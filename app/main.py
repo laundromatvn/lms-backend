@@ -1,4 +1,4 @@
-from app.core.app import init_app
+from app.core.boostrap import init_app
 
 
 app = init_app()

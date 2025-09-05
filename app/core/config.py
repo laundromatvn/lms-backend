@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     mqtt_keepalive: int = int(os.getenv("MQTT_KEEPALIVE", 60))
     mqtt_reconnect_delay: int = int(os.getenv("MQTT_RECONNECT_DELAY", 1))
     mqtt_reconnect_delay_max: int = int(os.getenv("MQTT_RECONNECT_DELAY_MAX", 120))
-    topic_prefix: str = os.getenv("TOPIC_PREFIX", "laundry/devices")
+    topic_prefix: str = os.getenv("TOPIC_PREFIX", "lms")
 
     ack_timeout_seconds: int = os.getenv("ACK_TIMEOUT_SECONDS", 5)
     timezone_name: str = os.getenv("TIMEZONE_NAME", "Asia/Ho_Chi_Minh")

@@ -1,0 +1,132 @@
+# env
+.env
+.env.*
+
+# logs
+logs/
+
+# __pycache__
+__pycache__/
+
+# .DS_Store
+.DS_Store
+
+# Python bytecode / optimizations
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-wheel-metadata/
+pip-log.txt
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django related (safe to ignore generally)
+*.log
+local_settings.py
+db.sqlite3
+
+# Flask/Instance
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Virtual environments
+.venv
+venv/
+env/
+ENV/
+.direnv
+.envrc
+
+# Type checkers / linters caches
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Editors/IDEs
+.idea/
+.vscode/
+.ropeproject/
+*.code-workspace
+
+# OS files
+Thumbs.db
+
+# Databases
+*.sqlite3
+*.db
+
+# Node (if present in repo)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# Swap / backup files
+*~
+*.swp
+*.swo

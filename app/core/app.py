@@ -6,11 +6,9 @@ import time
 from fastapi import FastAPI
 
 from app.core.config import settings
-from app.core.logging import configure_logging, get_logger
+from app.core.logging import configure_logging, logger
 from app.apis.router import router as api_router
-
-
-logger = get_logger()
+from app.libs.mqtt import start_service as start_mqtt, stop_service as stop_mqtt
 
 
 def init_app() -> FastAPI:
@@ -34,10 +32,12 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 def bootstrap_services():
     logger.info("starting", app=settings.app_name)
     init_timezone_and_logging()
+    start_mqtt()
 
 
 def shutdown_services():
     logger.info("stopped", app=settings.app_name)
+    stop_mqtt()
 
 
 def init_timezone_and_logging():

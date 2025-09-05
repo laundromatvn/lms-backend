@@ -29,3 +29,5 @@ def configure_logging(level: str = "INFO"):
 
 def get_logger() -> structlog.stdlib.BoundLogger:
     return structlog.get_logger()
+
+logger = get_logger()

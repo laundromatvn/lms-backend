@@ -1,4 +1,5 @@
 import os
+from typing import List, Optional
 
 from pydantic_settings import BaseSettings
 
@@ -20,6 +21,14 @@ class Settings(BaseSettings):
 
     mqtt_host: str = os.getenv("MQTT_HOST", "localhost")
     mqtt_port: int = os.getenv("MQTT_PORT", 1883)
+    # Comma-separated list of brokers in the form host:port
+    mqtt_brokers: List[str] = [s.strip() for s in os.getenv("MQTT_BROKERS", "").split(",") if s.strip()]
+    mqtt_username: Optional[str] = os.getenv("MQTT_USERNAME")
+    mqtt_password: Optional[str] = os.getenv("MQTT_PASSWORD")
+    mqtt_client_id_prefix: str = os.getenv("MQTT_CLIENT_ID_PREFIX", "lms")
+    mqtt_keepalive: int = int(os.getenv("MQTT_KEEPALIVE", 60))
+    mqtt_reconnect_delay: int = int(os.getenv("MQTT_RECONNECT_DELAY", 1))
+    mqtt_reconnect_delay_max: int = int(os.getenv("MQTT_RECONNECT_DELAY_MAX", 120))
     topic_prefix: str = os.getenv("TOPIC_PREFIX", "laundry/devices")
 
     ack_timeout_seconds: int = os.getenv("ACK_TIMEOUT_SECONDS", 5)
@@ -28,6 +37,11 @@ class Settings(BaseSettings):
     class Config:
         env_prefix = "BACKEND_"
         case_sensitive = False
+
+    def model_post_init(self, __context) -> None:  # type: ignore[override]
+        # Fallback to single broker from mqtt_host/mqtt_port when list is not provided
+        if not self.mqtt_brokers:
+            self.mqtt_brokers = [f"{self.mqtt_host}:{self.mqtt_port}"]
 
 
 settings = Settings()

@@ -7,6 +7,10 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     app_name: str = os.getenv("APP_NAME", "laundry-backend")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    
+    allow_hosts: List[str] = [s.strip() for s in os.getenv("ALLOW_HOSTS", "").split(",") if s.strip()]
+    # Comma-separated list of allowed CORS origins
+    cors_allow_origins: List[str] = [s.strip() for s in os.getenv("CORS_ALLOW_ORIGINS", "").split(",") if s.strip()]
 
     database_host: str = os.getenv("DATABASE_HOST", "localhost")
     database_port: int = os.getenv("DATABASE_PORT", 5432)
@@ -42,6 +46,18 @@ class Settings(BaseSettings):
         # Fallback to single broker from mqtt_host/mqtt_port when list is not provided
         if not self.mqtt_brokers:
             self.mqtt_brokers = [f"{self.mqtt_host}:{self.mqtt_port}"]
+        # Provide sensible defaults for CORS when not explicitly set
+        if not self.cors_allow_origins:
+            self.cors_allow_origins = (
+                self.allow_hosts
+                if self.allow_hosts
+                else [
+                    "http://localhost:5173",
+                    "https://localhost:5173",
+                    "http://127.0.0.1:5173",
+                    "https://127.0.0.1:5173",
+                ]
+            )
 
 
 settings = Settings()

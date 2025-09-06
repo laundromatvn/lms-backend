@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.core.logging import configure_logging, logger
 from app.apis.router import router as api_router
 from app.libs import mqtt
+from app.libs import redis
 
 
 def init_app() -> FastAPI:
@@ -42,11 +43,13 @@ def bootstrap_services():
     logger.info("starting", app=settings.app_name)
     init_timezone_and_logging()
     mqtt.start()
+    redis.start()
 
 
 def shutdown_services():
     logger.info("stopped", app=settings.app_name)
     mqtt.stop()
+    redis.stop()
 
 
 def init_timezone_and_logging():

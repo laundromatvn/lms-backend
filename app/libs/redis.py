@@ -54,7 +54,8 @@ class RedisClient:
 
     # --- Helpers ---
     def _namespaced(self, key: str) -> str:
-        return f"{self.key_prefix}:{key}" if self.key_prefix else key
+        # return f"{self.key_prefix}:{key}" if self.key_prefix else key
+        return key
 
     def _ensure(self) -> Optional[Redis]:
         if self._client is None:
@@ -234,5 +235,3 @@ def start() -> None:
 
 def stop() -> None:
     redis_client.close()
-
-

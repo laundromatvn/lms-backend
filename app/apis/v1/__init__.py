@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 
-from app.apis.v1.actions import demo
+from app.apis.v1 import actions
+from app.apis.v1 import tasks
 
 
-router = APIRouter(prefix="/actions")
+router = APIRouter()
 
-
-router.include_router(demo.router, prefix="/demo")
+router.include_router(actions.router, prefix="/actions")
+router.include_router(tasks.router, prefix="/tasks")

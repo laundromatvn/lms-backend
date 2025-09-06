@@ -17,10 +17,12 @@ ALLOWED_STATUS = {
     "failed",
 }
 
+TIMEOUT = 3600 * 24 # 1 day
+
 
 @runtime_checkable
 class TaskStorage(Protocol):
-    def create(self, task: TaskDict) -> None: ...
+    def create(self, task: TaskDict, timeout: int = TIMEOUT) -> None: ...
 
     def get(self, task_id: str) -> Optional[TaskDict]: ...
 
@@ -34,22 +36,42 @@ class InMemoryTaskStorage:
         self._tasks: Dict[str, TaskDict] = {}
         self._lock = threading.Lock()
 
-    def create(self, task: TaskDict) -> None:
+    def create(self, task: TaskDict, timeout: int = TIMEOUT) -> None:
         with self._lock:
-            self._tasks[task["id"]] = task
+            # store task alongside its expiry timestamp
+            expires_at: Optional[datetime] = None
+            if timeout and timeout > 0:
+                expires_at = datetime.now(timezone.utc).timestamp() + timeout
+            stored = dict(task)
+            stored["_expires_at_ts"] = expires_at
+            self._tasks[task["id"]] = stored
 
     def get(self, task_id: str) -> Optional[TaskDict]:
         with self._lock:
             task = self._tasks.get(task_id)
             if task is None:
                 return None
+            # check expiry
+            expires_at = task.get("_expires_at_ts")
+            if isinstance(expires_at, (int, float)):
+                if datetime.now(timezone.utc).timestamp() > float(expires_at):
+                    # expired, delete and return None
+                    self._tasks.pop(task_id, None)
+                    return None
             # Return a shallow copy to avoid external mutation
-            return dict(task)
+            copied = dict(task)
+            copied.pop("_expires_at_ts", None)
+            return copied
 
     def update(self, task_id: str, updates: TaskDict) -> Optional[TaskDict]:
         with self._lock:
             existing = self._tasks.get(task_id)
             if existing is None:
+                return None
+            # handle potential expiry on update fetch
+            expires_at = existing.get("_expires_at_ts")
+            if isinstance(expires_at, (int, float)) and datetime.now(timezone.utc).timestamp() > float(expires_at):
+                self._tasks.pop(task_id, None)
                 return None
             # Merge updates into existing task
             new_task = dict(existing)
@@ -60,8 +82,12 @@ class InMemoryTaskStorage:
                 updates = dict(updates)
                 updates.pop("data", None)
             new_task.update(updates)
+            # refresh expiry to default timeout on update
+            new_task["_expires_at_ts"] = datetime.now(timezone.utc).timestamp() + TIMEOUT
             self._tasks[task_id] = new_task
-            return dict(new_task)
+            result = dict(new_task)
+            result.pop("_expires_at_ts", None)
+            return result
 
     def delete(self, task_id: str) -> bool:
         with self._lock:
@@ -103,15 +129,17 @@ class RedisTaskStorage:
                     pass
         return data
 
-    def create(self, task: TaskDict) -> None:
+    def create(self, task: TaskDict, timeout: int = TIMEOUT) -> None:
         key = self._key(task["id"])
         payload = self._serialize(task)
-        ok = self._redis.set(key, payload)
+        # set with expiration
+        ok = self._redis.set(key, payload, ex=timeout)
         if not ok:
             logger.warning("task_redis_create_failed", task_id=task["id"])
 
     def get(self, task_id: str) -> Optional[TaskDict]:
         key = self._key(task_id)
+        logger.info("task_redis_get", key=key)
         raw = self._redis.get(key)
         return self._deserialize(raw)
 
@@ -128,7 +156,8 @@ class RedisTaskStorage:
             updates = dict(updates)
             updates.pop("data", None)
         new_task.update(updates)
-        ok = self._redis.set(key, self._serialize(new_task))
+        # update value and refresh TTL
+        ok = self._redis.set(key, self._serialize(new_task), ex=TIMEOUT)
         if not ok:
             logger.warning("task_redis_update_failed", task_id=task_id)
         return new_task

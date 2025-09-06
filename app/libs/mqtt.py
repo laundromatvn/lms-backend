@@ -3,7 +3,7 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import paho.mqtt.client as mqtt
 
@@ -34,6 +34,10 @@ class MQTTClient:
         self.password = password
 
         self.connected_event = threading.Event()
+        self._lock = threading.Lock()
+        self._subscriptions: Dict[str, int] = {}
+        # Waiters keyed by topic, each waiter contains a predicate, an event and a captured message
+        self._waiters: Dict[str, List[Dict[str, Any]]] = {}
 
         self.client = mqtt.Client(client_id=broker.client_id, clean_session=True)
         if username or password:
@@ -72,6 +76,14 @@ class MQTTClient:
                 client_id=self.broker.client_id,
             )
             self.connected_event.set()
+            # Re-subscribe to all known topics upon (re)connect
+            with self._lock:
+                for topic, qos in self._subscriptions.items():
+                    try:
+                        self.client.subscribe(topic, qos=qos)
+                        logger.debug("mqtt_resubscribe", topic=topic, qos=qos)
+                    except Exception as exc:
+                        logger.error("mqtt_resubscribe_error", topic=topic, error=str(exc))
         else:
             logger.warning(
                 "mqtt_connect_failed",
@@ -104,6 +116,24 @@ class MQTTClient:
             topic=message.topic,
             payload=message.payload,
         )
+        # Notify any waiters for this topic
+        with self._lock:
+            waiters = self._waiters.get(message.topic, [])
+            if not waiters:
+                return
+            to_remove: List[Dict[str, Any]] = []
+            for waiter in waiters:
+                predicate: Callable[[mqtt.MQTTMessage], bool] = waiter["predicate"]
+                try:
+                    if predicate(message):
+                        waiter["captured_message"] = message
+                        waiter["event"].set()
+                        to_remove.append(waiter)
+                except Exception as exc:
+                    logger.error("mqtt_waiter_predicate_error", topic=message.topic, error=str(exc))
+            if to_remove:
+                # Remove completed waiters
+                self._waiters[message.topic] = [w for w in waiters if w not in to_remove]
 
     def _on_subscribe(self, _client, _userdata, mid, granted_qos):
         logger.debug(
@@ -154,12 +184,75 @@ class MQTTClient:
             )
             return False
 
+    def subscribe(self, topic: str, qos: int = 0) -> bool:
+        with self._lock:
+            self._subscriptions[topic] = qos
+        try:
+            if self.connected_event.is_set():
+                self.client.subscribe(topic, qos=qos)
+            logger.debug("mqtt_subscribe_initiated", topic=topic, qos=qos)
+            return True
+        except Exception as exc:
+            logger.error("mqtt_subscribe_error", topic=topic, error=str(exc))
+            return False
+
+    def wait_for_json(
+        self,
+        topic: str,
+        timeout_seconds: Optional[int] = None,
+        match: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        self.subscribe(topic, qos=0)
+
+        event = threading.Event()
+        waiter: Dict[str, Any] = {
+            "predicate": lambda msg: self._json_predicate(msg, match),
+            "event": event,
+            "captured_message": None,
+        }
+        with self._lock:
+            self._waiters.setdefault(topic, []).append(waiter)
+
+        timeout = timeout_seconds if timeout_seconds is not None else settings.ack_timeout_seconds
+        signaled = event.wait(timeout=timeout)
+        if not signaled:
+            with self._lock:
+                waiters = self._waiters.get(topic, [])
+                if waiter in waiters:
+                    self._waiters[topic] = [w for w in waiters if w is not waiter]
+            logger.warning("mqtt_wait_for_json_timeout", topic=topic, timeout_seconds=timeout)
+            return None
+
+        message: Optional[mqtt.MQTTMessage] = waiter.get("captured_message")
+        if not message:
+            return None
+        try:
+            payload_str = message.payload.decode("utf-8") if isinstance(message.payload, (bytes, bytearray)) else str(message.payload)
+            return json.loads(payload_str)
+        except Exception as exc:
+            logger.error("mqtt_wait_for_json_parse_error", topic=topic, error=str(exc))
+            return None
+
+    def _json_predicate(self, message: mqtt.MQTTMessage, match: Optional[Dict[str, Any]]) -> bool:
+        try:
+            payload_str = message.payload.decode("utf-8") if isinstance(message.payload, (bytes, bytearray)) else str(message.payload)
+            data = json.loads(payload_str)
+        except Exception:
+            return False
+        if not match:
+            return True
+        for key, expected in match.items():
+            if key not in data or data[key] != expected:
+                return False
+        return True
+
+_unique_client_id = f"{settings.mqtt_client_id_prefix}-{uuid.uuid4().hex[:8]}"
 
 mqtt_client = MQTTClient(
     broker=BrokerConfig(
         host=settings.mqtt_host,
         port=settings.mqtt_port,
-        client_id=settings.mqtt_client_id_prefix,
+        client_id=_unique_client_id,
     ),
     username=settings.mqtt_username,
     password=settings.mqtt_password,

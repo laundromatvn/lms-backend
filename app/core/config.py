@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     mqtt_brokers: List[str] = [s.strip() for s in os.getenv("MQTT_BROKERS", "").split(",") if s.strip()]
     mqtt_username: Optional[str] = os.getenv("MQTT_USERNAME")
     mqtt_password: Optional[str] = os.getenv("MQTT_PASSWORD")
-    mqtt_client_id_prefix: str = os.getenv("MQTT_CLIENT_ID_PREFIX", "lms")
+    mqtt_client_id_prefix: str = os.getenv("MQTT_CLIENT_ID_PREFIX", "lms_backend")
     mqtt_keepalive: int = int(os.getenv("MQTT_KEEPALIVE", 60))
     mqtt_reconnect_delay: int = int(os.getenv("MQTT_RECONNECT_DELAY", 1))
     mqtt_reconnect_delay_max: int = int(os.getenv("MQTT_RECONNECT_DELAY_MAX", 120))

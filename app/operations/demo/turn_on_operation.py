@@ -11,13 +11,14 @@ def turn_on_operation(relay_id: int):
     _publish_turn_on_action(relay_id)
     _wait_for_turn_on_ack(relay_id)
 
+
 def _publish_turn_on_action(relay_id: int):
     payload = {
         "code": "10001",
         "controller_id": "1",
         "relay_id": relay_id,
         "value": 10,
-        "pulse_duration": 5,
+        "pulse_duration": 50,
     }
     mqtt_client.publish(DEMO_TOPIC, payload)
 

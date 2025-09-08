@@ -7,7 +7,7 @@ from app.bootstrap.common import bootstrap_services, shutdown_services
 from app.core.config import settings
 from app.core.logging import logger
 from app.libs.mqtt import mqtt_client
-from app.subscriber import subscriber_list, SubscriberManager
+from app.subscribers import subscriber_list, SubscriberManager
 
 
 APP_NAME = "mqtt_consumer"

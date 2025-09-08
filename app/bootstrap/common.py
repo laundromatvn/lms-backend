@@ -4,6 +4,7 @@ import time
 
 from fastapi import FastAPI
 
+from app.core import database
 from app.core.config import settings
 from app.core.logging import configure_logging, logger
 from app.libs import mqtt
@@ -18,6 +19,7 @@ def bootstrap_services(
     init_timezone_and_logging()
     mqtt.start()
     redis.start()
+    database.init()
     if custom_callback:
         custom_callback(app)
 
@@ -31,6 +33,7 @@ def shutdown_services(
         custom_callback(app)
     mqtt.stop()
     redis.stop()
+    database.close()
 
 
 def init_timezone_and_logging():

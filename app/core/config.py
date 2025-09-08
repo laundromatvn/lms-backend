@@ -12,13 +12,13 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed CORS origins
     cors_allow_origins: List[str] = [s.strip() for s in os.getenv("CORS_ALLOW_ORIGINS", "").split(",") if s.strip()]
 
+    database_driver: str = os.getenv("DATABASE_DRIVER", "postgresql+psycopg2")
     database_host: str = os.getenv("DATABASE_HOST", "localhost")
     database_port: int = os.getenv("DATABASE_PORT", 5432)
     database_user: str = os.getenv("DATABASE_USER", "laundry_admin")
     database_password: str = os.getenv("DATABASE_PASSWORD", "Secure@123")
     database_name: str = os.getenv("DATABASE_NAME", "laundry")
-    database_url: str = f"postgresql+psycopg2://{database_user}:{database_password}@{database_host}:{database_port}/{database_name}"
-    
+
     redis_host: str = os.getenv("REDIS_HOST", "localhost")
     redis_port: int = os.getenv("REDIS_PORT", 6379)
     redis_url: str = f"redis://{redis_host}:{redis_port}/0"

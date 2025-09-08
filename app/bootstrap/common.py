@@ -1,5 +1,4 @@
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from collections.abc import Callable
 import os
 import time
 
@@ -9,26 +8,27 @@ from app.core.config import settings
 from app.core.logging import configure_logging, logger
 from app.libs import mqtt
 from app.libs import redis
-
-
-@asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
-    bootstrap_services()
-    try:
-        yield
-    finally:
-        shutdown_services()
         
         
-def bootstrap_services():
+def bootstrap_services(
+    app: FastAPI = None,
+    custom_callback: Callable = None,
+):
     logger.info("starting", app=settings.app_name)
     init_timezone_and_logging()
     mqtt.start()
     redis.start()
+    if custom_callback:
+        custom_callback(app)
 
 
-def shutdown_services():
+def shutdown_services(
+    app: FastAPI = None,
+    custom_callback: Callable = None,
+):
     logger.info("stopped", app=settings.app_name)
+    if custom_callback:
+        custom_callback(app)
     mqtt.stop()
     redis.stop()
 

@@ -1,4 +1,4 @@
-from app.core.boostrap import init_app
+from app.bootstrap import api
 
 
-app = init_app()
+app = api.init()

@@ -38,6 +38,8 @@ class MQTTClient:
         self._subscriptions: Dict[str, int] = {}
         # Waiters keyed by topic, each waiter contains a predicate, an event and a captured message
         self._waiters: Dict[str, List[Dict[str, Any]]] = {}
+        # Topic listeners: topic -> list of callables to be invoked on message
+        self._topic_listeners: Dict[str, List[Callable[[mqtt.MQTTMessage], None]]] = {}
 
         self.client = mqtt.Client(client_id=broker.client_id, clean_session=True)
         if username or password:
@@ -116,6 +118,16 @@ class MQTTClient:
             topic=message.topic,
             payload=message.payload,
         )
+        # Deliver to any explicit topic listeners first
+        try:
+            listeners = self._topic_listeners.get(message.topic, [])
+            for listener in list(listeners):
+                try:
+                    listener(message)
+                except Exception as exc:
+                    logger.error("mqtt_listener_error", topic=message.topic, error=str(exc))
+        except Exception as exc:
+            logger.error("mqtt_listener_dispatch_error", topic=message.topic, error=str(exc))
         # Notify any waiters for this topic
         with self._lock:
             waiters = self._waiters.get(message.topic, [])
@@ -195,6 +207,21 @@ class MQTTClient:
         except Exception as exc:
             logger.error("mqtt_subscribe_error", topic=topic, error=str(exc))
             return False
+
+    def add_topic_listener(self, topic: str, callback: Callable[[mqtt.MQTTMessage], None]) -> None:
+        """Register a callback that will be invoked for every message on a topic."""
+        with self._lock:
+            self._topic_listeners.setdefault(topic, []).append(callback)
+        # Ensure we're subscribed so messages are received
+        self.subscribe(topic, qos=0)
+
+    def remove_topic_listener(self, topic: str, callback: Callable[[mqtt.MQTTMessage], None]) -> None:
+        with self._lock:
+            listeners = self._topic_listeners.get(topic, [])
+            if callback in listeners:
+                listeners.remove(callback)
+            if not listeners and topic in self._topic_listeners:
+                del self._topic_listeners[topic]
 
     def wait_for_json(
         self,

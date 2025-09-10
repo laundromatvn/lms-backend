@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     app_name: str = os.getenv("APP_NAME", "laundry-backend")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
-    
+
     allow_hosts: List[str] = [s.strip() for s in os.getenv("ALLOW_HOSTS", "").split(",") if s.strip()]
     # Comma-separated list of allowed CORS origins
     cors_allow_origins: List[str] = [s.strip() for s in os.getenv("CORS_ALLOW_ORIGINS", "").split(",") if s.strip()]
@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     database_user: str = os.getenv("DATABASE_USER", "laundry_admin")
     database_password: str = os.getenv("DATABASE_PASSWORD", "Secure@123")
     database_name: str = os.getenv("DATABASE_NAME", "laundry")
+    
+    auto_migrate: bool = os.getenv("AUTO_MIGRATE", "true").lower() == "true"
 
     redis_host: str = os.getenv("REDIS_HOST", "localhost")
     redis_port: int = os.getenv("REDIS_PORT", 6379)

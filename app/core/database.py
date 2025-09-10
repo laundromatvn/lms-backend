@@ -8,7 +8,8 @@ from typing import AsyncGenerator, Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from fastapi import Depends
-import structlog
+import subprocess
+import os
 
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -150,6 +151,171 @@ class DatabaseManager:
             "invalid": pool.invalid(),
         }
 
+    def run_migrations(self, auto_migrate: bool = True) -> bool:
+        """
+        Run database migrations using Alembic.
+        
+        Args:
+            auto_migrate: If True, automatically apply migrations. If False, only check status.
+            
+        Returns:
+            bool: True if migrations were successful or no migrations needed
+        """
+        try:
+            # Get the project root directory
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            
+            # Change to project root directory
+            original_cwd = os.getcwd()
+            os.chdir(project_root)
+            
+            try:
+                if auto_migrate:
+                    logger.info("Running database migrations...")
+                    result = subprocess.run(
+                        ["alembic", "upgrade", "head"],
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    logger.info("Database migrations completed successfully")
+                    if result.stdout:
+                        logger.info("Migration output", output=result.stdout)
+                    return True
+                else:
+                    # Just check migration status
+                    result = subprocess.run(
+                        ["alembic", "current"],
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    logger.info("Migration status", status=result.stdout.strip())
+                    return True
+                    
+            except subprocess.CalledProcessError as e:
+                logger.error(
+                    "Migration failed",
+                    error=e.stderr,
+                    returncode=e.returncode
+                )
+                return False
+            finally:
+                # Restore original working directory
+                os.chdir(original_cwd)
+                
+        except Exception as e:
+            logger.error("Failed to run migrations", error=str(e))
+            return False
+
+    def create_migration(self, message: str) -> bool:
+        """
+        Create a new migration file.
+        
+        Args:
+            message: Description of the migration
+            
+        Returns:
+            bool: True if migration file was created successfully
+        """
+        try:
+            # Get the project root directory
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            
+            # Change to project root directory
+            original_cwd = os.getcwd()
+            os.chdir(project_root)
+            
+            try:
+                logger.info("Creating new migration", message=message)
+                result = subprocess.run(
+                    ["alembic", "revision", "--autogenerate", "-m", message],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                logger.info("Migration file created successfully")
+                if result.stdout:
+                    logger.info("Migration creation output", output=result.stdout)
+                return True
+                
+            except subprocess.CalledProcessError as e:
+                logger.error(
+                    "Failed to create migration",
+                    error=e.stderr,
+                    returncode=e.returncode
+                )
+                return False
+            finally:
+                # Restore original working directory
+                os.chdir(original_cwd)
+                
+        except Exception as e:
+            logger.error("Failed to create migration", error=str(e))
+            return False
+
+    def get_migration_status(self) -> dict:
+        """
+        Get current migration status.
+        
+        Returns:
+            dict: Migration status information
+        """
+        try:
+            # Get the project root directory
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            
+            # Change to project root directory
+            original_cwd = os.getcwd()
+            os.chdir(project_root)
+            
+            try:
+                # Get current revision
+                current_result = subprocess.run(
+                    ["alembic", "current"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                
+                # Get heads
+                heads_result = subprocess.run(
+                    ["alembic", "heads"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                
+                # Get history
+                history_result = subprocess.run(
+                    ["alembic", "history", "--verbose"],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                
+                return {
+                    "current": current_result.stdout.strip(),
+                    "heads": heads_result.stdout.strip(),
+                    "history": history_result.stdout.strip(),
+                    "status": "success"
+                }
+                
+            except subprocess.CalledProcessError as e:
+                return {
+                    "error": e.stderr,
+                    "status": "error"
+                }
+            finally:
+                # Restore original working directory
+                os.chdir(original_cwd)
+                
+        except Exception as e:
+            return {
+                "error": str(e),
+                "status": "error"
+            }
+
     def close(self) -> None:
         """Close the database engine."""
         if self.engine:
@@ -214,3 +380,39 @@ def get_database_manager() -> DatabaseManager:
 def get_pool_status() -> dict:
     """Get connection pool status for monitoring."""
     return db_manager.get_pool_status()
+
+
+def migrate(auto_migrate: bool = True) -> bool:
+    """
+    Run database migrations.
+    
+    Args:
+        auto_migrate: If True, automatically apply migrations. If False, only check status.
+        
+    Returns:
+        bool: True if migrations were successful
+    """
+    return db_manager.run_migrations(auto_migrate=auto_migrate)
+
+
+def create_migration(message: str) -> bool:
+    """
+    Create a new migration file.
+    
+    Args:
+        message: Description of the migration
+        
+    Returns:
+        bool: True if migration file was created successfully
+    """
+    return db_manager.create_migration(message)
+
+
+def get_migration_status() -> dict:
+    """
+    Get current migration status.
+    
+    Returns:
+        dict: Migration status information
+    """
+    return db_manager.get_migration_status()

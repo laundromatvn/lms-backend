@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.apis.router import router as api_router
 from app.bootstrap.common import bootstrap_services, shutdown_services
 from app.core.config import settings
+from app.core.logging import logger
+import app.core.database as database
 
 
 APP_NAME = "api"
@@ -33,8 +35,22 @@ def init() -> FastAPI:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
-    bootstrap_services()
+    bootstrap_services(app=_app, custom_callback=on_startup)
     try:
         yield
     finally:
-        shutdown_services()
+        shutdown_services(app=_app, custom_callback=on_shutdown)
+
+
+def on_startup(_app: FastAPI) -> None:
+    if settings.auto_migrate:
+        logger.info("Running automatic database migrations")
+        migration_success = database.migrate(auto_migrate=True)
+        if not migration_success:
+            logger.warning("Database migration failed, continuing with startup")
+        else:
+            logger.info("Database migrations completed successfully")
+
+
+def on_shutdown(_app: FastAPI) -> None:
+    shutdown_services(app=_app)

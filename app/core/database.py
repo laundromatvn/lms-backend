@@ -1,11 +1,12 @@
 """
 Database module for centralized database management.
-Provides SQLModel integration with FastAPI dependency injection.
+Provides SQLAlchemy integration with FastAPI dependency injection.
 """
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Generator
-from sqlmodel import SQLModel, create_engine, Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from fastapi import Depends
 import structlog
 
@@ -14,9 +15,20 @@ from app.core.logging import get_logger
 
 logger = get_logger()
 
+# Create declarative base for SQLAlchemy models
+Base = declarative_base()
+
 
 class DatabaseManager:
-    """Centralized database management class."""
+    """
+    Centralized database management class.
+    
+    This class is designed to work efficiently in multi-worker and multi-server environments:
+    - Each worker process gets its own connection pool
+    - Connection pooling is optimized for concurrent access
+    - Thread-safe session management
+    - Automatic connection cleanup and recycling
+    """
 
     def __init__(
         self,
@@ -28,6 +40,7 @@ class DatabaseManager:
         name: str = settings.database_name,
     ):
         self.engine = None
+        self.SessionLocal = None
         self._initialized = False
 
         self.driver = driver
@@ -61,18 +74,23 @@ class DatabaseManager:
             return
 
         try:
-            # Create engine with connection pooling
+            # Create engine with connection pooling optimized for multi-worker setup
             self.engine = create_engine(
                 self.database_url,
                 echo=settings.log_level.upper() == "DEBUG",
                 pool_pre_ping=True,
                 pool_recycle=300,  # Recycle connections every 5 minutes
-                pool_size=10,
-                max_overflow=20,
+                pool_size=5,       # Reduced per-worker pool size for multi-worker setup
+                max_overflow=10,   # Reduced overflow for better resource management
+                pool_timeout=30,   # Timeout for getting connection from pool
+                pool_reset_on_return='commit',  # Reset connections on return
             )
 
+            # Create sessionmaker
+            self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+
             # Create all tables
-            SQLModel.metadata.create_all(self.engine)
+            Base.metadata.create_all(self.engine)
             self._initialized = True
             logger.info(
                 "Database initialized successfully", database_url=self.database_url
@@ -91,15 +109,15 @@ class DatabaseManager:
         if not self._initialized:
             self.initialize()
 
-        with Session(self.engine) as session:
-            try:
-                yield session
-            except Exception as e:
-                logger.error("Database session error", error=str(e))
-                session.rollback()
-                raise
-            finally:
-                session.close()
+        session = self.SessionLocal()
+        try:
+            yield session
+        except Exception as e:
+            logger.error("Database session error", error=str(e))
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     @asynccontextmanager
     async def get_async_session(self) -> AsyncGenerator[Session, None]:
@@ -107,15 +125,30 @@ class DatabaseManager:
         if not self._initialized:
             self.initialize()
 
-        with Session(self.engine) as session:
-            try:
-                yield session
-            except Exception as e:
-                logger.error("Async database session error", error=str(e))
-                session.rollback()
-                raise
-            finally:
-                session.close()
+        session = self.SessionLocal()
+        try:
+            yield session
+        except Exception as e:
+            logger.error("Async database session error", error=str(e))
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def get_pool_status(self) -> dict:
+        """Get connection pool status for monitoring."""
+        if not self.engine:
+            return {"status": "not_initialized"}
+        
+        pool = self.engine.pool
+        return {
+            "status": "active",
+            "pool_size": pool.size(),
+            "checked_in": pool.checkedin(),
+            "checked_out": pool.checkedout(),
+            "overflow": pool.overflow(),
+            "invalid": pool.invalid(),
+        }
 
     def close(self) -> None:
         """Close the database engine."""
@@ -176,3 +209,8 @@ def close() -> None:
 def get_database_manager() -> DatabaseManager:
     """Get the global database manager instance."""
     return db_manager
+
+
+def get_pool_status() -> dict:
+    """Get connection pool status for monitoring."""
+    return db_manager.get_pool_status()

@@ -104,14 +104,15 @@ class User(Base):
         
         return role
     
-    def set_password(self, plain_password: str) -> None:
+    @classmethod
+    def set_password(cls, plain_password: str) -> None:
         """
         Hash and set the user's password.
         
         Args:
             plain_password: Plain text password to hash and store
         """
-        self.password = pwd_context.hash(plain_password)
+        return pwd_context.hash(plain_password)
     
     def verify_password(self, plain_password: str) -> bool:
         """

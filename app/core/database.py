@@ -4,7 +4,8 @@ Provides SQLAlchemy integration with FastAPI dependency injection.
 """
 
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator, Generator, Callable, Any
+from functools import wraps
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from fastapi import Depends
@@ -475,3 +476,126 @@ def downgrade(revision: str = "base") -> bool:
         bool: True if downgrade was successful
     """
     return db_manager.downgrade_migrations(revision=revision)
+
+
+def get_session() -> Session:
+    """
+    Get a database session for use in operations.
+    
+    This function provides a direct session that can be used in operations.
+    The caller is responsible for closing the session.
+    
+    Returns:
+        Session: A SQLAlchemy database session
+        
+    Example:
+        session = get_session()
+        try:
+            user = session.query(User).filter(User.id == user_id).first()
+            # ... use session
+        finally:
+            session.close()
+    """
+    if not db_manager._initialized:
+        db_manager.initialize()
+    
+    return db_manager.SessionLocal()
+
+
+def with_db_session(func: Callable) -> Callable:
+    """
+    Decorator to automatically manage database sessions for functions.
+    
+    This decorator automatically provides a database session as the first
+    argument to the decorated function and handles session cleanup.
+    
+    The decorated function should accept 'session' as its first parameter
+    after 'self' (for methods) or as the first parameter (for functions).
+    
+    Args:
+        func: The function to decorate
+        
+    Returns:
+        Callable: The decorated function
+        
+    Example:
+        @with_db_session
+        def create_user(self, session: Session, user_data: dict):
+            user = User(**user_data)
+            session.add(user)
+            return user
+            
+        @with_db_session  
+        def get_user_by_id(session: Session, user_id: str):
+            return session.query(User).filter(User.id == user_id).first()
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        session = get_session()
+        try:
+            # Insert session as the first argument after self (if it exists)
+            if args and hasattr(args[0], '__class__'):
+                # Method call - insert session after self
+                new_args = (args[0], session) + args[1:]
+            else:
+                # Function call - insert session as first argument
+                new_args = (session,) + args
+            
+            result = func(*new_args, **kwargs)
+            session.commit()
+            return result
+        except Exception as e:
+            session.rollback()
+            logger.error("Database session error in decorated function", 
+                        function=func.__name__, error=str(e))
+            raise
+        finally:
+            session.close()
+    
+    return wrapper
+
+
+def with_db_session_async(func: Callable) -> Callable:
+    """
+    Async decorator to automatically manage database sessions for async functions.
+    
+    This decorator automatically provides a database session as the first
+    argument to the decorated async function and handles session cleanup.
+    
+    Args:
+        func: The async function to decorate
+        
+    Returns:
+        Callable: The decorated async function
+        
+    Example:
+        @with_db_session_async
+        async def create_user_async(self, session: Session, user_data: dict):
+            user = User(**user_data)
+            session.add(user)
+            return user
+    """
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        session = get_session()
+        try:
+            # Insert session as the first argument after self (if it exists)
+            if args and hasattr(args[0], '__class__'):
+                # Method call - insert session after self
+                new_args = (args[0], session) + args[1:]
+            else:
+                # Function call - insert session as first argument
+                new_args = (session,) + args
+            
+            result = await func(*new_args, **kwargs)
+            session.commit()
+            return result
+        except Exception as e:
+            session.rollback()
+            logger.error("Database session error in decorated async function", 
+                        function=func.__name__, error=str(e))
+            raise
+        finally:
+            session.close()
+    
+    return wrapper

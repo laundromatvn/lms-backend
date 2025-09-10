@@ -29,6 +29,7 @@ show_help() {
     echo ""
     echo "Commands:"
     echo "  upgrade [--dry-run]    Run database migrations (use --dry-run to check status)"
+    echo "  downgrade [revision]   Downgrade database migrations (default: 'base' for complete rollback)"
     echo "  create <message>       Create a new migration file"
     echo "  status                 Show current migration status"
     echo "  init                   Initialize Alembic for the first time"
@@ -37,6 +38,8 @@ show_help() {
     echo "Examples:"
     echo "  $0 upgrade                    # Run all pending migrations"
     echo "  $0 upgrade --dry-run          # Check migration status without applying"
+    echo "  $0 downgrade                  # Downgrade to base (complete rollback)"
+    echo "  $0 downgrade <revision>       # Downgrade to specific revision"
     echo "  $0 create \"Add user table\"    # Create a new migration"
     echo "  $0 status                     # Show current migration status"
     echo "  $0 init                       # Initialize Alembic"
@@ -61,6 +64,15 @@ case "${1:-help}" in
             run_cli upgrade --dry-run
         else
             run_cli upgrade
+        fi
+        ;;
+    "downgrade")
+        if [ -n "$2" ]; then
+            echo -e "${YELLOW}⬇️  Downgrading database to revision: $2${NC}"
+            run_cli downgrade-cmd "$2"
+        else
+            echo -e "${YELLOW}⬇️  Downgrading database to base (complete rollback)${NC}"
+            run_cli downgrade-cmd
         fi
         ;;
     "create")

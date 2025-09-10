@@ -208,6 +208,52 @@ class DatabaseManager:
             logger.error("Failed to run migrations", error=str(e))
             return False
 
+    def downgrade_migrations(self, revision: str = "base") -> bool:
+        """
+        Downgrade database migrations using Alembic.
+        
+        Args:
+            revision: Target revision to downgrade to (default: "base" for complete rollback)
+            
+        Returns:
+            bool: True if downgrade was successful
+        """
+        try:
+            # Get the project root directory
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            
+            # Change to project root directory
+            original_cwd = os.getcwd()
+            os.chdir(project_root)
+            
+            try:
+                logger.info("Downgrading database migrations", target_revision=revision)
+                result = subprocess.run(
+                    ["alembic", "downgrade", revision],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                logger.info("Database downgrade completed successfully")
+                if result.stdout:
+                    logger.info("Downgrade output", output=result.stdout)
+                return True
+                    
+            except subprocess.CalledProcessError as e:
+                logger.error(
+                    "Downgrade failed",
+                    error=e.stderr,
+                    returncode=e.returncode
+                )
+                return False
+            finally:
+                # Restore original working directory
+                os.chdir(original_cwd)
+                
+        except Exception as e:
+            logger.error("Failed to downgrade migrations", error=str(e))
+            return False
+
     def create_migration(self, message: str) -> bool:
         """
         Create a new migration file.
@@ -416,3 +462,16 @@ def get_migration_status() -> dict:
         dict: Migration status information
     """
     return db_manager.get_migration_status()
+
+
+def downgrade(revision: str = "base") -> bool:
+    """
+    Downgrade database migrations.
+    
+    Args:
+        revision: Target revision to downgrade to (default: "base" for complete rollback)
+        
+    Returns:
+        bool: True if downgrade was successful
+    """
+    return db_manager.downgrade_migrations(revision=revision)

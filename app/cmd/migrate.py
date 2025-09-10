@@ -3,14 +3,13 @@
 Database migration CLI commands.
 """
 import typer
-from typing import Optional
 import sys
 import os
 
 # Add the project root to the Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from app.core.database import migrate, create_migration, get_migration_status
+from app.core.database import migrate, create_migration, get_migration_status, downgrade
 from app.core.logging import get_logger
 
 logger = get_logger()
@@ -40,6 +39,28 @@ def upgrade(
     except Exception as e:
         logger.error("Migration command failed", error=str(e))
         typer.echo(f"❌ Migration command failed: {e}")
+        sys.exit(1)
+
+
+@app.command()
+def downgrade_cmd(
+    revision: str = typer.Argument("base", help="Target revision to downgrade to (default: 'base' for complete rollback)")
+):
+    """Downgrade database migrations to a specific revision."""
+    try:
+        logger.info("Downgrading database migrations", target_revision=revision)
+        success = downgrade(revision)
+        
+        if success:
+            typer.echo(f"✅ Database downgraded successfully to: {revision}")
+            sys.exit(0)
+        else:
+            typer.echo("❌ Failed to downgrade database")
+            sys.exit(1)
+            
+    except Exception as e:
+        logger.error("Downgrade command failed", error=str(e))
+        typer.echo(f"❌ Downgrade command failed: {e}")
         sys.exit(1)
 
 

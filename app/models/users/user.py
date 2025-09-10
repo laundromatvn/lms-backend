@@ -84,7 +84,14 @@ class User(Base):
         if phone is not None:
             # Basic phone format validation (digits, +, -, spaces, parentheses)
             import re
-            phone_pattern = r'^[\+]?[0-9\s\-\(\)]{10,20}$'
+            
+            if phone.startswith('+'):
+                phone = phone[1:]
+                
+            if phone.startswith('0'):
+                phone = phone[1:]
+            
+            phone_pattern = r'^[\+]?[0-9\s\-\(\)]{9}$'
             if not re.match(phone_pattern, phone):
                 raise ValueError("Invalid phone format")
         

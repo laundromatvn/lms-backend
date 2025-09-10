@@ -9,7 +9,6 @@ from sqlalchemy.exc import IntegrityError
 
 from app.operations.base import BaseOperation, OperationResult
 from app.models.users.user import User, UserRole    
-from app.core.logging import logger
 
 
 class RegisterCustomerOperation(BaseOperation[Dict[str, Any]]):
@@ -35,18 +34,16 @@ class RegisterCustomerOperation(BaseOperation[Dict[str, Any]]):
     @BaseOperation.with_session
     def _execute_impl(self, session: Session, *args, **kwargs) -> OperationResult[Dict[str, Any]]:
         try:
-            hashed_password = User.set_password(self.password)
-            
-            logger.info(f"Hashed password: {hashed_password}")
-            
             user = User(
                 phone=self.phone,
-                password=hashed_password,
+                password=User.set_password(self.password),
                 role=UserRole.CUSTOMER,
                 is_verified=True,
             )
             session.add(user)
             session.commit()
+            session.refresh(user)
+            return OperationResult.success(user)
         except IntegrityError as e:
             session.rollback()
 
@@ -54,7 +51,3 @@ class RegisterCustomerOperation(BaseOperation[Dict[str, Any]]):
                 return OperationResult.failure("Phone number already exists")
             else:
                 return OperationResult.failure(f"Database integrity error: {str(e)}")
-
-        session.refresh(user)
-        
-        return OperationResult.success(user)

@@ -512,6 +512,9 @@ def with_db_session(func: Callable) -> Callable:
     The decorated function should accept 'session' as its first parameter
     after 'self' (for methods) or as the first parameter (for functions).
     
+    IMPORTANT: The decorated function should NOT manually commit or rollback
+    the session - the decorator handles this automatically.
+    
     Args:
         func: The function to decorate
         
@@ -523,6 +526,7 @@ def with_db_session(func: Callable) -> Callable:
         def create_user(self, session: Session, user_data: dict):
             user = User(**user_data)
             session.add(user)
+            # Don't call session.commit() - decorator handles it
             return user
             
         @with_db_session  
@@ -542,14 +546,16 @@ def with_db_session(func: Callable) -> Callable:
                 new_args = (session,) + args
             
             result = func(*new_args, **kwargs)
-            session.commit()
+
             return result
         except Exception as e:
+            # Rollback on any exception
             session.rollback()
             logger.error("Database session error in decorated function", 
                         function=func.__name__, error=str(e))
             raise
         finally:
+            # Always close the session
             session.close()
     
     return wrapper

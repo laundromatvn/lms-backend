@@ -22,6 +22,6 @@ async def register(payload: RegisterCustomerPayload):
     result = RegisterCustomerOperation().execute(payload=payload.__dict__)
 
     if result.is_success:
-        return result.data
+        return result.data.to_dict()
     else:
-        raise HTTPException(status_code=422, detail="Unable to register customer")
+        raise HTTPException(status_code=422, detail=result.error_message)

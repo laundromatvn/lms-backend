@@ -14,10 +14,7 @@ class RegisterCustomerPayload(BaseModel):
     password: str
 
 
-@router.post(
-    "/register",
-    response_model=UserSerializer
-)
+@router.post("/register", response_model=UserSerializer)
 async def register(payload: RegisterCustomerPayload):
     result = RegisterCustomerOperation().execute(payload=payload.__dict__)
 

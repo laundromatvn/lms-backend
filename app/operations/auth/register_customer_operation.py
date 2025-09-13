@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from app.operations.base import BaseOperation, OperationResult
-from app.models.users.user import User, UserRole    
+from app.models.users.user import User, UserRole
+from app.libs.auth_manager import auth_manager
+from app.utils.phone_number import is_valid_phone_format    
 
 
 class RegisterCustomerOperation(BaseOperation[Dict[str, Any]]):
@@ -29,25 +31,27 @@ class RegisterCustomerOperation(BaseOperation[Dict[str, Any]]):
         if not self.password:
             return OperationResult.failure("Password is required")
 
+        # Validate phone number format
+        if not is_valid_phone_format(self.phone):
+            return OperationResult.failure("Invalid phone number format")
+
         return None
 
-    @BaseOperation.with_session
-    def _execute_impl(self, session: Session, *args, **kwargs) -> OperationResult[Dict[str, Any]]:
+    def _execute_impl(self, *args, **kwargs) -> OperationResult[Dict[str, Any]]:
         try:
-            user = User(
+            # Use user repository through auth manager for consistent user creation
+            result = auth_manager.user_repository.create_customer(
                 phone=self.phone,
-                password=User.set_password(self.password),
-                role=UserRole.CUSTOMER,
-                is_verified=True,
+                password=self.password
             )
-            session.add(user)
-            session.commit()
-            session.refresh(user)
-            return OperationResult.success(user)
-        except IntegrityError as e:
-            session.rollback()
-
-            if hasattr(e.orig, 'pgcode') and e.orig.pgcode == '23505':
-                return OperationResult.failure("Phone number already exists")
+            
+            if result.is_success:
+                return OperationResult.success(result.data)
             else:
-                return OperationResult.failure(f"Database integrity error: {str(e)}")
+                return result
+                
+        except Exception as e:
+            return OperationResult.failure(
+                f"Customer registration failed: {str(e)}",
+                "REGISTRATION_ERROR"
+            )

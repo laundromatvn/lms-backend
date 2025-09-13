@@ -5,6 +5,7 @@ from sqlalchemy import func
 from app.repositories.base_repository import BaseRepository
 from app.models.users.user import User, UserRole
 from app.operations.base import OperationResult
+from app.utils.phone_number import normalize_phone_for_authentication
 
 
 class UserRepository(BaseRepository[User, Dict[str, Any], Dict[str, Any]]):
@@ -16,7 +17,12 @@ class UserRepository(BaseRepository[User, Dict[str, Any], Dict[str, Any]]):
         return self.get_by_field("email", email)
     
     def get_by_phone(self, phone: str) -> OperationResult[User]:
-        return self.get_by_field("phone", phone)
+        # Normalize phone number before lookup
+        try:
+            normalized_phone = normalize_phone_for_authentication(phone)
+            return self.get_by_field("phone", normalized_phone)
+        except ValueError:
+            return OperationResult.failure("Invalid phone number format", "INVALID_PHONE")
     
     def get_by_role(self, role: UserRole) -> OperationResult[List[User]]:
         return self.get_multi_by_field("role", role)
@@ -44,8 +50,14 @@ class UserRepository(BaseRepository[User, Dict[str, Any], Dict[str, Any]]):
                 return OperationResult.failure(f"Failed to get users: {str(e)}", "QUERY_ERROR")
     
     def create_customer(self, phone: str, password: str, **kwargs) -> OperationResult[User]:
+        # Normalize phone number before creating user
+        try:
+            normalized_phone = normalize_phone_for_authentication(phone)
+        except ValueError as e:
+            return OperationResult.failure(f"Invalid phone number format: {str(e)}", "INVALID_PHONE")
+        
         user_data = {
-            "phone": phone,
+            "phone": normalized_phone,
             "password": User.set_password(password),
             "role": UserRole.CUSTOMER,
             "is_verified": True,
@@ -132,7 +144,12 @@ class UserRepository(BaseRepository[User, Dict[str, Any], Dict[str, Any]]):
         return self.exists(email=email)
     
     def check_phone_exists(self, phone: str) -> OperationResult[bool]:
-        return self.exists(phone=phone)
+        # Normalize phone number before checking existence
+        try:
+            normalized_phone = normalize_phone_for_authentication(phone)
+            return self.exists(phone=normalized_phone)
+        except ValueError:
+            return OperationResult.failure("Invalid phone number format", "INVALID_PHONE")
 
     def get_user_stats(self) -> OperationResult[Dict[str, Any]]:
         with self.get_db_session() as session:

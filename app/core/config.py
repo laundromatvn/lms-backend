@@ -39,6 +39,12 @@ class Settings(BaseSettings):
 
     ack_timeout_seconds: int = os.getenv("ACK_TIMEOUT_SECONDS", 5)
     timezone_name: str = os.getenv("TIMEZONE_NAME", "Asia/Ho_Chi_Minh")
+    
+    # JWT Configuration
+    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "secret")
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    jwt_access_token_expire_minutes: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+    jwt_refresh_token_expire_days: int = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", 7))
 
     class Config:
         env_prefix = "BACKEND_"

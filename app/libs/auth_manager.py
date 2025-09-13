@@ -92,8 +92,8 @@ class AuthManager:
             OperationResult containing the authenticated user or error
         """
         try:
-            # Normalize identifier for authentication
-            normalized_identifier = self._normalize_identifier(identifier)
+            # Normalize identifier for authentication based on role
+            normalized_identifier = self._normalize_identifier(identifier, role)
             
             # Use repository's authenticate method with normalized identifier
             result = self.user_repository.authenticate_user(normalized_identifier, password)
@@ -467,34 +467,37 @@ class AuthManager:
         """
         return self.verify_access_token(token)
     
-    def _normalize_identifier(self, identifier: str) -> str:
+    def _normalize_identifier(self, identifier: str, role: Optional[UserRole] = None) -> str:
         """
-        Normalize identifier for authentication (email or phone).
+        Normalize identifier for authentication based on role.
         
         Args:
             identifier: Email or phone number
+            role: User role to determine expected identifier type
             
         Returns:
             Normalized identifier string
             
         Raises:
-            ValueError: If identifier format is invalid
+            ValueError: If identifier format is invalid for the role
         """
         if not identifier:
             raise ValueError("Identifier cannot be empty")
         
-        identifier = identifier.strip().lower()
+        identifier = identifier.strip()
         
-        # Check if it's an email (contains @)
-        if '@' in identifier:
-            # Email - just normalize case
+        if role == UserRole.CUSTOMER:
+            # For customers, expect phone number
+            try:
+                return normalize_phone_for_authentication(identifier)
+            except ValueError as e:
+                raise ValueError(f"Invalid phone number format: {str(e)}")
+        else:
+            # For other roles, expect email
+            identifier = identifier.lower()
+            if '@' not in identifier:
+                raise ValueError("Invalid email format")
             return identifier
-        
-        # Phone number - normalize format
-        try:
-            return normalize_phone_for_authentication(identifier)
-        except ValueError as e:
-            raise ValueError(f"Invalid phone number format: {str(e)}")
 
 
 # Global instance for easy access

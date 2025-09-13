@@ -1,7 +1,3 @@
-"""
-Change password operation implementation using the auth manager.
-"""
-
 from typing import Dict, Any, Optional
 
 from app.operations.base import BaseOperation, OperationResult
@@ -10,9 +6,6 @@ from app.libs.auth_manager import auth_manager
 
 
 class ChangePasswordOperation(BaseOperation[User]):
-    """
-    Operation for changing user password.
-    """
 
     def validate_input(self, *args, **kwargs) -> Optional[OperationResult[User]]:
         payload = kwargs.get("payload", {})
@@ -37,7 +30,6 @@ class ChangePasswordOperation(BaseOperation[User]):
 
     def _execute_impl(self, *args, **kwargs) -> OperationResult[User]:
         try:
-            # Use auth manager for password change
             result = auth_manager.change_password(
                 user_id=self.user_id,
                 current_password=self.current_password,

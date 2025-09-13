@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Main CLI entry point for the application.
 """

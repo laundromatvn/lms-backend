@@ -8,13 +8,6 @@ from app.libs.mqtt import MQTTClient
 
 
 class BaseSubscriber:
-    """Base class for single-topic MQTT subscribers.
-
-    Subclasses must set `TOPIC` and implement `handle(self, topic, payload)`.
-    The base class will subscribe to the topic and dispatch messages to `handle`.
-    If the payload is JSON, it is parsed and passed as a Python object; otherwise
-    the UTF-8 decoded string (or raw payload) is passed.
-    """
 
     TOPIC: str = ""
     QOS: int = 0
@@ -53,9 +46,5 @@ class BaseSubscriber:
         except Exception as exc:
             logger.error("subscriber_handle_error", topic=topic, error=str(exc))
 
-    def handle(self, topic: str, payload: Any) -> None:  # noqa: ARG002
-        """Process a message received on `TOPIC`.
-
-        Subclasses must implement this.
-        """
+    def handle(self, topic: str, payload: Any) -> None:
         raise NotImplementedError

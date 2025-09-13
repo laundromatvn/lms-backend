@@ -19,7 +19,7 @@ class RegisterCustomerPayload(BaseModel):
 
 
 class SignInCustomerPayload(BaseModel):
-    identifier: str  # Can be phone or email
+    phone: str
     password: str
 
 

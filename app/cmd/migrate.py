@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Database migration CLI commands.
 """
@@ -6,7 +5,6 @@ import typer
 import sys
 import os
 
-# Add the project root to the Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from app.core.database import migrate, create_migration, get_migration_status, downgrade
@@ -118,19 +116,16 @@ def init():
         import subprocess
         import os
         
-        # Get the project root directory
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         original_cwd = os.getcwd()
         
         try:
             os.chdir(project_root)
             
-            # Check if alembic is already initialized
             if os.path.exists("alembic.ini"):
                 typer.echo("⚠️  Alembic is already initialized")
                 return
             
-            # Initialize alembic
             logger.info("Initializing Alembic")
             result = subprocess.run(
                 ["alembic", "init", "migrations"],

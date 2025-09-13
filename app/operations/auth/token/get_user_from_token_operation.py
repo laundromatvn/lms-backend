@@ -1,7 +1,3 @@
-"""
-Get user from token operation implementation using the auth manager.
-"""
-
 from typing import Dict, Any, Optional
 
 from app.operations.base import BaseOperation, OperationResult
@@ -10,9 +6,6 @@ from app.libs.auth_manager import auth_manager
 
 
 class GetUserFromTokenOperation(BaseOperation[User]):
-    """
-    Operation for getting user from JWT token.
-    """
 
     def validate_input(self, *args, **kwargs) -> Optional[OperationResult[User]]:
         self.token = kwargs.get("token")
@@ -24,7 +17,6 @@ class GetUserFromTokenOperation(BaseOperation[User]):
 
     def _execute_impl(self, *args, **kwargs) -> OperationResult[User]:
         try:
-            # Use auth manager for token verification
             result = auth_manager.verify_access_token(self.token)
             
             return result

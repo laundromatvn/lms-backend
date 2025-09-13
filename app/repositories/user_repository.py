@@ -17,7 +17,6 @@ class UserRepository(BaseRepository[User, Dict[str, Any], Dict[str, Any]]):
         return self.get_by_field("email", email)
     
     def get_by_phone(self, phone: str) -> OperationResult[User]:
-        # Normalize phone number before lookup
         try:
             normalized_phone = normalize_phone_for_authentication(phone)
             return self.get_by_field("phone", normalized_phone)
@@ -50,7 +49,6 @@ class UserRepository(BaseRepository[User, Dict[str, Any], Dict[str, Any]]):
                 return OperationResult.failure(f"Failed to get users: {str(e)}", "QUERY_ERROR")
     
     def create_customer(self, phone: str, password: str, **kwargs) -> OperationResult[User]:
-        # Normalize phone number before creating user
         try:
             normalized_phone = normalize_phone_for_authentication(phone)
         except ValueError as e:
@@ -144,7 +142,6 @@ class UserRepository(BaseRepository[User, Dict[str, Any], Dict[str, Any]]):
         return self.exists(email=email)
     
     def check_phone_exists(self, phone: str) -> OperationResult[bool]:
-        # Normalize phone number before checking existence
         try:
             normalized_phone = normalize_phone_for_authentication(phone)
             return self.exists(phone=normalized_phone)

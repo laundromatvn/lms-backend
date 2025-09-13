@@ -1,7 +1,3 @@
-"""
-Sign-in operation implementation using the auth manager.
-"""
-
 from typing import Dict, Any, Optional
 
 from app.operations.base import BaseOperation, OperationResult
@@ -11,34 +7,40 @@ from app.utils.phone_number import is_valid_phone_format
 
 
 class SignInOperation(BaseOperation[Dict[str, Any]]):
-    """
-    Operation for user sign-in with authentication and token creation.
-    """
 
     def validate_input(self, *args, **kwargs) -> Optional[OperationResult[Dict[str, Any]]]:
         payload = kwargs.get("payload", {})
         
-        self.identifier = payload.get("identifier") or payload.get("email") or payload.get("phone")
+        self.phone = payload.get("phone")
+        self.email = payload.get("email")
         self.password = payload.get("password")
         self.role = kwargs.get("role")
-
-        if not self.identifier:
-            return OperationResult.failure("Email or phone is required")
 
         if not self.password:
             return OperationResult.failure("Password is required")
 
-        # Validate phone number format if it's not an email
-        if '@' not in self.identifier and not is_valid_phone_format(self.identifier):
-            return OperationResult.failure("Invalid phone number format")
+        if self.role == UserRole.CUSTOMER:
+            if not self.phone:
+                return OperationResult.failure("Phone is required for customer")
+            if not is_valid_phone_format(self.phone):
+                return OperationResult.failure("Invalid phone number format")
+        else:
+            if not self.email:
+                return OperationResult.failure("Email is required for this role")
+            if '@' not in self.email:
+                return OperationResult.failure("Invalid email format")
 
         return None
 
     def _execute_impl(self, *args, **kwargs) -> OperationResult[Dict[str, Any]]:
         try:
-            # Use auth manager for sign-in
+            if self.role == UserRole.CUSTOMER:
+                identifier = self.phone
+            else:
+                identifier = self.email
+            
             result = auth_manager.sign_in_user(
-                identifier=self.identifier,
+                identifier=identifier,
                 password=self.password,
                 role=self.role
             )

@@ -112,7 +112,6 @@ class BaseOperation(ABC, Generic[T]):
         Example:
             with self.get_db_session() as session:
                 user = session.query(User).filter(User.id == user_id).first()
-                # session is automatically closed and committed/rolled back
         """
         session = get_session()
         try:
@@ -181,16 +180,13 @@ class BaseOperation(ABC, Generic[T]):
         self.logger.info("Starting operation execution")
 
         try:
-            # Validate input
             validation_result = self.validate_input(*args, **kwargs)
             if validation_result is not None:
                 self.logger.warning("Input validation failed", result=validation_result.to_dict())
                 return validation_result
 
-            # Execute the operation
             result = self._execute_impl(*args, **kwargs)
 
-            # Log the result
             if result.is_success:
                 self.logger.info("Operation completed successfully", result=result.to_dict())
             else:

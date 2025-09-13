@@ -38,11 +38,9 @@ class SubscriberManager:
     def stop(self) -> None:
         if not self._started:
             return
-        # Best-effort: detach listeners so callbacks stop firing
         for subscriber in self._subscribers:
             try:
-                # Bound method identity is stable per instance, so this works
-                self._client.remove_topic_listener(subscriber.TOPIC, subscriber._on_message)  # type: ignore[attr-defined]
+                self._client.remove_topic_listener(subscriber.TOPIC, subscriber._on_message)
                 logger.info(
                     "subscriber_unregistered",
                     topic=subscriber.TOPIC,

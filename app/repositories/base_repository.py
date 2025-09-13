@@ -20,7 +20,6 @@ from app.core.logging import get_logger
 from app.core.database import get_session, with_db_session
 from app.operations.base import OperationResult, OperationStatus
 
-# Type variables for generic repository
 ModelType = TypeVar('ModelType')
 CreateSchemaType = TypeVar('CreateSchemaType')
 UpdateSchemaType = TypeVar('UpdateSchemaType')
@@ -90,7 +89,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
         Example:
             with self.get_db_session() as session:
                 user = session.query(self.model).filter(self.model.id == user_id).first()
-                # session is automatically closed and committed/rolled back
         """
         session = get_session()
         try:
@@ -127,7 +125,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
         """
         return with_db_session(func)
     
-    # ==================== CREATE OPERATIONS ====================
     
     @with_session
     def create(self, session: Session, obj_in: CreateSchemaType, **kwargs) -> OperationResult[ModelType]:
@@ -143,7 +140,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             OperationResult: Success with created model or failure with error message
         """
         try:
-            # Convert schema to dict if it's a Pydantic model
             if hasattr(obj_in, 'dict'):
                 obj_data = obj_in.dict()
             elif hasattr(obj_in, 'model_dump'):
@@ -151,13 +147,11 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             else:
                 obj_data = obj_in
             
-            # Merge with additional kwargs
             obj_data.update(kwargs)
             
-            # Create model instance
             db_obj = self.model(**obj_data)
             session.add(db_obj)
-            session.flush()  # Flush to get the ID without committing
+            session.flush()
             session.refresh(db_obj)
             
             self.logger.info("Record created successfully", model=self.model.__name__, id=getattr(db_obj, 'id', None))
@@ -167,11 +161,10 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             session.rollback()
             self.logger.error("Integrity error during creation", error=str(e))
             
-            # Handle specific integrity errors
             if hasattr(e.orig, 'pgcode'):
-                if e.orig.pgcode == '23505':  # Unique violation
+                if e.orig.pgcode == '23505':
                     return OperationResult.failure("Record with this data already exists", "DUPLICATE_ERROR")
-                elif e.orig.pgcode == '23503':  # Foreign key violation
+                elif e.orig.pgcode == '23503':
                     return OperationResult.failure("Referenced record does not exist", "FOREIGN_KEY_ERROR")
             
             return OperationResult.failure(f"Database integrity error: {str(e)}", "INTEGRITY_ERROR")
@@ -198,7 +191,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             created_objects = []
             
             for obj_in in objs_in:
-                # Convert schema to dict if it's a Pydantic model
                 if hasattr(obj_in, 'dict'):
                     obj_data = obj_in.dict()
                 elif hasattr(obj_in, 'model_dump'):
@@ -206,17 +198,14 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
                 else:
                     obj_data = obj_in
                 
-                # Merge with additional kwargs
                 obj_data.update(kwargs)
                 
-                # Create model instance
                 db_obj = self.model(**obj_data)
                 session.add(db_obj)
                 created_objects.append(db_obj)
             
-            session.flush()  # Flush to get IDs without committing
+            session.flush()
             
-            # Refresh all objects to get their IDs
             for obj in created_objects:
                 session.refresh(obj)
             
@@ -234,7 +223,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             self.logger.error("Unexpected error during bulk creation", error=str(e))
             return OperationResult.failure(f"Failed to create records: {str(e)}", "BULK_CREATE_ERROR")
     
-    # ==================== READ OPERATIONS ====================
     
     @with_session
     def get(self, session: Session, id: Any) -> OperationResult[ModelType]:
@@ -285,7 +273,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
         try:
             query = session.query(self.model)
             
-            # Apply ordering
             if order_by:
                 order_field = getattr(self.model, order_by, None)
                 if order_field:
@@ -294,13 +281,11 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
                     else:
                         query = query.order_by(asc(order_field))
             else:
-                # Default ordering by id
                 if order_desc:
                     query = query.order_by(desc(self.model.id))
                 else:
                     query = query.order_by(asc(self.model.id))
             
-            # Apply pagination
             query = query.offset(skip).limit(limit)
             
             db_objs = query.all()
@@ -379,7 +364,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
         try:
             query = session.query(self.model)
             
-            # Apply filters
             for field_name, value in filters.items():
                 field = getattr(self.model, field_name, None)
                 if field:
@@ -407,7 +391,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
         try:
             query = session.query(self.model)
             
-            # Apply filters
             for field_name, value in filters.items():
                 field = getattr(self.model, field_name, None)
                 if field:
@@ -420,7 +403,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             self.logger.error("Error checking existence", filters=filters, error=str(e))
             return OperationResult.failure(f"Failed to check existence: {str(e)}", "EXISTS_ERROR")
     
-    # ==================== UPDATE OPERATIONS ====================
     
     @with_session
     def update(self, session: Session, db_obj: ModelType, obj_in: Union[UpdateSchemaType, Dict[str, Any]]) -> OperationResult[ModelType]:
@@ -436,7 +418,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             OperationResult: Success with updated model or failure with error message
         """
         try:
-            # Convert schema to dict if it's a Pydantic model
             if hasattr(obj_in, 'dict'):
                 update_data = obj_in.dict(exclude_unset=True)
             elif hasattr(obj_in, 'model_dump'):
@@ -444,12 +425,10 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             else:
                 update_data = obj_in
             
-            # Update fields
             for field, value in update_data.items():
                 if hasattr(db_obj, field):
                     setattr(db_obj, field, value)
             
-            # Update timestamp if the model has updated_at field
             if hasattr(db_obj, 'updated_at'):
                 setattr(db_obj, 'updated_at', datetime.utcnow())
             
@@ -483,19 +462,16 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             OperationResult: Success with updated model or failure with error message
         """
         try:
-            # First get the record
             get_result = self.get(session, id)
             if get_result.is_failure:
                 return get_result
             
-            # Update the record
             return self.update(session, get_result.data, obj_in)
             
         except Exception as e:
             self.logger.error("Error updating record by id", id=id, error=str(e))
             return OperationResult.failure(f"Failed to update record by id: {str(e)}", "UPDATE_BY_ID_ERROR")
     
-    # ==================== DELETE OPERATIONS ====================
     
     @with_session
     def remove(self, session: Session, id: Any) -> OperationResult[ModelType]:
@@ -510,7 +486,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             OperationResult: Success with deleted model or failure with error message
         """
         try:
-            # First get the record
             get_result = self.get(session, id)
             if get_result.is_failure:
                 return get_result
@@ -560,7 +535,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             self.logger.error("Error deleting multiple records", ids=ids, error=str(e))
             return OperationResult.failure(f"Failed to delete records: {str(e)}", "BULK_DELETE_ERROR")
     
-    # ==================== ADVANCED QUERY OPERATIONS ====================
     
     @with_session
     def filter(
@@ -589,15 +563,12 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
         try:
             query = session.query(self.model)
             
-            # Apply filters
             for field_name, value in filters.items():
                 field = getattr(self.model, field_name, None)
                 if field:
                     if isinstance(value, list):
-                        # Handle IN queries
                         query = query.filter(field.in_(value))
                     elif isinstance(value, dict):
-                        # Handle range queries (e.g., {'gte': 10, 'lte': 20})
                         if 'gte' in value:
                             query = query.filter(field >= value['gte'])
                         if 'lte' in value:
@@ -609,10 +580,8 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
                         if 'like' in value:
                             query = query.filter(field.like(f"%{value['like']}%"))
                     else:
-                        # Exact match
                         query = query.filter(field == value)
             
-            # Apply ordering
             if order_by:
                 order_field = getattr(self.model, order_by, None)
                 if order_field:
@@ -621,7 +590,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
                     else:
                         query = query.order_by(asc(order_field))
             
-            # Apply pagination
             query = query.offset(skip).limit(limit)
             
             db_objs = query.all()
@@ -656,7 +624,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
         try:
             query = session.query(self.model)
             
-            # Build search conditions
             search_conditions = []
             for field_name in search_fields:
                 field = getattr(self.model, field_name, None)
@@ -666,7 +633,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             if search_conditions:
                 query = query.filter(or_(*search_conditions))
             
-            # Apply pagination
             query = query.offset(skip).limit(limit)
             
             db_objs = query.all()
@@ -676,7 +642,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
             self.logger.error("Error searching records", search_term=search_term, error=str(e))
             return OperationResult.failure(f"Failed to search records: {str(e)}", "SEARCH_ERROR")
     
-    # ==================== UTILITY METHODS ====================
     
     def get_query(self, session: Session) -> Query:
         """
@@ -706,7 +671,6 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
         try:
             result = session.execute(text(query), params or {})
             
-            # Convert result to list of dictionaries
             columns = result.keys()
             rows = result.fetchall()
             
@@ -732,11 +696,9 @@ class BaseRepository(ABC, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
         try:
             stats = {}
             
-            # Total count
             total_count = session.query(self.model).count()
             stats['total_count'] = total_count
             
-            # Group by statistics if specified
             if group_by:
                 group_field = getattr(self.model, group_by, None)
                 if group_field:

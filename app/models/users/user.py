@@ -5,7 +5,7 @@ from enum import Enum
 
 from sqlalchemy import Column, String, Boolean, DateTime, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, relationship
 from passlib.context import CryptContext
 
 from app.core.database import Base
@@ -38,6 +38,9 @@ class User(Base):
     role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.CUSTOMER)
     is_verified = Column(Boolean, default=False, nullable=False)
     verified_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    tenant_profile = relationship("TenantProfile", back_populates="user", uselist=False)
     
     @validates('email')
     def validate_email(self, key, email):

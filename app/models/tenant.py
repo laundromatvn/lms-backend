@@ -40,12 +40,13 @@ class Tenant(Base):
         default=TenantStatus.ACTIVE,
         index=True
     )
-
+    
+    name = Column(String(255), nullable=False, index=True)
     contact_email = Column(String(255), nullable=False, index=True)
     contact_phone_number = Column(String(20), nullable=False, index=True)
     contact_full_name = Column(String(255), nullable=False)
     contact_address = Column(String(500), nullable=False)
-    
+
     @validates('status')
     def validate_status(self, key: str, status) -> TenantStatus:
         if not isinstance(status, TenantStatus):
@@ -147,6 +148,7 @@ class Tenant(Base):
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,
             'deleted_by': str(self.deleted_by) if self.deleted_by else None,
             'status': self.status.value,
+            'name': self.name,
             'contact_email': self.contact_email,
             'contact_phone_number': self.contact_phone_number,
             'contact_full_name': self.contact_full_name,

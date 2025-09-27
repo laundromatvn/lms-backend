@@ -36,6 +36,7 @@ def upgrade() -> None:
         sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('deleted_by', postgresql.UUID(as_uuid=True), nullable=True, index=True),
         sa.Column('status', tenant_status_enum, nullable=False, default='ACTIVE', index=True),
+        sa.Column('name', sa.String(255), nullable=False, index=True),
         sa.Column('contact_email', sa.String(255), nullable=False, index=True),
         sa.Column('contact_phone_number', sa.String(20), nullable=False, index=True),
         sa.Column('contact_full_name', sa.String(255), nullable=False),

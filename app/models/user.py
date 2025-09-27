@@ -170,6 +170,18 @@ class User(Base):
             'verified_at': self.verified_at.isoformat() if self.verified_at else None,
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,
         }
+        
+    def is_admin(self) -> bool:
+        return self.role == UserRole.ADMIN
+    
+    def is_tenant_admin(self) -> bool:
+        return self.role == UserRole.TENANT_ADMIN
+    
+    def is_tenant_staff(self) -> bool:
+        return self.role == UserRole.TENANT_STAFF
+    
+    def is_customer(self) -> bool:
+        return self.role == UserRole.CUSTOMER
 
 
 @event.listens_for(User, 'before_insert')

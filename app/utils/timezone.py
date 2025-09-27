@@ -5,7 +5,7 @@ from app.core.config import settings
 
 
 def get_tzinfo() -> ZoneInfo:
-    return ZoneInfo(settings.timezone_name)
+    return ZoneInfo(settings.TIMEZONE_NAME)
 
 
 def iso_now_local() -> str:

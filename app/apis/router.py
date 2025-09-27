@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
 
 from app.apis import v1
 

@@ -55,7 +55,7 @@ class User(Base):
     phone = Column(String(20), unique=True, nullable=True, index=True)
     email = Column(String(255), unique=True, nullable=True, index=True)
     password = Column(String(255), nullable=False)
-    
+
     is_verified = Column(Boolean, nullable=False, default=False)
     verified_at = Column(DateTime(timezone=True), nullable=True)
     
@@ -170,16 +170,20 @@ class User(Base):
             'verified_at': self.verified_at.isoformat() if self.verified_at else None,
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,
         }
-        
+    
+    @property
     def is_admin(self) -> bool:
         return self.role == UserRole.ADMIN
     
+    @property
     def is_tenant_admin(self) -> bool:
         return self.role == UserRole.TENANT_ADMIN
     
+    @property
     def is_tenant_staff(self) -> bool:
         return self.role == UserRole.TENANT_STAFF
     
+    @property
     def is_customer(self) -> bool:
         return self.role == UserRole.CUSTOMER
 

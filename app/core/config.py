@@ -20,7 +20,6 @@ class Settings(BaseSettings):
     DATABASE_USER: str = os.getenv("DATABASE_USER", "laundry_admin")
     DATABASE_PASSWORD: str = os.getenv("DATABASE_PASSWORD", "Secure@123")
     DATABASE_NAME: str = os.getenv("DATABASE_NAME", "laundry")
-    
     AUTO_MIGRATE: bool = os.getenv("AUTO_MIGRATE", "false").lower() == "true"
 
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")

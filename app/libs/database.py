@@ -184,6 +184,26 @@ def with_db_session(func: F) -> F:
     return wrapper
 
 
+def with_db_session_classmethod(func: F) -> F:
+    """
+    Decorator for class methods that need a database session with automatic transaction management.
+    
+    Usage:
+        @classmethod
+        @with_db_session_classmethod
+        def create_user(cls, db: Session, name: str):
+            user = User(name=name)
+            db.add(user)
+            # Auto-commit on success, auto-rollback on exception
+            return user
+    """
+    @functools.wraps(func)
+    def wrapper(cls, *args, **kwargs):
+        with get_db_session() as db:
+            return func(cls, db, *args, **kwargs)
+    return wrapper
+
+
 def with_db_session_manual(func: F) -> F:
     """
     Decorator for functions that need a database session with manual transaction management.

@@ -7,3 +7,14 @@ class RegisterLMSUserRequest(BaseModel):
     email: str
     password: str
     role: UserRole
+
+
+class SignInRequest(BaseModel):
+    email: str | None = None
+    phone: str | None = None
+    password: str
+
+
+class SignInResponse(BaseModel):
+    access_token: str
+    refresh_token: str

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from uuid import UUID
 
 from app.models.tenant import TenantStatus
+from app.schemas.pagination import Pagination
 
 
 class AddTenantRequest(BaseModel):
@@ -36,3 +37,7 @@ class TenantSerializer(BaseModel):
     contact_phone_number: str
     contact_full_name: str
     contact_address: str
+
+
+class ListTenantQueryParams(Pagination):
+    status: TenantStatus | None = None

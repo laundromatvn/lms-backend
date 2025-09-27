@@ -7,6 +7,7 @@ from app.models.tenant import Tenant
 from app.schemas.tenant import (
     AddTenantRequest,
     UpdateTenantRequest,
+    ListTenantQueryParams,
 )
 
 
@@ -15,7 +16,7 @@ class TenantOperation:
     @classmethod
     @with_db_session_classmethod
     def add(cls, db: Session, created_by: User, request: AddTenantRequest) -> Tenant:
-        if not created_by.is_admin():
+        if not created_by.is_admin:
             raise ValueError("Only admin can add tenant")
         
         existing_tenant = db.query(Tenant).filter(
@@ -45,7 +46,7 @@ class TenantOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def update(cls, db: Session, updated_by: User, tenant_id: str, request: UpdateTenantRequest) -> Tenant:
+    def update_partially(cls, db: Session, updated_by: User, tenant_id: str, request: UpdateTenantRequest) -> Tenant:
         tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
         if not tenant:
             raise ValueError("Tenant not found")
@@ -53,11 +54,12 @@ class TenantOperation:
         if not cls._have_permission(updated_by, tenant):
             raise PermissionError("You don't have permission to update this tenant")
         
-        tenant.name = request.name
-        tenant.contact_email = request.contact_email
-        tenant.contact_phone_number = request.contact_phone_number
-        tenant.contact_full_name = request.contact_full_name
-        tenant.contact_address = request.contact_address
+        update_data = request.model_dump(exclude_unset=True)
+        
+        for field, value in update_data.items():
+            if hasattr(tenant, field):
+                setattr(tenant, field, value)
+        
         tenant.updated_by = updated_by.id
 
         db.commit()
@@ -78,8 +80,26 @@ class TenantOperation:
         return tenant
 
     @classmethod
+    @with_db_session_classmethod
+    def list(cls, db: Session, current_user: User, query_params: ListTenantQueryParams) -> tuple[int, list[Tenant]]:
+        base_query = db.query(Tenant)
+        
+        if query_params.status:
+            base_query = base_query.filter(Tenant.status == query_params.status)
+
+        total = base_query.count()
+        tenants = (
+            base_query
+            .offset((query_params.page - 1) * query_params.page_size)
+            .limit(query_params.page_size)
+            .all()
+        )
+
+        return total, tenants
+
+    @classmethod
     def _have_permission(cls, current_user: User, tenant: Tenant) -> bool:
-        if current_user.is_admin():
+        if current_user.is_admin:
             return True
 
         if current_user.id == tenant.created_by:

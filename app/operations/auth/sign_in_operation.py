@@ -12,7 +12,13 @@ class SignInOperation:
     @classmethod
     @with_db_session_classmethod
     def execute(cls, db: Session, request: SignInRequest) -> tuple[str, str]:
-        user = db.query(User).filter(User.email == request.email).first()
+        if request.email:
+            user = db.query(User).filter(User.email == request.email).first()
+        elif request.phone:
+            user = db.query(User).filter(User.phone == request.phone).first()
+        else:
+            raise ValueError("Email or phone is required")
+
         if not user:
             raise NoResultFound("User not found")
 

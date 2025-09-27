@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta, timezone
+from sqlalchemy.orm import Session
 from jose import jwt
-from typing import Optional, Union
-from uuid import UUID
+from typing import Optional
 
 from app.core.config import settings
+from app.models.user import User
+from app.libs.database import with_db_session
 
 
 def create_access_token(
@@ -46,8 +48,8 @@ def create_refresh_token(
     )
     return encoded_jwt 
 
-
-def verify_token(token: str) -> Optional[Union[UUID, str]]:
+@with_db_session
+def verify_token(db: Session, token: str) -> Optional[User]:
     try:
         payload = jwt.decode(
             token,
@@ -55,9 +57,11 @@ def verify_token(token: str) -> Optional[Union[UUID, str]]:
             algorithms=[settings.JWT_ALGORITHM]
         )
         
-        if not payload.get("user_id"):
+        user_id = payload.get("user_id")
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
             raise ValueError("Invalid token")
 
-        return payload
+        return user
     except Exception as e:  
         raise e

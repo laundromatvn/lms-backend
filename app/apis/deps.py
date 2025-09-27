@@ -1,5 +1,7 @@
-from fastapi import HTTPException, Depends, Header
+from fastapi import HTTPException, Header
 from typing import Optional
+
+from app.utils.security.jwt import verify_token
 
 
 def get_current_user(authorization: Optional[str] = Header(None)):
@@ -12,3 +14,5 @@ def get_current_user(authorization: Optional[str] = Header(None)):
             raise HTTPException(status_code=401, detail="Invalid authentication scheme")
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid authorization header format")
+
+    return verify_token(token)

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import NoResultFound
 from jose import jwt
 from typing import Optional
 
@@ -60,7 +61,7 @@ def verify_token(db: Session, token: str) -> Optional[User]:
         user_id = payload.get("user_id")
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
-            raise ValueError("Invalid token")
+            raise NoResultFound("Invalid token")
 
         return user
     except Exception as e:  

@@ -39,7 +39,8 @@ class User(Base):
     
     created_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, default=func.now(), onupdate=func.now())
-    
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
     role = Column(
         SQLEnum(UserRole, name="user_roles", create_type=False),
         nullable=False,
@@ -58,8 +59,6 @@ class User(Base):
 
     is_verified = Column(Boolean, nullable=False, default=False)
     verified_at = Column(DateTime(timezone=True), nullable=True)
-    
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
     
     @validates('role')
     def validate_role(self, key: str, role) -> UserRole:

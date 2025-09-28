@@ -24,9 +24,9 @@ def get_tenant(
 ):
     try:
         return TenantOperation.get(current_user, tenant_id)
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except PermissionError:
+    except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         logger.error("Get tenant failed", type=type(e).__name__, error=str(e))
@@ -61,7 +61,7 @@ def add_tenant(
 ):
     try:
         return TenantOperation.add(current_user, request)
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error("Add tenant failed", type=type(e).__name__, error=str(e))
@@ -76,9 +76,9 @@ def update_tenant(
 ):
     try:
         return TenantOperation.update_partially(current_user, tenant_id, request)
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except PermissionError:
+    except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         logger.error("Update tenant failed", type=type(e).__name__, error=str(e))

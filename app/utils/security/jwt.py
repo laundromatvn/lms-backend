@@ -18,7 +18,7 @@ def create_access_token(
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(
-            minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+            seconds=settings.JWT_ACCESS_TOKEN_EXPIRE_SECONDS
         )
     
     to_encode.update({"exp": expire})
@@ -38,7 +38,7 @@ def create_refresh_token(
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(
-            minutes=settings.JWT_REFRESH_TOKEN_EXPIRE_MINUTES
+            seconds=settings.JWT_REFRESH_TOKEN_EXPIRE_SECONDS
         )
     to_encode = data.copy()
     to_encode.update({"exp": expire})

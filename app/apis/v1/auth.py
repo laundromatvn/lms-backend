@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.exc import IntegrityError
 
 from app.core.logging import logger
@@ -8,10 +8,13 @@ from app.schemas.auth import (
     SignInResponse,
     RefreshTokenRequest,
     RefreshTokenResponse,
+    VerifyOTPRequest,
 )
 from app.operations.auth.register_lms_user_operation import RegisterLMSUserOperation
 from app.operations.auth.sign_in_operation import SignInOperation
 from app.operations.auth.refresh_token_operation import RefreshTokenOperation
+from app.apis.deps import get_current_user
+from app.models.user import User
 
 
 router = APIRouter()
@@ -54,3 +57,21 @@ def refresh_token(request: RefreshTokenRequest):
     except Exception as e:
         logger.error("Refresh token failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/generate-email-otp")
+def generate_email_otp(current_user: User = Depends(get_current_user)):
+    logger.info("Generating email OTP", email=current_user.email)
+    
+    return {
+        "message": "OTP generated successfully",
+    }    
+
+
+@router.post("/verify-otp")
+def verify_otp(request: VerifyOTPRequest, current_user: User = Depends(get_current_user)):
+    logger.info("Verifying OTP", email=current_user.email, otp=request.otp)
+    
+    return {
+        "message": "OTP verified successfully",
+    }

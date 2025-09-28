@@ -8,11 +8,12 @@ from sqlalchemy import (
     Enum as SQLEnum,
     ForeignKey,
     String,
+    Integer,
     func,
     event,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, relationship
 
 from app.libs.database import Base
 
@@ -41,6 +42,10 @@ class Controller(Base):
     device_id = Column(String(255), nullable=False, unique=True, index=True)
     name = Column(String(255), nullable=True, index=True)
     store_id = Column(UUID(as_uuid=True), ForeignKey('stores.id'), nullable=True, index=True)
+    total_relays = Column(Integer, nullable=False, default=0)
+
+    # Relationship
+    machines = relationship("Machine", back_populates="controller", cascade="all, delete-orphan")
 
     @validates('status')
     def validate_status(self, key: str, status) -> ControllerStatus:
@@ -100,6 +105,22 @@ class Controller(Base):
         
         return store_id
 
+    @validates('total_relays')
+    def validate_total_relays(self, key: str, total_relays: int) -> int:
+        if not isinstance(total_relays, int):
+            try:
+                total_relays = int(total_relays)
+            except (ValueError, TypeError):
+                raise ValueError("Total relays must be an integer")
+        
+        if total_relays < 0:
+            raise ValueError("Total relays must be at least 0")
+        
+        if total_relays > 50:  # Reasonable limit
+            raise ValueError("Total relays cannot exceed 50")
+        
+        return total_relays
+
     @property
     def is_active(self) -> bool:
         return self.status == ControllerStatus.ACTIVE and self.deleted_at is None
@@ -139,6 +160,7 @@ class Controller(Base):
             'device_id': self.device_id,
             'name': self.name,
             'store_id': str(self.store_id) if self.store_id else None,
+            'total_relays': self.total_relays,
         }
 
 

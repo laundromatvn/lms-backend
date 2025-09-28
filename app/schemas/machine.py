@@ -41,7 +41,6 @@ class UpdateMachineRequest(BaseModel):
 
 class ListMachineQueryParams(Pagination):
     controller_id: UUID | None = None
-    name: str | None = None
+    store_id: UUID | None = None
     machine_type: MachineType | None = None
     status: MachineStatus | None = None
-    relay_no: int | None = Field(None, ge=1, le=50)

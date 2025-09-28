@@ -7,6 +7,7 @@ This package contains all SQLAlchemy models for the application.
 from .controller import Controller, ControllerStatus
 from .machine import Machine, MachineType, MachineStatus
 from .tenant import Tenant, TenantStatus
+from .tenant_member import TenantMember
 from .store import Store, StoreStatus
 from .user import User, UserRole, UserStatus
 
@@ -23,6 +24,7 @@ __all__ = [
     # Tenant
     "Tenant",
     "TenantStatus",
+    "TenantMember",
 
     # Store
     "Store",

@@ -1,8 +1,11 @@
+from uuid import UUID
+
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.libs.database import with_db_session_classmethod
-from app.models.user import User
+from app.models.tenant_member import TenantMember
+from app.models.user import User, UserRole
 from app.models.tenant import Tenant
 from app.schemas.tenant import (
     AddTenantRequest,
@@ -96,6 +99,26 @@ class TenantOperation:
         )
 
         return total, tenants
+
+    @classmethod
+    @with_db_session_classmethod
+    def get_user_tenant(cls, db: Session, user_id: UUID) -> Tenant:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise ValueError("User not found")
+        
+        if user.role not in [UserRole.TENANT_ADMIN, UserRole.TENANT_STAFF]:
+            raise PermissionError("User is not a tenant admin or staff")
+        
+        tenant_member = db.query(TenantMember).filter(TenantMember.user_id == user_id).first()
+        if not tenant_member:
+            raise ValueError("User does not belong to any tenant")
+        
+        tenant = db.query(Tenant).filter(Tenant.id == tenant_member.tenant_id).first()
+        if not tenant:
+            raise ValueError("Tenant not found")
+
+        return tenant
 
     @classmethod
     def _have_permission(cls, current_user: User, tenant: Tenant) -> bool:

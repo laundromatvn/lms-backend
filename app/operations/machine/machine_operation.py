@@ -34,14 +34,16 @@ class MachineOperation:
 
         if query_params.controller_id:
             base_query = base_query.filter(Machine.controller_id == query_params.controller_id)
-        if query_params.name:
-            base_query = base_query.filter(Machine.name.ilike(f"%{query_params.name}%"))
         if query_params.machine_type:
             base_query = base_query.filter(Machine.machine_type == query_params.machine_type)
         if query_params.status:
             base_query = base_query.filter(Machine.status == query_params.status)
-        if query_params.relay_no:
-            base_query = base_query.filter(Machine.relay_no == query_params.relay_no)
+        if query_params.store_id:
+            base_query = (
+                base_query
+                .join(Controller, Machine.controller_id == Controller.id)
+                .filter(Controller.store_id == query_params.store_id)
+            )
 
         total = base_query.count()
         machines = (
@@ -50,6 +52,8 @@ class MachineOperation:
             .limit(query_params.page_size)
             .all()
         )
+        
+        logger.info(f"Query: {base_query.statement}")
         
         return total, machines
     

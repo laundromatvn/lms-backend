@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 
 from app.models.user import UserRole
+from app.schemas.user import UserSerializer
+from app.schemas.tenant import TenantSerializer
 
 
 class RegisterLMSUserRequest(BaseModel):
@@ -31,3 +33,8 @@ class RefreshTokenResponse(BaseModel):
 
 class VerifyOTPRequest(BaseModel):
     otp: str
+
+
+class LMSProfileResponse(BaseModel):
+    user: UserSerializer
+    tenant: TenantSerializer

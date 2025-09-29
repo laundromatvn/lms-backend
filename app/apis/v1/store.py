@@ -4,14 +4,15 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.apis.deps import get_current_user
 from app.core.logging import logger
-from app.models.store import StoreStatus
 from app.models.user import User
 from app.operations.store.store_operation import StoreOperation
+from app.operations.store.store_machine_opeartion import StoreMachineOperation
 from app.schemas.store import (
     StoreSerializer,
     AddStoreRequest,
     ListStoreQueryParams,
     UpdateStoreRequest,
+    ClassifiedMachinesResponse,
 )
 from app.schemas.pagination import PaginatedResponse
 from app.utils.pagination import get_total_pages
@@ -81,4 +82,20 @@ def update_store(
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         logger.error("Update store failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{store_id}/classified-machines", response_model=ClassifiedMachinesResponse)
+def classified_machines(
+    store_id: UUID,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        washers, dryers = StoreMachineOperation.classify_machines(store_id)
+        return {
+            "washers": washers,
+            "dryers": dryers,
+        }
+    except Exception as e:
+        logger.error("Classified machines failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))

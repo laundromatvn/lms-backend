@@ -9,7 +9,6 @@ from app.models.machine import Machine, MachineType, MachineStatus
 from app.models.controller import Controller
 from app.models.user import User
 from app.schemas.machine import (
-    MachineSerializer,
     AddMachineRequest,
     UpdateMachineRequest,
     ListMachineQueryParams,
@@ -48,6 +47,7 @@ class MachineOperation:
         total = base_query.count()
         machines = (
             base_query
+            .order_by(Machine.relay_no.asc())
             .offset((query_params.page - 1) * query_params.page_size)
             .limit(query_params.page_size)
             .all()

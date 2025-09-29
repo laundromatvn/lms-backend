@@ -1,10 +1,12 @@
 from datetime import datetime
+from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.schemas.pagination import Pagination
 from app.models.store import StoreStatus
+from app.schemas.machine import MachineSerializer
+from app.schemas.pagination import Pagination
 
 
 class StoreSerializer(BaseModel):
@@ -45,3 +47,8 @@ class UpdateStoreRequest(BaseModel):
     latitude: float | None = None
     contact_phone_number: str | None = None
     tenant_id: UUID | None = None
+
+
+class ClassifiedMachinesResponse(BaseModel):
+    washers: List[MachineSerializer]
+    dryers: List[MachineSerializer]

@@ -25,7 +25,7 @@ from app.schemas.payment import (
 router = APIRouter()
 
 
-@router.post("/", response_model=PaymentResponse, status_code=201)
+@router.post("", response_model=PaymentResponse, status_code=201)
 async def initialize_payment(
     request: InitializePaymentRequest,
     user: User = Depends(get_current_user)

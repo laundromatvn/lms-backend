@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path
 from app.apis.deps import get_current_user
 from app.models.user import User
 from app.operations.payment import PaymentOperation
+from app.tasks.payment.payment_tasks import generate_payment_details
 from app.schemas.payment import (
     InitializePaymentRequest,
     PaymentResponse,
@@ -34,7 +35,7 @@ async def initialize_payment(
     """
     try:
         payment = PaymentOperation.initialize_payment(request, user.id)
-        
+        generate_payment_details(str(payment.id))
         return payment
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -60,3 +61,15 @@ async def get_payment(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/{payment_id}/trigger-payment-details")
+async def get_payment_status(
+    payment_id: uuid.UUID = Path(..., description="Payment ID"),
+    _: User = Depends(get_current_user)
+):
+    """
+    Trigger payment details generation by ID.
+    """
+    generate_payment_details(str(payment_id))
+    return {"message": "Payment details generation triggered"}

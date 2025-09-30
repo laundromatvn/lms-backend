@@ -6,20 +6,22 @@ creation, status updates, and integration with payment providers.
 """
 
 import uuid
-from decimal import Decimal
 from typing import Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import and_, func
+from sqlalchemy import and_
 
+from app.core.logging import logger
+from app.models import payment
 from app.models.payment import Payment, PaymentStatus, PaymentProvider
 from app.models.order import Order, OrderStatus
 from app.models.store import Store
 from app.models.tenant import Tenant
 from app.schemas.payment import InitializePaymentRequest
 from app.libs.database import with_db_session_classmethod
+from app.libs.vietqr import GenerateQRCodeRequest
+from app.services.payment_service import PaymentService, PaymentProviderEnum
 
 
 class PaymentOperation:
@@ -67,6 +69,7 @@ class PaymentOperation:
                 and_(
                     Payment.store_id == request.store_id,
                     Payment.tenant_id == request.tenant_id,
+                    Payment.order_id == request.order_id,
                     Payment.deleted_at.is_(None),
                     Payment.status.in_(
                         [
@@ -89,7 +92,8 @@ class PaymentOperation:
             store_id=request.store_id,
             tenant_id=request.tenant_id,
             total_amount=request.total_amount,
-            provider=request.provider,
+            provider=PaymentProvider.VIET_QR,  # Default provider
+            payment_method=request.payment_method,
             status=PaymentStatus.NEW,
             created_by=created_by,
         )
@@ -103,8 +107,8 @@ class PaymentOperation:
 
             db.commit()
             db.refresh(payment_transaction)
+    
             return payment_transaction
-
         except Exception as e:
             db.rollback()
             raise e
@@ -134,6 +138,86 @@ class PaymentOperation:
             raise ValueError(f"Payment transaction with ID {payment_id} not found")
         
         return payment_transaction
+
+    @classmethod
+    @with_db_session_classmethod
+    def generate_payment_details(cls, db: Session, payment_id: uuid.UUID) -> Payment:
+        """
+        Generate payment details including QR code and transaction information.
+        
+        Args:
+            payment_id: Payment transaction ID
+            
+        Returns:
+            Updated payment transaction with generated details
+            
+        Raises:
+            ValueError: If payment not found or invalid status
+        """
+        payment = cls.get_payment_by_id(payment_id)
+        order = cls._validate_order_for_payment(payment.order_id)
+        
+        # Validate payment can have details generated
+        if payment.status != PaymentStatus.NEW:
+            raise ValueError(f"Payment {payment_id} cannot generate details in status {payment.status.value}")
+        
+        try:
+            # Update status to waiting for payment detail
+            payment.update_status(PaymentStatus.WAITING_FOR_PAYMENT_DETAIL)
+            db.commit()
+            
+            # Generate QR code using payment service
+            payment_service = PaymentService(provider_name=PaymentProviderEnum.VIETQR)
+            
+            # Create QR generation request
+            qr_request = GenerateQRCodeRequest(
+                amount=str(int(payment.total_amount)),
+                content=str(order.id),
+                orderId=str(order.id),
+                terminalCode=str(order.store_id)
+            )
+            
+            # Generate QR code
+            qr_code, transaction_id, transaction_ref_id = payment_service.generate_qr_code(request=qr_request)
+            
+            # Update payment with generated details
+            payment.details = {
+                "qr_code": qr_code,
+                "transaction_id": transaction_id,
+                "transaction_ref_id": transaction_ref_id,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat(),
+            }
+            payment.provider_transaction_id = transaction_id
+            payment.update_status(PaymentStatus.WAITING_FOR_PURCHASE)
+
+            db.add(payment)
+            db.commit()
+            db.refresh(payment)
+            
+            return payment
+            
+        except Exception as e:
+            # Update payment status to failed on error
+            payment.update_status(PaymentStatus.FAILED)
+            db.commit()
+            raise e
+
+    @classmethod
+    @with_db_session_classmethod
+    def generate_payment_qr_code(cls, db: Session, payment_id: uuid.UUID):
+        """Generate payment QR code."""
+        payment_service = PaymentService(provider_name=PaymentProviderEnum.VIETQR)
+        qr_code, transaction_id, transaction_ref_id = payment_service.generate_qr_code(payment_id)
+        payment.details = {
+            "qr_code": qr_code,
+            "transaction_id": transaction_id,
+            "transaction_ref_id": transaction_ref_id
+        }
+        payment.status = PaymentStatus.WAITING_FOR_PURCHASE
+        db.commit()
+        db.refresh(payment)
+        return payment
 
     @classmethod
     @with_db_session_classmethod

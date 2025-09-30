@@ -7,7 +7,8 @@ from pydantic import BaseModel, Field, validator
 
 from app.models.payment import (
     PaymentStatus, 
-    PaymentProvider
+    PaymentProvider,
+    PaymentMethod
 )
 
 
@@ -18,7 +19,7 @@ class InitializePaymentRequest(BaseModel):
     store_id: UUID = Field(..., description="ID of the store")
     tenant_id: UUID = Field(..., description="ID of the tenant")
     total_amount: Decimal = Field(..., description="Total payment amount")
-    provider: PaymentProvider = Field(default=PaymentProvider.VIET_QR, description="Payment provider")
+    payment_method: PaymentMethod = Field(default=PaymentMethod.QR, description="Payment method")
 
     @validator('total_amount')
     def validate_total_amount(cls, v):
@@ -39,6 +40,7 @@ class PaymentResponse(BaseModel):
     tenant_id: UUID
     total_amount: Decimal
     provider: PaymentProvider
+    payment_method: PaymentMethod
     provider_transaction_id: Optional[str] = None
 
     class Config:

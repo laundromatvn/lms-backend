@@ -27,6 +27,12 @@ class PaymentStatus(str, Enum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     CANCELLED = "CANCELLED"
+    
+    
+class PaymentMethod(str, Enum):
+    QR = "QR"
+    CARD = "CARD"
+    OTHER = "OTHER"
 
 
 class PaymentProvider(str, Enum):
@@ -60,6 +66,12 @@ class Payment(Base):
         SQLEnum(PaymentProvider, name="payment_provider", create_type=False),
         nullable=False,
         default=PaymentProvider.VIET_QR,
+        index=True
+    )
+    payment_method = Column(
+        SQLEnum(PaymentMethod, name="payment_method", create_type=False),
+        nullable=False,
+        default=PaymentMethod.QR,
         index=True
     )
     provider_transaction_id = Column(String(255), nullable=True, index=True)
@@ -99,7 +111,16 @@ class Payment(Base):
             except ValueError:
                 raise ValueError(f"Invalid provider: {provider}. Must be one of {[p.value for p in PaymentProvider]}")
         return provider
-    
+
+    @validates('payment_method')
+    def validate_payment_method(self, key: str, payment_method) -> PaymentMethod:
+        if not isinstance(payment_method, PaymentMethod):
+            try:
+                payment_method = PaymentMethod(payment_method)
+            except ValueError:
+                raise ValueError(f"Invalid payment method: {payment_method}. Must be one of {[m.value for m in PaymentMethod]}")
+        return payment_method
+
     @validates('total_amount')
     def validate_total_amount(self, key: str, total_amount) -> Decimal:
         if not isinstance(total_amount, (int, float, Decimal)):
@@ -236,6 +257,7 @@ class Payment(Base):
             'tenant_id': str(self.tenant_id),
             'total_amount': float(self.total_amount) if self.total_amount else 0.0,
             'provider': self.provider.value,
+            'payment_method': self.payment_method.value,
             'provider_transaction_id': self.provider_transaction_id,
         }
 

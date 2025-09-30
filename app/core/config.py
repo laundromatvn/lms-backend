@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     VIETQR_BANK_ACCOUNT: str = os.getenv("VIETQR_BANK_ACCOUNT", "vietqr-bank-account")
     VIETQR_BANK_CODE: str = os.getenv("VIETQR_BANK_CODE", "vietqr-bank-code")
     VIETQR_USER_BANK_NAME: str = os.getenv("VIETQR_BANK_NAME", "vietqr-bank-name")
+    VIETQR_INTERNAL_USERNAME: str = os.getenv("VIETQR_INTERNAL_USERNAME", "vietqr-internal-username")
+    VIETQR_INTERNAL_PASSWORD: str = os.getenv("VIETQR_INTERNAL_PASSWORD", "vietqr-internal-password")
+    
+    # VietQR Partner API Authentication
+    VIETQR_PARTNER_USERNAME: str = os.getenv("VIETQR_PARTNER_USERNAME", "vietqr-partner-username")
+    VIETQR_PARTNER_PASSWORD: str = os.getenv("VIETQR_PARTNER_PASSWORD", "vietqr-partner-password")
+    VIETQR_TOKEN_EXPIRE_SECONDS: int = int(os.getenv("VIETQR_TOKEN_EXPIRE_SECONDS", 300))
 
     class Config:
         env_prefix = "BACKEND_"

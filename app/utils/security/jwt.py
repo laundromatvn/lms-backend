@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import NoResultFound
 from jose import jwt
-from typing import Optional
+from typing import Optional, Any
 
 from app.core.config import settings
 from app.models.user import User
@@ -65,4 +65,21 @@ def verify_token(db: Session, token: str) -> Optional[User]:
 
         return user
     except Exception as e:  
+        raise e
+
+
+def verify_vietqr_internal_user(token: str) -> Optional[Any]:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM]
+        )
+
+        username = payload.get("username")
+        if username != settings.VIETQR_INTERNAL_USERNAME:
+            raise NoResultFound("Invalid token")
+
+        return payload
+    except Exception as e:
         raise e

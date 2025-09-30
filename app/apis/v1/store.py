@@ -33,7 +33,7 @@ def get_store(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/", response_model=PaginatedResponse[StoreSerializer])
+@router.get("", response_model=PaginatedResponse[StoreSerializer])
 def list_stores(
     query_params: ListStoreQueryParams = Depends(),
     current_user: User = Depends(get_current_user),
@@ -54,7 +54,7 @@ def list_stores(
         raise HTTPException(status_code=500, detail=str(e))
     
     
-@router.post("/", response_model=StoreSerializer)
+@router.post("", response_model=StoreSerializer)
 def create_store(
     request: AddStoreRequest,
     current_user: User = Depends(get_current_user),

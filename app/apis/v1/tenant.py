@@ -33,7 +33,7 @@ def get_tenant(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/", response_model=PaginatedResponse[TenantSerializer])
+@router.get("", response_model=PaginatedResponse[TenantSerializer])
 def list_tenants(
     query_params: ListTenantQueryParams = Depends(),
     current_user: User = Depends(get_current_user),
@@ -54,7 +54,7 @@ def list_tenants(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/", response_model=TenantSerializer)
+@router.post("", response_model=TenantSerializer)
 def add_tenant(
     request: AddTenantRequest,
     current_user: User = Depends(get_current_user),

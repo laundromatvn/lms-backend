@@ -33,7 +33,7 @@ def get_controller(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/", response_model=PaginatedResponse[ControllerSerializer])
+@router.get("", response_model=PaginatedResponse[ControllerSerializer])
 def list_controllers(
     query_params: ListControllerQueryParams = Depends(),
     _: User = Depends(get_current_user),
@@ -54,7 +54,7 @@ def list_controllers(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/", response_model=ControllerSerializer)
+@router.post("", response_model=ControllerSerializer)
 def add_controller(
     request: AddControllerRequest,
     current_user: User = Depends(get_current_user),

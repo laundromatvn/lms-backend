@@ -11,7 +11,7 @@ from app.schemas.tenant_member import (
 
 router = APIRouter()
 
-@router.post("/", response_model=TenantMemberSerializer)
+@router.post("", response_model=TenantMemberSerializer)
 def add_tenant_member(
     request: TenantMemberCreate,
     current_user: User = Depends(get_current_user),

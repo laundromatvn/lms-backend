@@ -16,14 +16,17 @@ def init() -> FastAPI:
     app = FastAPI(
         title=TITLE,
         lifespan=lifespan,
+        redirect_slashes=True,  # Enable automatic trailing slash redirects
     )
 
+    # Add CORS middleware first, before any other middleware
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ALLOW_ORIGINS,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["*"],
     )
     app.include_router(api_router)
 

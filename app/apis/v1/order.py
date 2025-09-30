@@ -32,7 +32,7 @@ from app.schemas.order import (
 router = APIRouter()
 
 
-@router.post("/", response_model=OrderResponse, status_code=201)
+@router.post("", response_model=OrderResponse, status_code=201)
 async def create_order(
     request: CreateOrderRequest,
     user: User = Depends(get_current_user)
@@ -72,7 +72,7 @@ async def get_order(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/", response_model=OrderListResponse)
+@router.get("", response_model=OrderListResponse)
 async def list_orders(
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(20, ge=1, le=100, description="Items per page"),
@@ -126,7 +126,7 @@ async def list_orders(
     )
 
 
-@router.put("/{order_id}/status", response_model=OrderResponse)
+@router.put("/{order_id}/status", response_model=OrderResponse) #type: ignore
 async def update_order_status(
     order_id: uuid.UUID = Path(..., description="Order ID"),
     request: UpdateOrderStatusRequest = ...,

@@ -16,7 +16,7 @@ from app.utils.pagination import get_total_pages
 router = APIRouter()
 
 
-@router.get("/", response_model=PaginatedResponse[MachineSerializer])
+@router.get("", response_model=PaginatedResponse[MachineSerializer])
 async def list_machines(
     query_params: ListMachineQueryParams = Depends(),
     current_user: User = Depends(get_current_user),
@@ -60,7 +60,7 @@ async def get_machine(
         )
 
 
-@router.post("/", response_model=MachineSerializer, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=MachineSerializer, status_code=status.HTTP_201_CREATED)
 async def create_machine(
     request: AddMachineRequest,
     current_user: User = Depends(get_current_user),

@@ -11,6 +11,11 @@ from .tenant_member import TenantMember
 from .store import Store, StoreStatus
 from .user import User, UserRole, UserStatus
 from .order import Order, OrderStatus, OrderDetail, OrderDetailStatus
+from .payment import (
+    Payment, 
+    PaymentStatus, 
+    PaymentProvider
+)
 
 __all__ = [
     # Controller
@@ -41,4 +46,9 @@ __all__ = [
     "OrderStatus",
     "OrderDetail",
     "OrderDetailStatus",
+
+    # Payment
+    "Payment",
+    "PaymentStatus",
+    "PaymentProvider",
 ]

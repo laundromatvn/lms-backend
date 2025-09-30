@@ -151,7 +151,7 @@ class Order(Base):
     @property
     def can_be_paid(self) -> bool:
         """Check if order can be paid"""
-        return self.status == OrderStatus.WAITING_FOR_PAYMENT
+        return self.status in [OrderStatus.NEW, OrderStatus.WAITING_FOR_PAYMENT]
 
     @property
     def is_payment_required(self) -> bool:

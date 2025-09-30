@@ -113,7 +113,7 @@ class OrderOperation:
             order.total_washer = washer_count
             order.total_dryer = dryer_count
             
-            order.status = OrderStatus.WAITING_FOR_PAYMENT
+            order.status = OrderStatus.NEW
             
             db.commit()            
             db.refresh(order)

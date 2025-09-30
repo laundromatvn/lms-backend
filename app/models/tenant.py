@@ -12,7 +12,7 @@ from sqlalchemy import (
     event,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, relationship
 
 from app.libs.database import Base
 
@@ -46,6 +46,9 @@ class Tenant(Base):
     contact_phone_number = Column(String(20), nullable=False, index=True)
     contact_full_name = Column(String(255), nullable=False)
     contact_address = Column(String(500), nullable=False)
+
+    # Relationships
+    payments = relationship("Payment", back_populates="tenant")
 
     @validates('status')
     def validate_status(self, key: str, status) -> TenantStatus:

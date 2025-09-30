@@ -8,6 +8,7 @@ from app.apis.v1.tenant_member import router as tenant_member_router
 from app.apis.v1.store import router as store_router
 from app.apis.v1.user import router as user_router
 from app.apis.v1.order import router as order_router
+from app.apis.v1.payment import router as payment_router
 
 
 router = APIRouter()
@@ -20,3 +21,4 @@ router.include_router(tenant_member_router, prefix="/tenant-member", tags=["Tena
 router.include_router(store_router, prefix="/store", tags=["Store"])
 router.include_router(user_router, prefix="/user", tags=["User"])
 router.include_router(order_router, prefix="/order", tags=["Order"])
+router.include_router(payment_router, prefix="/payment", tags=["Payment"])

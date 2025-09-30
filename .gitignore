@@ -1,3 +1,8 @@
+# editor
+.vscode/
+.idea/
+.cursorrules
+
 # env
 .env
 .env.*

@@ -2,6 +2,7 @@
 .vscode/
 .idea/
 .cursorrules
+.cursor
 
 # env
 .env

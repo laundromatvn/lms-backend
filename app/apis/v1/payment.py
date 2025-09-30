@@ -8,8 +8,11 @@ creation, status updates, and integration with orders.
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Path
+from sqlalchemy.dialects.postgresql.psycopg import logger
+from sqlalchemy.orm import Session
 
 from app.apis.deps import get_current_user
+from app.libs.database import get_db
 from app.models.user import User
 from app.operations.payment import PaymentOperation
 from app.tasks.payment.payment_tasks import generate_payment_details
@@ -73,3 +76,29 @@ async def get_payment_status(
     """
     generate_payment_details(str(payment_id))
     return {"message": "Payment details generation triggered"}
+
+
+
+@router.post("/{payment_id}/test-trigger-payment-success")
+async def test_trigger_payment_success(
+    payment_id: uuid.UUID = Path(..., description="Payment ID"),
+    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Test trigger payment success.
+    """
+    try:
+        from app.models.payment import Payment, PaymentStatus
+        
+        payment = db.query(Payment).filter(Payment.id == payment_id).first()
+        if not payment:
+            raise HTTPException(status_code=404, detail="Payment not found")
+        payment.update_status(PaymentStatus.SUCCESS)
+        db.commit()
+        db.refresh(payment)
+
+        return payment
+    except Exception as e:
+        logger.error(f"Error triggering payment success: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")

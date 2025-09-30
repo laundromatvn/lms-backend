@@ -61,7 +61,7 @@ class StoreOperation:
         created_by: User,
         request: AddStoreRequest,
     ) -> Store:
-        if not cls._has_permission(db, created_by, request.tenant_id):
+        if not cls._has_permission(created_by, request.tenant_id):
             raise PermissionError("You don't have permission to create store")
 
         store = Store(
@@ -92,7 +92,7 @@ class StoreOperation:
         store = db.query(Store).filter_by(id=store_id).first()
         if not store:
             raise ValueError("Store not found")
-        
+
         if not cls._has_permission(created_by, store.tenant_id):
             raise PermissionError("You don't have permission to update store")
         

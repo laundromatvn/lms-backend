@@ -13,7 +13,7 @@ from sqlalchemy import (
     event,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, relationship
 
 from app.libs.database import Base
 
@@ -47,6 +47,9 @@ class Store(Base):
     latitude = Column(Float, nullable=True)
     contact_phone_number = Column(String(20), nullable=False, index=True)
     tenant_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, index=True)
+
+    # Relationships
+    orders = relationship("Order", back_populates="store")
 
     @validates('status')
     def validate_status(self, key: str, status) -> StoreStatus:

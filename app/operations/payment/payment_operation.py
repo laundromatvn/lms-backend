@@ -266,3 +266,99 @@ class PaymentOperation:
             raise ValueError(f"Tenant with ID {tenant_id} not found")
 
         return tenant
+
+    @classmethod
+    @with_db_session_classmethod
+    def update_payment_status_by_transaction_id(
+        cls,
+        db: Session,
+        transaction_id: str,
+        status: str,
+        provider: str = "VIET_QR"
+    ) -> Dict[str, Any]:
+        """
+        Generic method to update payment status by transaction ID.
+        
+        This method finds a payment by its provider transaction ID and updates
+        its status. It's designed to work with any payment provider.
+        
+        Args:
+            transaction_id: Payment provider transaction ID
+            status: Payment status to update to
+            provider: Payment provider name (default: VIET_QR)
+            
+        Returns:
+            Dict containing updated payment information
+            
+        Raises:
+            ValueError: If payment not found or invalid status
+        """
+        try:
+            # Find payment by provider transaction ID
+            payment = (
+                db.query(Payment)
+                .filter(
+                    and_(
+                        Payment.provider_transaction_id == transaction_id,
+                        Payment.deleted_at.is_(None)
+                    )
+                )
+                .first()
+            )
+            
+            if not payment:
+                raise ValueError(f"Payment with transaction ID {transaction_id} not found")
+            
+            # Validate status
+            try:
+                new_status = PaymentStatus(status)
+            except ValueError:
+                raise ValueError(f"Invalid payment status: {status}")
+            
+            # Get the order for status updates
+            order = payment.order
+            
+            # Update payment status
+            old_status = payment.status
+            payment.update_status(new_status)
+            
+            # Update order status based on payment status
+            if new_status == PaymentStatus.COMPLETED:
+                order.update_status(OrderStatus.PAID)
+                logger.info(f"Payment completed for order {order.id} via {provider} transaction {transaction_id}")
+            elif new_status == PaymentStatus.FAILED:
+                order.update_status(OrderStatus.PAYMENT_FAILED)
+                logger.info(f"Payment failed for order {order.id} via {provider} transaction {transaction_id}")
+            elif new_status == PaymentStatus.REFUNDED:
+                order.update_status(OrderStatus.REFUNDED)
+                logger.info(f"Payment refunded for order {order.id} via {provider} transaction {transaction_id}")
+            
+            # Update payment details with sync information
+            if not payment.details:
+                payment.details = {}
+            
+            payment.details.update({
+                f"{provider.lower()}_status_update": {
+                    "status": status,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "previous_status": old_status.value
+                }
+            })
+            
+            db.add(payment)
+            db.add(order)
+            db.commit()
+            db.refresh(payment)
+            
+            return {
+                "payment_id": str(payment.id),
+                "order_id": str(order.id),
+                "status": payment.status.value,
+                "transaction_id": transaction_id,
+                "provider": provider
+            }
+            
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error updating payment status for transaction {transaction_id}: {str(e)}")
+            raise e

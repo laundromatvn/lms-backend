@@ -1,5 +1,8 @@
 from app.tasks.health_check import health_check
-from app.tasks.payment.payment_tasks import generate_payment_details
+from app.tasks.payment.payment_tasks import (
+    generate_payment_details,
+    sync_payment_transaction,
+)
 
 
 __all__ = [
@@ -8,4 +11,5 @@ __all__ = [
 
     # Payment tasks
     "generate_payment_details",
+    "sync_payment_transaction",
 ]

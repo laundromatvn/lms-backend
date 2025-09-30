@@ -53,3 +53,69 @@ def generate_payment_details(payment_id: str):
             f"Payment details generation failed - unexpected error: {str(e)}",
             payment_id=payment_id,
         )
+
+
+@celery_app.task(name="app.tasks.payment.sync_payment_transaction")
+def sync_payment_transaction(transaction_id: str, status: str, provider: str = "VIET_QR"):
+    """
+    Generic payment status synchronization task.
+    
+    This task updates payment status when payment providers send transaction
+    status updates to our system. It's designed to work with any payment provider.
+    
+    Args:
+        transaction_id: Payment provider transaction ID
+        status: Payment status (COMPLETED, FAILED, REFUNDED, etc.)
+        provider: Payment provider name (default: VIET_QR)
+        
+    Returns:
+        Dict containing sync result and updated payment information
+    """
+    try:
+        logger.info(f"Starting payment status sync for transaction {transaction_id} with status {status}")
+        
+        # Process payment status update using the operation
+        result = PaymentOperation.update_payment_status_by_transaction_id(
+            transaction_id=transaction_id,
+            status=status,
+            provider=provider
+        )
+        
+        logger.info(
+            f"Payment status sync completed successfully for transaction {transaction_id}",
+            payment_id=result.get("payment_id"),
+            order_id=result.get("order_id"),
+            status=result.get("status")
+        )
+        
+        return {
+            "success": True,
+            "transaction_id": transaction_id,
+            "payment_id": result.get("payment_id"),
+            "order_id": result.get("order_id"),
+            "status": result.get("status"),
+            "message": "Payment status updated successfully"
+        }
+        
+    except ValueError as e:
+        logger.error(f"Payment status sync failed - validation error: {str(e)}", 
+                    transaction_id=transaction_id, status=status)
+        return {
+            "success": False,
+            "transaction_id": transaction_id,
+            "error": "validation_error",
+            "message": str(e)
+        }
+        
+    except Exception as e:
+        logger.error(
+            f"Payment status sync failed - unexpected error: {str(e)}",
+            transaction_id=transaction_id,
+            status=status
+        )
+        return {
+            "success": False,
+            "transaction_id": transaction_id,
+            "error": "internal_error",
+            "message": "Internal server error during payment status sync"
+        }

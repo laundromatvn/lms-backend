@@ -6,8 +6,9 @@ from app.apis.deps import verify_vietqr_partner_credentials, get_vietqr_internal
 from app.models.user import User
 from app.core.config import settings
 from app.core.logging import logger
-from app.schemas.vietqr import VietQRTokenGenerateRequest, VietQRTokenGenerateResponse, VietQRTransactionSyncRequest, VietQRTransactionSyncResponse
+from app.schemas.vietqr import VietQRTokenGenerateResponse, VietQRTransactionSyncRequest, VietQRTransactionSyncResponse
 from app.utils.security.jwt import create_access_token
+from app.tasks.payment.payment_tasks import sync_payment_transaction
 
 
 router = APIRouter()
@@ -94,15 +95,19 @@ async def transaction_sync(
                 object=None
             )
         
-        # TODO: Add business logic here to process the transaction
-        # This could include:
-        # - Updating payment status in database
-        # - Creating payment records
-        # - Updating order status
-        # - Sending notifications
+        # Determine payment status based on transaction type
+        # D = Debit (payment received) -> COMPLETED
+        # C = Credit (payment refunded) -> REFUNDED
+        payment_status = "COMPLETED" if request.transType == "D" else "REFUNDED"
         
-        # For now, we'll simulate successful processing
-        logger.info(f"Transaction {request.transactionid} processed successfully for order {request.orderId}")
+        # Trigger async payment status update task
+        task = sync_payment_transaction.delay(
+            transaction_id=request.transactionid,
+            status=payment_status,
+            provider="VIET_QR"
+        )
+        
+        logger.info(f"Payment sync task triggered for transaction {request.transactionid}, task ID: {task.id}")
         
         return VietQRTransactionSyncResponse(
             error=False,

@@ -1,21 +1,18 @@
+import base64
 import requests
+from pydantic import BaseModel
 
 from app.core.config import settings
 
 
-class GenerateQRCodeRequest:
+class GenerateQRCodeRequest(BaseModel):
     amount: str
-    bankAccount: str
-    bankCode: str
-    userBankName: str
     content: str
-    transType: str
     orderId: str
-    qrType: str
     terminalCode: str
 
 
-class GenerateQRCodeResponse:
+class GenerateQRCodeResponse(BaseModel):
 	bankCode: str
 	bankName: str
 	bankAccount: str
@@ -25,14 +22,14 @@ class GenerateQRCodeResponse:
 	qrCode: str
 	imgId: str
 	existing: int
-	transactionId: str
+	transactionId: str 
 	transactionRefId: str
 	qrLink: str
 	terminalCode: str
-	subTerminalCode: str
+	subTerminalCode: str | None
 	serviceCode: str
 	orderId: str
-	additionalData: list
+	additionalData: list | None
 	vaAccount: str
 
 
@@ -49,16 +46,14 @@ class VietQR:
 
     def _get_token(self):
         url = f"{self.base_url}/vqr/api/token_generate"
+        basic_auth = base64.b64encode(f"{self.username}:{self.password}".encode()).decode()
         headers = {
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "username": self.username,
-            "password": self.password
+            "Content-Type": "application/json",
+            "Authorization": f"Basic {basic_auth}"
         }
 
         try:    
-            response = requests.post(url, headers=headers, json=payload, timeout=10)
+            response = requests.post(url, headers=headers, timeout=10)
             response_data = response.json()
             
             access_token = response_data.get("access_token")
@@ -69,7 +64,7 @@ class VietQR:
             raise e
 
     def generate_qr_code(self, request: GenerateQRCodeRequest) -> tuple[str, str, str]:
-        url = f"{self.base_url}/vqr/api/qr_code_generate"
+        url = f"{self.base_url}/vqr/api/qr/generate-customer"
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self._get_token()}"

@@ -47,6 +47,14 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     JWT_ACCESS_TOKEN_EXPIRE_SECONDS: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_SECONDS", 30 * 60))
     JWT_REFRESH_TOKEN_EXPIRE_SECONDS: int = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_SECONDS", 60 * 60 * 24 * 7))
+    
+    # VietQR
+    VIETQR_BASE_URL: str = os.getenv("VIETQR_BASE_URL", "https://dev.vietqr.org")
+    VIETQR_USERNAME: str = os.getenv("VIETQR_USERNAME", "vietqr-username")
+    VIETQR_PASSWORD: str = os.getenv("VIETQR_PASSWORD", "vietqr-password")
+    VIETQR_BANK_ACCOUNT: str = os.getenv("VIETQR_BANK_ACCOUNT", "vietqr-bank-account")
+    VIETQR_BANK_CODE: str = os.getenv("VIETQR_BANK_CODE", "vietqr-bank-code")
+    VIETQR_USER_BANK_NAME: str = os.getenv("VIETQR_BANK_NAME", "vietqr-bank-name")
 
     class Config:
         env_prefix = "BACKEND_"

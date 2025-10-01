@@ -17,22 +17,6 @@ from app.utils.pagination import get_total_pages
 router = APIRouter()
 
 
-@router.get("/{tenant_id}", response_model=TenantSerializer)
-def get_tenant(
-    tenant_id: str,
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        return TenantOperation.get(current_user, tenant_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail=str(e))
-    except PermissionError:
-        raise HTTPException(status_code=403, detail=str(e))
-    except Exception as e:
-        logger.error("Get tenant failed", type=type(e).__name__, error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.get("", response_model=PaginatedResponse[TenantSerializer])
 def list_tenants(
     query_params: ListTenantQueryParams = Depends(),
@@ -65,6 +49,22 @@ def add_tenant(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error("Add tenant failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{tenant_id}", response_model=TenantSerializer)
+def get_tenant(
+    tenant_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return TenantOperation.get(current_user, tenant_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        logger.error("Get tenant failed", type=type(e).__name__, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

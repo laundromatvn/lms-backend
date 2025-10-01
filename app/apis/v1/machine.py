@@ -39,27 +39,6 @@ async def list_machines(
         )
 
 
-@router.get("/{machine_id}", response_model=MachineSerializer)
-async def get_machine(
-    machine_id: UUID,
-    current_user: User = Depends(get_current_user),
-):
-    """Get a specific machine by ID"""
-    try:
-        machine = MachineOperation.get(machine_id)
-        return MachineSerializer.model_validate(machine)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-
-
 @router.post("", response_model=MachineSerializer, status_code=status.HTTP_201_CREATED)
 async def create_machine(
     request: AddMachineRequest,
@@ -72,6 +51,27 @@ async def create_machine(
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/{machine_id}", response_model=MachineSerializer)
+async def get_machine(
+    machine_id: UUID,
+    current_user: User = Depends(get_current_user),
+):
+    """Get a specific machine by ID"""
+    try:
+        machine = MachineOperation.get(machine_id)
+        return MachineSerializer.model_validate(machine)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e)
         )
     except Exception as e:

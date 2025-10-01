@@ -20,16 +20,17 @@ from app.utils.pagination import get_total_pages
 router = APIRouter()
 
 
-@router.get("/{store_id}", response_model=StoreSerializer)
-def get_store(
-    store_id: UUID,
+@router.post("", response_model=StoreSerializer)
+def create_store(
+    request: AddStoreRequest,
+    current_user: User = Depends(get_current_user),
 ):
     try:
-        return StoreOperation.get(store_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail=str(e))
+        return StoreOperation.create(current_user, request)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
-        logger.error("Get store failed", error=str(e))
+        logger.error("Create store failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -52,19 +53,18 @@ def list_stores(
     except Exception as e:
         logger.error("List stores failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
-    
-@router.post("", response_model=StoreSerializer)
-def create_store(
-    request: AddStoreRequest,
-    current_user: User = Depends(get_current_user),
+
+
+@router.get("/{store_id}", response_model=StoreSerializer)
+def get_store(
+    store_id: UUID,
 ):
     try:
-        return StoreOperation.create(current_user, request)
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+        return StoreOperation.get(store_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        logger.error("Create store failed", error=str(e))
+        logger.error("Get store failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -88,7 +88,7 @@ def update_store(
 @router.get("/{store_id}/classified-machines", response_model=ClassifiedMachinesResponse)
 def classified_machines(
     store_id: UUID,
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_user),
 ):
     try:
         washers, dryers = StoreMachineOperation.classify_machines(store_id)

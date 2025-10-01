@@ -17,19 +17,19 @@ from app.utils.pagination import get_total_pages
 router = APIRouter()
 
 
-@router.get("/{controller_id}", response_model=ControllerSerializer)
-def get_controller(
-    controller_id: str,
-    _: User = Depends(get_current_user),
+@router.post("", response_model=ControllerSerializer)
+def add_controller(
+    request: AddControllerRequest,
+    current_user: User = Depends(get_current_user),
 ):
     try:
-        return ControllerOperation.get(controller_id)
+        return ControllerOperation.create(current_user, request)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
-        logger.error("Get controller failed", type=type(e).__name__, error=str(e))
+        logger.error("Add controller failed", type=type(e).__name__, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -54,19 +54,19 @@ def list_controllers(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("", response_model=ControllerSerializer)
-def add_controller(
-    request: AddControllerRequest,
-    current_user: User = Depends(get_current_user),
+@router.get("/{controller_id}", response_model=ControllerSerializer)
+def get_controller(
+    controller_id: str,
+    _: User = Depends(get_current_user),
 ):
     try:
-        return ControllerOperation.create(current_user, request)
+        return ControllerOperation.get(controller_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
-        logger.error("Add controller failed", type=type(e).__name__, error=str(e))
+        logger.error("Get controller failed", type=type(e).__name__, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

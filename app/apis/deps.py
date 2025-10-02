@@ -6,6 +6,7 @@ from typing import Optional
 from app.core.logging import logger
 from app.core.config import settings
 from app.utils.security.jwt import verify_token, verify_vietqr_internal_user
+from app.libs.mqtt import mqtt_client, MQTTClient
 
 
 def get_current_user(authorization: Optional[str] = Header(None)):
@@ -55,3 +56,28 @@ def get_vietqr_internal_user(authorization: Optional[str] = Header(None)):
     except Exception as e:
         logger.error("Invalid authorization header format", error=str(e))
         raise HTTPException(status_code=401)
+
+
+def get_mqtt_client_dependency() -> MQTTClient:
+    """
+    Dependency to get the MQTT client instance.
+    
+    Returns:
+        MQTTClient instance
+        
+    Raises:
+        HTTPException: If MQTT client is not available
+    """
+    try:
+        if not mqtt_client:
+            raise HTTPException(
+                status_code=503,
+                detail="MQTT client not available"
+            )
+        return mqtt_client
+    except Exception as e:
+        logger.error(f"Failed to get MQTT client: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="MQTT service unavailable"
+        )

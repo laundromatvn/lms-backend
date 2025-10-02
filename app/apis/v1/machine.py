@@ -24,13 +24,15 @@ async def list_machines(
     """List machines with pagination and filtering"""
     try:
         total, machines = MachineOperation.list(query_params)
-        
+        # Convert dictionaries to MachineSerializer objects
+        serialized_machines = [MachineSerializer(**machine) for machine in machines]
+
         return {
             "page": query_params.page,
             "page_size": query_params.page_size,
             "total": total,
             "total_pages": get_total_pages(total, query_params.page_size),
-            "data": machines
+            "data": serialized_machines
         }
     except Exception as e:
         raise HTTPException(

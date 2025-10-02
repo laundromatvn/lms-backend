@@ -7,6 +7,7 @@ from app.core.logging import logger
 from app.libs.database import with_db_session_classmethod
 from app.models.machine import Machine, MachineType, MachineStatus
 from app.models.controller import Controller
+from app.models.store import Store
 from app.models.user import User
 from app.schemas.machine import (
     AddMachineRequest,
@@ -28,8 +29,14 @@ class MachineOperation:
     
     @classmethod
     @with_db_session_classmethod
-    def list(cls, db: Session, query_params: ListMachineQueryParams) -> tuple[int, List[Machine]]:
-        base_query = db.query(Machine)
+    def list(cls, db: Session, query_params: ListMachineQueryParams) -> tuple[int, List[dict]]:
+        # Join with Controller and Store tables to get store information
+        base_query = db.query(
+            Machine,
+            Controller.store_id.label('store_id'),
+            Store.name.label('store_name')
+        ).join(Controller, Machine.controller_id == Controller.id)\
+         .outerjoin(Store, Controller.store_id == Store.id)
 
         if query_params.controller_id:
             base_query = base_query.filter(Machine.controller_id == query_params.controller_id)
@@ -38,20 +45,24 @@ class MachineOperation:
         if query_params.status:
             base_query = base_query.filter(Machine.status == query_params.status)
         if query_params.store_id:
-            base_query = (
-                base_query
-                .join(Controller, Machine.controller_id == Controller.id)
-                .filter(Controller.store_id == query_params.store_id)
-            )
+            base_query = base_query.filter(Controller.store_id == query_params.store_id)
 
         total = base_query.count()
-        machines = (
+        results = (
             base_query
             .order_by(Machine.relay_no.asc())
             .offset((query_params.page - 1) * query_params.page_size)
             .limit(query_params.page_size)
             .all()
         )
+        
+        # Convert results to dictionaries with store information included
+        machines = []
+        for machine, store_id, store_name in results:
+            machine_dict = machine.to_dict()
+            machine_dict['store_id'] = str(store_id) if store_id else None
+            machine_dict['store_name'] = store_name
+            machines.append(machine_dict)
         
         logger.info(f"Query: {base_query.statement}")
         

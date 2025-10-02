@@ -20,6 +20,8 @@ class MachineSerializer(BaseModel):
     details: Dict[str, Any] = {}
     base_price: Decimal
     status: MachineStatus
+    store_id: UUID | None = None
+    store_name: str | None = None
 
 
 class AddMachineRequest(BaseModel):

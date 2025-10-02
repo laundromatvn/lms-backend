@@ -1,13 +1,11 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 
-from app.core.logging import logger
 from app.libs.database import with_db_session_classmethod
 from app.models.controller import Controller
 from app.models.store import Store
 from app.models.user import User
 from app.schemas.controller import (
-    ControllerSerializer,
     AddControllerRequest,
     UpdateControllerRequest,
     ListControllerQueryParams,
@@ -30,8 +28,12 @@ class ControllerOperation:
     
     @classmethod
     @with_db_session_classmethod
-    def list(cls, db: Session, query_params: ListControllerQueryParams) -> tuple[int, list[Controller]]:
-        base_query = db.query(Controller)
+    def list(cls, db: Session, query_params: ListControllerQueryParams) -> tuple[int, list[dict]]:
+        # Join with Store table to get store_name
+        base_query = db.query(
+            Controller,
+            Store.name.label('store_name')
+        ).outerjoin(Store, Controller.store_id == Store.id)
 
         if query_params.status:
             base_query = base_query.filter(Controller.status == query_params.status)
@@ -39,12 +41,19 @@ class ControllerOperation:
             base_query = base_query.filter(Controller.store_id == query_params.store_id)
 
         total = base_query.count()
-        controllers = (
+        results = (
             base_query
             .offset((query_params.page - 1) * query_params.page_size)
             .limit(query_params.page_size)
             .all()
         )
+        
+        # Convert results to dictionaries with store_name included
+        controllers = []
+        for controller, store_name in results:
+            controller_dict = controller.to_dict()
+            controller_dict['store_name'] = store_name
+            controllers.append(controller_dict)
         
         return total, controllers
     
@@ -63,6 +72,7 @@ class ControllerOperation:
             name=request.name,
             store_id=request.store_id,
             total_relays=request.total_relays,
+            status=request.status,
         )
         db.add(controller)
         db.commit()
@@ -101,7 +111,7 @@ class ControllerOperation:
         db.refresh(controller)
         
         return controller
-    
+
     @classmethod
     def _handle_total_relays_change(cls, db: Session, controller: Controller, old_total_relays: int, new_total_relays: int) -> None:
         """Handle changes to total_relays by adding or removing machines"""
@@ -155,6 +165,5 @@ class ControllerOperation:
             db.add(machine)
     
     @classmethod
-    @with_db_session_classmethod
-    def _has_permission(cls, db: Session, current_user: User, controller: Controller) -> bool:
+    def _has_permission(cls, current_user: User, store_id_or_controller) -> bool:
         return True

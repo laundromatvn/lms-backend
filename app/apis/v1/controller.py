@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.apis.deps import get_current_user
 from app.core.logging import logger
 from app.models.user import User
+from app.operations.controller.abandon_controller_operation import AbandonControllerOperation
 from app.operations.controller.controller_operation import ControllerOperation
 from app.schemas.controller import (
     ControllerSerializer,
@@ -40,17 +41,71 @@ def list_controllers(
 ):
     try:
         total, controllers = ControllerOperation.list(query_params)
+        # Convert dictionaries to ControllerSerializer objects
+        serialized_controllers = [ControllerSerializer(**controller) for controller in controllers]
         return {
             "page": query_params.page,
             "page_size": query_params.page_size,
             "total": total,
             "total_pages": get_total_pages(total, query_params.page_size),
-            "data": controllers,
+            "data": serialized_controllers,
         }
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         logger.error("List controllers failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/abandoned", response_model=PaginatedResponse[str])
+def get_abandoned_controllers(
+    query_params: ListControllerQueryParams = Depends(),
+    _: User = Depends(get_current_user),
+):
+    try:
+        abandoned_controllers = AbandonControllerOperation.list()
+        return {
+            "page": query_params.page,
+            "page_size": query_params.page_size,
+            "total": len(abandoned_controllers if abandoned_controllers else []),
+            "total_pages": get_total_pages(len(abandoned_controllers if abandoned_controllers else []), query_params.page_size),
+            "data": abandoned_controllers[query_params.page - 1:query_params.page_size] if abandoned_controllers else [],
+        }
+    except Exception as e:
+        logger.error("Get abandoned controllers failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/abandoned/assign", response_model=ControllerSerializer)
+def assign_abandoned_controller(
+    request: AddControllerRequest,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        controller = ControllerOperation.create(current_user, request)
+        AbandonControllerOperation.remove(controller.device_id)
+        return controller
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        logger.error("Add controller failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/abandoned/{device_id}/verify")
+def verify_abandoned_controllers(
+    device_id: str,
+    _: User = Depends(get_current_user),
+):
+    try:
+        AbandonControllerOperation.verify(device_id)
+        return {
+            "message": "Abandoned controller verified successfully",
+        }
+    except Exception as e:
+        logger.error("Verify abandoned controllers failed", type=type(e).__name__, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

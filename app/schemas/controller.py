@@ -15,6 +15,7 @@ class ControllerSerializer(BaseModel):
     device_id: str
     name: str | None = None
     store_id: UUID | None = None
+    store_name: str | None = None
     total_relays: int
 
 
@@ -23,6 +24,7 @@ class AddControllerRequest(BaseModel):
     name: str | None = None
     store_id: UUID | None = None
     total_relays: int = 1
+    status: ControllerStatus | None = None
 
 
 class UpdateControllerRequest(BaseModel):

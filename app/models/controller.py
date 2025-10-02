@@ -44,8 +44,9 @@ class Controller(Base):
     store_id = Column(UUID(as_uuid=True), ForeignKey('stores.id'), nullable=True, index=True)
     total_relays = Column(Integer, nullable=False, default=0)
 
-    # Relationship
+    # Relationships
     machines = relationship("Machine", back_populates="controller", cascade="all, delete-orphan")
+    store = relationship("Store", back_populates="controllers")
 
     @validates('status')
     def validate_status(self, key: str, status) -> ControllerStatus:

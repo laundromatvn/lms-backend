@@ -112,22 +112,45 @@ class ControllerOperation:
         return controller
 
     @classmethod
+    @with_db_session_classmethod
+    def delete(cls, db: Session, controller_id: UUID) -> None:
+        controller = db.query(Controller).filter_by(id=controller_id).first()
+        if not controller:
+            raise ValueError("Controller not found")
+
+        db.delete(controller)
+        db.commit()
+
+    @classmethod
     def _handle_total_relays_change(cls, db: Session, controller: Controller, old_total_relays: int, new_total_relays: int) -> None:
-        """Handle changes to total_relays by adding or removing machines"""
+        """Handle changes to total_relays by managing machines according to the new requirements"""
         
-        if new_total_relays < old_total_relays:
-            # Decrease: Soft delete excess machines (from highest relay numbers)
-            cls._soft_delete_excess_machines(db, controller, new_total_relays)
-        elif new_total_relays > old_total_relays:
-            # Increase: Create new machines for additional relays
+        if new_total_relays == old_total_relays:
+            # Case 1: new_total_relays = old_total_relays
+            # Activate machines from relay_no = 1 to relay_no = new_total_relays
+            cls._activate_machines_range(db, controller, 1, new_total_relays)
+            
+        elif new_total_relays < old_total_relays:
+            # Case 2: new_total_relays < old_total_relays
+            # Activate machines from relay_no = 1 to relay_no = new_total_relays
+            cls._activate_machines_range(db, controller, 1, new_total_relays)
+            # Soft delete machines from relay_no = new_total_relays + 1 to old_total_relays
+            cls._soft_delete_excess_machines(db, controller, new_total_relays, old_total_relays)
+            
+        else:  # new_total_relays > old_total_relays
+            # Case 3: new_total_relays > old_total_relays
+            # Check if number of existing machines is enough, activate
+            cls._activate_machines_range(db, controller, 1, new_total_relays)
+            # Create if need
             cls._create_additional_machines(db, controller, old_total_relays, new_total_relays)
     
     @classmethod
-    def _soft_delete_excess_machines(cls, db: Session, controller: Controller, new_total_relays: int) -> None:
-        """Soft delete machines with relay_no > new_total_relays"""
+    def _soft_delete_excess_machines(cls, db: Session, controller: Controller, new_total_relays: int, old_total_relays: int) -> None:
+        """Soft delete machines with relay_no from new_total_relays + 1 to old_total_relays"""
         excess_machines = db.query(Machine).filter(
             Machine.controller_id == controller.id,
             Machine.relay_no > new_total_relays,
+            Machine.relay_no <= old_total_relays,
             Machine.deleted_at.is_(None)  # Only get non-deleted machines
         ).all()
         
@@ -140,17 +163,11 @@ class ControllerOperation:
         existing_machines = db.query(Machine).filter_by(controller_id=controller.id).all()
         existing_machine_relay_numbers = [machine.relay_no for machine in existing_machines]
         
-        for existing_machine in existing_machines:
-            existing_machine.restore()
-            db.add(existing_machine)
-        db.commit()
-        
-        """Create new machines for additional relays"""
+        # Create machines only for relay numbers that don't exist
         for relay_no in range(old_total_relays + 1, new_total_relays + 1):
             if relay_no in existing_machine_relay_numbers:
                 continue
-            
-            # Default machine type - could be made configurable
+
             machine_type = MachineType.WASHER if relay_no % 2 == 1 else MachineType.DRYER
             
             machine = Machine(
@@ -161,6 +178,19 @@ class ControllerOperation:
                 details={},
                 base_price=Decimal('0.00'),
             )
+            db.add(machine)
+    
+    @classmethod
+    def _activate_machines_range(cls, db: Session, controller: Controller, start_relay: int, end_relay: int) -> None:
+        """Activate machines from start_relay to end_relay (inclusive)"""
+        machines = db.query(Machine).filter(
+            Machine.controller_id == controller.id,
+            Machine.relay_no >= start_relay,
+            Machine.relay_no <= end_relay
+        ).all()
+        
+        for machine in machines:
+            machine.restore()  # This will set deleted_at to None and status to IDLE if it was OUT_OF_SERVICE
             db.add(machine)
     
     @classmethod

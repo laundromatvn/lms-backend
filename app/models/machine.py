@@ -175,8 +175,7 @@ class Machine(Base):
 
     def restore(self) -> None:
         self.deleted_at = None
-        if self.status == MachineStatus.OUT_OF_SERVICE:
-            self.status = MachineStatus.IDLE
+        self.status = MachineStatus.IDLE
 
     def start_operation(self) -> None:
         if self.status == MachineStatus.IDLE:

@@ -78,7 +78,6 @@ class ControllerOperation:
         db.commit()
         db.refresh(controller)
 
-        # Create machines for all relays
         MachineOperation.create_machines_for_controller(controller)
 
         return controller

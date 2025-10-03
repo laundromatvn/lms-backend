@@ -83,6 +83,7 @@ def assign_abandoned_controller(
 ):
     try:
         controller = ControllerOperation.create(current_user, request)
+        AbandonControllerOperation.confirm_assignment(controller)
         AbandonControllerOperation.remove(controller.device_id)
         return controller
     except ValueError as e:

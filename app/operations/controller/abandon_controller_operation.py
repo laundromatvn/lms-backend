@@ -60,6 +60,26 @@ class AbandonControllerOperation:
         return None
 
     @classmethod
+    def confirm_assignment(cls, controller: Controller):
+        topic = cls.WAIT_ADMIN_ASSIGN_STORE_TOPIC.format(device_id=controller.device_id)
+        payload = {
+            "version": "1.0.0",
+            "event_type": MQTTEventTypeEnum.STORE_ASSIGNMENT.value,
+            "timestamp": datetime.now().isoformat(),
+            "correlation_id": str(uuid.uuid4()),
+            "controller_id": str(controller.device_id),
+            "store_id": str(controller.store_id),
+            "payload": {
+                "status": "ASSIGNED",
+            },
+        }
+
+        mqtt_client.publish(
+            topic=topic,
+            payload=payload,
+        )
+
+    @classmethod
     def remove(cls, device_id: str):
         abandon_controllers = cache_manager.get(cls.ABANDONED_CONTROLLERS_CACHE_KEY)
         if abandon_controllers:

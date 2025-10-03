@@ -31,12 +31,14 @@ class MachineOperation:
     @with_db_session_classmethod
     def list(cls, db: Session, query_params: ListMachineQueryParams) -> tuple[int, List[dict]]:
         # Join with Controller and Store tables to get store information
-        base_query = db.query(
-            Machine,
-            Controller.store_id.label('store_id'),
-            Store.name.label('store_name')
-        ).join(Controller, Machine.controller_id == Controller.id)\
-         .outerjoin(Store, Controller.store_id == Store.id)
+        base_query = (
+            db.query(
+                Machine,
+                Controller.store_id.label('store_id'),
+                Store.name.label('store_name')
+            ).join(Controller, Machine.controller_id == Controller.id)
+            .outerjoin(Store, Controller.store_id == Store.id)
+        )
 
         if query_params.controller_id:
             base_query = base_query.filter(Machine.controller_id == query_params.controller_id)

@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.apis.router import router as api_router
 from app.bootstrap.common import bootstrap_services, shutdown_services
 from app.core.config import settings
-
+from app.libs import mqtt
 
 TITLE = f"{settings.APP_NAME}_api"
 
@@ -43,8 +43,9 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 def on_startup(_app: FastAPI) -> None:
-    pass
+    mqtt.start()
 
 
 def on_shutdown(_app: FastAPI) -> None:
+    mqtt.stop()
     shutdown_services(app=_app)

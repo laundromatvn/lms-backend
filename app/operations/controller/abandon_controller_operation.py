@@ -13,7 +13,7 @@ from app.enums.mqtt import MQTTEventTypeEnum
 
 class AbandonControllerOperation:
     ABANDONED_CONTROLLERS_CACHE_KEY = "abandoned_controllers"
-    VERIFY_CONTROLLER_TOPIC = "lms/controllers/{device_id}/wait_admin_assign_store"
+    WAIT_ADMIN_ASSIGN_STORE_TOPIC = "lms/controllers/{device_id}/wait_admin_assign_store"
 
     @classmethod
     def list(cls):
@@ -23,24 +23,19 @@ class AbandonControllerOperation:
 
     @classmethod
     def verify(cls, device_id: str):
-        abandon_controllers = cache_manager.get(cls.ABANDONED_CONTROLLERS_CACHE_KEY)
-        if abandon_controllers:
-            abandon_controllers = list(set(abandon_controllers + [device_id]))
-        else:
-            abandon_controllers = [device_id]
-
+        topic = cls.WAIT_ADMIN_ASSIGN_STORE_TOPIC.format(device_id=device_id)
         payload = {
             "version": "1.0.0",
             "event_type": MQTTEventTypeEnum.CONTROLLER_VERIFICATION.value,
             "timestamp": datetime.now().isoformat(),
             "correlation_id": str(uuid.uuid4()),
-            "controller_id": "98A316EABE98",
+            "controller_id": str(device_id),
             "store_id": None,
             "payload": {"relay_id": 1, "pulse_duration": 50, "value": 10},
         }
 
         mqtt_client.publish(
-            topic=cls.VERIFY_CONTROLLER_TOPIC.format(device_id=device_id),
+            topic=topic,
             payload=payload,
         )
 
@@ -62,7 +57,7 @@ class AbandonControllerOperation:
             abandon_controllers,
             ttl_seconds=60 * 15,
         )
-        return abandon_controllers
+        return None
 
     @classmethod
     def remove(cls, device_id: str):

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT: int = os.getenv("REDIS_PORT", 6379)
+    REDIS_USERNAME: str = os.getenv("REDIS_USERNAME", "")
     REDIS_PASSWORD: str = os.getenv("REDIS_PASSWORD", "")
     REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from uuid import UUID
 
 from app.apis.deps import get_current_user
@@ -70,7 +70,7 @@ async def get_machine(
     """Get a specific machine by ID"""
     try:
         machine = MachineOperation.get(machine_id)
-        return MachineSerializer.model_validate(machine)
+        return machine
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -92,7 +92,7 @@ async def update_machine(
     """Update a machine partially"""
     try:
         machine = MachineOperation.update_partially(current_user, machine_id, request)
-        return MachineSerializer.model_validate(machine)
+        return machine
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -133,7 +133,7 @@ async def restore_machine(
     """Restore a soft-deleted machine"""
     try:
         machine = MachineOperation.restore(current_user, machine_id)
-        return MachineSerializer.model_validate(machine)
+        return machine
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -154,7 +154,7 @@ async def start_machine_operation(
     """Start machine operation (set status to BUSY)"""
     try:
         machine = MachineOperation.start_operation(current_user, machine_id)
-        return MachineSerializer.model_validate(machine)
+        return machine
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -175,7 +175,7 @@ async def finish_machine_operation(
     """Finish machine operation (set status to IDLE)"""
     try:
         machine = MachineOperation.finish_operation(current_user, machine_id)
-        return MachineSerializer.model_validate(machine)
+        return machine
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -196,7 +196,7 @@ async def set_machine_out_of_service(
     """Set machine out of service"""
     try:
         machine = MachineOperation.set_out_of_service(current_user, machine_id)
-        return MachineSerializer.model_validate(machine)
+        return machine
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -217,7 +217,7 @@ async def mark_machine_ready(
     """Mark machine as ready for use after setup is complete"""
     try:
         machine = MachineOperation.mark_as_ready(current_user, machine_id)
-        return MachineSerializer.model_validate(machine)
+        return machine
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

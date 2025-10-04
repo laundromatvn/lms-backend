@@ -41,14 +41,12 @@ def list_controllers(
 ):
     try:
         total, controllers = ControllerOperation.list(query_params)
-        # Convert dictionaries to ControllerSerializer objects
-        serialized_controllers = [ControllerSerializer(**controller) for controller in controllers]
         return {
             "page": query_params.page,
             "page_size": query_params.page_size,
             "total": total,
             "total_pages": get_total_pages(total, query_params.page_size),
-            "data": serialized_controllers,
+            "data": controllers,
         }
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))

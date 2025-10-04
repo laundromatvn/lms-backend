@@ -2,6 +2,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.models.tenant import Tenant
+from app.models.tenant_member import TenantMember
 from app.models.user import User
 from app.models.store import Store
 from app.libs.database import with_db_session_classmethod
@@ -121,8 +122,13 @@ class StoreOperation:
         if not created_by.is_tenant_admin:
             return False
 
-        created_by_tenant = db.query(Tenant).filter_by(id=tenant_id).first()
-        if not created_by_tenant:
+        is_belongs_to_tenant = (
+            db.query(TenantMember)
+            .filter_by(user_id=created_by.id, tenant_id=tenant_id)
+            .filter_by(is_enabled=True)
+            .first()
+        )
+        if not is_belongs_to_tenant:
             return False
 
-        return created_by_tenant.created_by == created_by.id
+        return True

@@ -51,7 +51,7 @@ class RegisterControllerSubcriber:
         """Build the existing controller response"""
         return {
             "version": "1.0.0",
-            "event_type": MQTTEventTypeEnum.CONTROLLER_INIT_RESPONSE.value,
+            "event_type": MQTTEventTypeEnum.STORE_ASSIGNMENT.value,
             "timestamp": datetime.now().isoformat(),
             "correlation_id": str(uuid.uuid4()),
             "controller_id": str(controller.device_id),

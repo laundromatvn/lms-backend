@@ -431,7 +431,7 @@ class OrderOperation:
         """Start machines for an order."""
         for detail in order.order_details:
             if detail.machine.status == MachineStatus.IDLE:
-                detail.machine.start_operation()
+                detail.machine.start()
                 detail.update_status(OrderDetailStatus.IN_PROGRESS)
 
     @classmethod

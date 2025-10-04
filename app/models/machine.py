@@ -29,6 +29,7 @@ class MachineType(str, Enum):
 class MachineStatus(str, Enum):
     PENDING_SETUP = "PENDING_SETUP"
     IDLE = "IDLE"
+    STARTING = "STARTING"
     BUSY = "BUSY"
     OUT_OF_SERVICE = "OUT_OF_SERVICE"
 
@@ -183,11 +184,17 @@ class Machine(Base):
     def out_of_service(self) -> None:
         self.status = MachineStatus.OUT_OF_SERVICE
 
-    def start_operation(self) -> None:
+    def start(self) -> None:
         if self.status == MachineStatus.IDLE:
-            self.status = MachineStatus.BUSY
+            self.status = MachineStatus.STARTING
         else:
             raise ValueError("Only idle machines can start operations")
+        
+    def mark_as_in_progress(self) -> None:
+        if self.status == MachineStatus.STARTING:
+            self.status = MachineStatus.BUSY
+        else:
+            raise ValueError("Only starting machines can be in progress")
     
     def finish_operation(self) -> None:
         if self.status == MachineStatus.BUSY:

@@ -130,7 +130,7 @@ async def start_machine_operation(
 ):
     """Start machine operation (set status to BUSY)"""
     try:
-        MachineOperation.start_operation(current_user, machine_id)
+        MachineOperation.start(current_user, machine_id)
         return {"message": "Machine operation started"}
     except ValueError as e:
         raise HTTPException(

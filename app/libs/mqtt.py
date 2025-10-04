@@ -127,7 +127,14 @@ class MQTTClient:
         )
         # Deliver to any explicit topic listeners first
         try:
+            # First try exact match
             listeners = self._topic_listeners.get(message.topic, [])
+            
+            # If no exact match, try wildcard pattern matching
+            if not listeners:
+                listeners = self._get_matching_wildcard_listeners(message.topic)
+            
+            logger.info("mqtt_listeners", listeners=listeners, topic=message.topic)
             for listener in list(listeners):
                 try:
                     listener(message)
@@ -162,6 +169,42 @@ class MQTTClient:
             mid=mid,
             qos=granted_qos,
         )
+
+    def _get_matching_wildcard_listeners(self, topic: str) -> List[Callable[[mqtt.MQTTMessage], None]]:
+        """Find listeners that match the given topic using MQTT wildcard patterns."""
+        matching_listeners = []
+        
+        logger.debug("mqtt_wildcard_matching", topic=topic, patterns=list(self._topic_listeners.keys()))
+        
+        for pattern, listeners in self._topic_listeners.items():
+            if self._topic_matches_pattern(topic, pattern):
+                logger.info("mqtt_pattern_match", topic=topic, pattern=pattern, listeners_count=len(listeners))
+                matching_listeners.extend(listeners)
+                
+        return matching_listeners
+
+    def _topic_matches_pattern(self, topic: str, pattern: str) -> bool:
+        """Check if a topic matches an MQTT wildcard pattern."""
+        import fnmatch
+        
+        # Convert MQTT wildcards to fnmatch patterns
+        # MQTT uses + for single level and # for multi-level
+        # fnmatch uses * for any characters and ? for single character
+        
+        # Replace MQTT wildcards with fnmatch equivalents
+        fnmatch_pattern = pattern.replace('+', '*').replace('#', '*')
+        
+        # Handle the special case where # should match everything after
+        if pattern.endswith('/#'):
+            # Remove the /# and check if topic starts with the prefix
+            prefix = pattern[:-2]  # Remove /#
+            return topic.startswith(prefix + '/') or topic == prefix
+        elif pattern.endswith('#'):
+            # Remove the # and check if topic starts with the prefix
+            prefix = pattern[:-1]  # Remove #
+            return topic.startswith(prefix)
+        
+        return fnmatch.fnmatch(topic, fnmatch_pattern)
 
     def connect(self):
         self.client.connect(

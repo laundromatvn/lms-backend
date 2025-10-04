@@ -240,13 +240,30 @@ class MachineOperation:
             db.refresh(machine)
 
         return machines
-    
+
     @classmethod
     @with_db_session_classmethod
-    def start_operation(cls, db: Session, user: User, machine_id: UUID) -> Machine:
+    def activate_machine(cls, db: Session, user: User, machine_id: UUID) -> Machine:
         machine = db.query(Machine).filter_by(id=machine_id).first()
         if not machine:
             raise ValueError("Machine not found")
+
+        machine.activate()
+        db.commit()
+        db.refresh(machine)
+
+        return machine
+
+    @classmethod
+    @with_db_session_classmethod
+    def start(cls, db: Session, user: User, machine_id: UUID) -> Machine:
+        machine = db.query(Machine).filter_by(id=machine_id).first()
+        if not machine:
+            raise ValueError("Machine not found")
+        
+        machine.start()
+        db.commit()
+        db.refresh(machine)
 
         topic = cls.MACHINE_ACTION_TOPIC.format(
             store_id=str(machine.controller.store_id),
@@ -279,13 +296,28 @@ class MachineOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def activate_machine(cls, db: Session, user: User, machine_id: UUID) -> Machine:
-        machine = db.query(Machine).filter_by(id=machine_id).first()
+    def mark_as_in_progress(
+        cls,
+        db: Session,
+        controller_device_id: str,
+        machine_relay_no: int,
+    ) -> Machine:
+        machine = (
+            db.query(Machine)
+            .join(Controller, Machine.controller_id == Controller.id)
+            .filter(
+                Controller.device_id == controller_device_id,
+                Machine.relay_no == machine_relay_no,
+            )
+            .first()
+        )
         if not machine:
             raise ValueError("Machine not found")
 
-        machine.activate()
+        machine.mark_as_in_progress()
         db.commit()
         db.refresh(machine)
+        
+        logger.info("Marked machine as in progress", machine=machine)
 
         return machine

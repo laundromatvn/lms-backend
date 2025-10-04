@@ -349,7 +349,7 @@ class OrderDetailOperation:
     def _start_machine(self, order_detail: OrderDetail) -> None:
         """Start machine for an order detail."""
         if order_detail.machine.status == MachineStatus.IDLE:
-            order_detail.machine.start_operation()
+            order_detail.machine.start()
 
     def _finish_machine(self, order_detail: OrderDetail) -> None:
         """Finish machine for an order detail."""

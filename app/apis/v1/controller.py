@@ -139,3 +139,16 @@ def update_partially_controller(
     except Exception as e:
         logger.error("Update partially controller failed", type=type(e).__name__, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{controller_id}/activate-machines")
+def activate_controller_machines(
+    controller_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        ControllerOperation.activate_controller_machines(current_user, controller_id)
+        return {"message": "Machines activated"}
+    except Exception as e:
+        logger.error("Activate machines failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))

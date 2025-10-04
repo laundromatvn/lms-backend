@@ -177,6 +177,12 @@ class Machine(Base):
         self.deleted_at = None
         self.status = MachineStatus.IDLE
 
+    def activate(self) -> None:
+        self.status = MachineStatus.IDLE
+        
+    def out_of_service(self) -> None:
+        self.status = MachineStatus.OUT_OF_SERVICE
+
     def start_operation(self) -> None:
         if self.status == MachineStatus.IDLE:
             self.status = MachineStatus.BUSY

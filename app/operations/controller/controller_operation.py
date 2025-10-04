@@ -122,6 +122,24 @@ class ControllerOperation:
         db.commit()
 
     @classmethod
+    @with_db_session_classmethod
+    def activate_controller_machines(cls, db: Session, user: User, controller_id: UUID) -> None:
+        controller = db.query(Controller).filter_by(id=controller_id).first()
+        if not controller:
+            raise ValueError("Controller not found")
+
+        machines = controller.machines
+        for machine in machines:
+            if machine.relay_no > controller.total_relays:
+                machine.out_of_service()
+            else:
+                machine.activate()
+        db.commit()
+        db.refresh(controller)
+
+        return controller
+
+    @classmethod
     def _handle_total_relays_change(cls, db: Session, controller: Controller, old_total_relays: int, new_total_relays: int) -> None:
         """Handle changes to total_relays by managing machines according to the new requirements"""
         

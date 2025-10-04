@@ -24,15 +24,13 @@ async def list_machines(
     """List machines with pagination and filtering"""
     try:
         total, machines = MachineOperation.list(query_params)
-        # Convert dictionaries to MachineSerializer objects
-        serialized_machines = [MachineSerializer(**machine) for machine in machines]
 
         return {
             "page": query_params.page,
             "page_size": query_params.page_size,
             "total": total,
             "total_pages": get_total_pages(total, query_params.page_size),
-            "data": serialized_machines
+            "data": machines,
         }
     except Exception as e:
         raise HTTPException(
@@ -125,36 +123,15 @@ async def delete_machine(
         )
 
 
-@router.post("/{machine_id}/restore", response_model=MachineSerializer)
-async def restore_machine(
-    machine_id: UUID,
-    current_user: User = Depends(get_current_user),
-):
-    """Restore a soft-deleted machine"""
-    try:
-        machine = MachineOperation.restore(current_user, machine_id)
-        return machine
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-
-
-@router.post("/{machine_id}/start", response_model=MachineSerializer)
+@router.post("/{machine_id}/start")
 async def start_machine_operation(
     machine_id: UUID,
     current_user: User = Depends(get_current_user),
 ):
     """Start machine operation (set status to BUSY)"""
     try:
-        machine = MachineOperation.start_operation(current_user, machine_id)
-        return machine
+        MachineOperation.start_operation(current_user, machine_id)
+        return {"message": "Machine operation started"}
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -167,57 +144,15 @@ async def start_machine_operation(
         )
 
 
-@router.post("/{machine_id}/finish", response_model=MachineSerializer)
-async def finish_machine_operation(
+@router.post("/{machine_id}/activate")
+async def activate_machine(
     machine_id: UUID,
     current_user: User = Depends(get_current_user),
 ):
-    """Finish machine operation (set status to IDLE)"""
+    """Activate machine (set status to IDLE)"""
     try:
-        machine = MachineOperation.finish_operation(current_user, machine_id)
-        return machine
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-
-
-@router.post("/{machine_id}/out-of-service", response_model=MachineSerializer)
-async def set_machine_out_of_service(
-    machine_id: UUID,
-    current_user: User = Depends(get_current_user),
-):
-    """Set machine out of service"""
-    try:
-        machine = MachineOperation.set_out_of_service(current_user, machine_id)
-        return machine
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-
-
-@router.post("/{machine_id}/mark-ready", response_model=MachineSerializer)
-async def mark_machine_ready(
-    machine_id: UUID,
-    current_user: User = Depends(get_current_user),
-):
-    """Mark machine as ready for use after setup is complete"""
-    try:
-        machine = MachineOperation.mark_as_ready(current_user, machine_id)
-        return machine
+        MachineOperation.activate_machine(current_user, machine_id)
+        return {"message": "Machine activated"}
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

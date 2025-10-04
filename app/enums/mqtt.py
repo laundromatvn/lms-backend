@@ -7,3 +7,6 @@ class MQTTEventTypeEnum(str, Enum):
     CONTROLLER_INIT_RESPONSE = "controller_init_response"
     CONTROLLER_VERIFICATION = "controller_verification"
     STORE_ASSIGNMENT = "store_assignment"
+
+    # Machine
+    MACHINE_START = "start"

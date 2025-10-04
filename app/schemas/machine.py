@@ -14,6 +14,7 @@ class MachineSerializer(BaseModel):
     updated_at: datetime
     deleted_at: datetime | None = None
     controller_id: UUID
+    controller_device_id: str | None = None
     relay_no: int
     name: str | None = None
     machine_type: MachineType

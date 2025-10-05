@@ -133,6 +133,9 @@ class MachineOperation:
             machine_type=request.machine_type,
             details=request.details,
             base_price=request.base_price,
+            pulse_duration=request.pulse_duration,
+            pulse_value=request.pulse_value,
+            add_ons_options=request.add_ons_options,
         )
         db.add(machine)
         db.commit()
@@ -229,6 +232,9 @@ class MachineOperation:
                 machine_type=machine_type,
                 details={},
                 base_price=Decimal("0.00"),
+                pulse_duration=1000,
+                pulse_value=10,
+                add_ons_options=[],
             )
             db.add(machine)
             machines.append(machine)
@@ -273,8 +279,8 @@ class MachineOperation:
         action_payload = {
             "machine_type": machine.machine_type.value,
             "relay_id": machine.relay_no,
-            "pulse_duration": 1000,
-            "value": 10,
+            "pulse_duration": machine.pulse_duration,
+            "value": machine.pulse_value,
         }
 
         payload = {

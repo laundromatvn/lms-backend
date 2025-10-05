@@ -59,6 +59,9 @@ class Machine(Base):
         default=MachineStatus.PENDING_SETUP,
         index=True
     )
+    pulse_duration = Column(Integer, nullable=False, default=1000)
+    pulse_value = Column(Integer, nullable=False, default=10)
+    add_ons_options = Column(JSON, nullable=True, default=list)
 
     # Relationships
     controller = relationship("Controller", back_populates="machines")
@@ -225,6 +228,9 @@ class Machine(Base):
             'details': self.details,
             'base_price': float(self.base_price) if self.base_price else 0.0,
             'status': self.status.value,
+            'pulse_duration': self.pulse_duration,
+            'pulse_value': self.pulse_value,
+            'add_ons_options': self.add_ons_options,
         }
 
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List
 from pydantic import BaseModel, Field
 from uuid import UUID
 
@@ -23,7 +23,9 @@ class MachineSerializer(BaseModel):
     status: MachineStatus
     store_id: UUID | None = None
     store_name: str | None = None
-
+    pulse_duration: int
+    pulse_value: int
+    add_ons_options: List[Dict[str, Any]]
 
 class AddMachineRequest(BaseModel):
     controller_id: UUID
@@ -32,7 +34,10 @@ class AddMachineRequest(BaseModel):
     machine_type: MachineType
     details: Dict[str, Any] = {}
     base_price: Decimal = Field(default=Decimal('0.00'), ge=0)
-
+    pulse_duration: int = Field(default=1000, ge=1)
+    pulse_value: int = Field(default=10, ge=1)
+    add_ons_options: List[Dict[str, Any]] = Field(default_factory=list)
+    
 
 class UpdateMachineRequest(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=255)
@@ -40,6 +45,9 @@ class UpdateMachineRequest(BaseModel):
     details: Dict[str, Any] = {}
     base_price: Decimal | None = Field(None, ge=0)
     status: MachineStatus | None = None
+    pulse_duration: int | None = None
+    pulse_value: int | None = None
+    add_ons_options: List[Dict[str, Any]] | None = None
 
 
 class ListMachineQueryParams(Pagination):

@@ -67,6 +67,32 @@ async def get_payment(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+@router.post("/{payment_id}/timeout")
+def post_payment_timeout(
+    payment_id: uuid.UUID = Path(..., description="Payment ID"),
+    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Test trigger payment success.
+    """
+    try:
+        payment = db.query(Payment).filter(Payment.id == payment_id).first()
+        if not payment:
+            raise HTTPException(status_code=404, detail="Payment not found")
+
+        sync_payment_transaction(
+            content=payment.transaction_code,
+            status=PaymentStatus.CANCELLED,
+            provider=PaymentProvider.VIET_QR
+        )
+
+        return { "success": True }
+    except Exception as e:
+        logger.error(f"Error triggering payment timeout: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 @router.post("/{payment_id}/test-trigger-payment-success")
 async def test_trigger_payment_success(
     payment_id: uuid.UUID = Path(..., description="Payment ID"),

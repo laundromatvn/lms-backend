@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
 from app.core.logging import logger
-from app.models import payment
 from app.models.payment import Payment, PaymentStatus, PaymentProvider, PaymentMethod
 from app.models.order import Order, OrderStatus
 from app.models.store import Store
@@ -22,6 +21,7 @@ from app.schemas.payment import InitializePaymentRequest
 from app.libs.database import with_db_session_classmethod
 from app.libs.vietqr import GenerateQRCodeRequest
 from app.services.payment_service import PaymentService, PaymentProviderEnum
+from app.operations.order.order_operation import OrderOperation
 
 
 class PaymentOperation:
@@ -50,12 +50,12 @@ class PaymentOperation:
             IntegrityError: If database constraints are violated
         """
         # Validate order exists and can be paid
-        order = cls._validate_order_for_payment(request.order_id)
-
+        order = OrderOperation.wait_for_payment(request.order_id, created_by)
+        
         # Validate store and tenant exist
         store = cls._validate_store_exists(request.store_id)
         _ = cls._validate_tenant_exists(request.tenant_id)
-
+        
         # Validate amount matches order total
         if request.total_amount != order.total_amount:
             raise ValueError(
@@ -100,15 +100,11 @@ class PaymentOperation:
             payment_method_details=payment_method_details,
             status=PaymentStatus.NEW,
             created_by=created_by,
+            updated_by=created_by,
         )
 
         try:
             db.add(payment_transaction)
-            db.flush()  # Get payment transaction ID
-
-            # Update order status to waiting for payment
-            order.update_status(OrderStatus.WAITING_FOR_PAYMENT, updated_by=created_by)
-
             db.commit()
             db.refresh(payment_transaction)
     

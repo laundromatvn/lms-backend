@@ -66,19 +66,6 @@ async def get_payment(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.post("/{payment_id}/trigger-payment-details")
-async def get_payment_status(
-    payment_id: uuid.UUID = Path(..., description="Payment ID"),
-    _: User = Depends(get_current_user)
-):
-    """
-    Trigger payment details generation by ID.
-    """
-    generate_payment_details(str(payment_id))
-    return {"message": "Payment details generation triggered"}
-
-
-
 @router.post("/{payment_id}/test-trigger-payment-success")
 async def test_trigger_payment_success(
     payment_id: uuid.UUID = Path(..., description="Payment ID"),

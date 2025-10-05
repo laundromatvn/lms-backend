@@ -284,6 +284,33 @@ class OrderOperation:
         return order
 
     @classmethod
+    @with_db_session_classmethod
+    def wait_for_payment(cls, db: Session, order_id: uuid.UUID, updated_by: Optional[uuid.UUID] = None) -> Order:
+        """
+        Wait for payment for an order.
+        """
+        order = (
+            db.query(Order)
+            .filter(and_(
+                Order.id == order_id,
+                Order.deleted_at.is_(None)
+            ))
+            .first()
+        )
+        if not order:
+            raise ValueError(f"Order with ID {order_id} not found")
+        
+        if not order.can_be_paid:
+            raise ValueError(f"Order {order_id} cannot be paid in current status: {order.status.value}")
+        
+        # Cancel all order details and free machines
+        order.update_status(OrderStatus.WAITING_FOR_PAYMENT, updated_by)
+        db.commit()
+        db.refresh(order)
+
+        return order
+
+    @classmethod
     def calculate_order_total(cls, order_id: uuid.UUID) -> Decimal:
         """
         Calculate total amount for an order.

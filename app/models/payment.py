@@ -74,6 +74,7 @@ class Payment(Base):
         default=PaymentMethod.QR,
         index=True
     )
+    payment_method_details = Column(JSON, nullable=True)
     provider_transaction_id = Column(String(255), nullable=True, index=True)
     
     # Relationships
@@ -170,6 +171,32 @@ class Payment(Base):
                 raise ValueError("Provider transaction ID cannot exceed 255 characters")
         return provider_transaction_id
     
+    @validates('payment_method_details')
+    def validate_payment_method_details(self, key: str, payment_method_details: Optional[dict]) -> Optional[dict]:
+        if payment_method_details is not None:
+            if not isinstance(payment_method_details, dict):
+                raise ValueError("Payment method details must be a dictionary")
+            
+            # Validate required fields based on payment method
+            if self.payment_method == PaymentMethod.QR:
+                required_fields = [
+                    'bank_code',
+                    'bank_name', 
+                    'bank_account_number',
+                    'bank_account_name',
+                ]
+                for field in required_fields:
+                    if field not in payment_method_details:
+                        raise ValueError(f"QR payment method details must have '{field}' field")
+                    
+                    if not isinstance(payment_method_details[field], str):
+                        raise ValueError(f"QR payment method '{field}' must be a string")
+                    
+                    if not payment_method_details[field].strip():
+                        raise ValueError(f"QR payment method '{field}' cannot be empty")
+        
+        return payment_method_details
+    
     @property
     def is_active(self) -> bool:
         return self.deleted_at is None
@@ -258,6 +285,7 @@ class Payment(Base):
             'total_amount': float(self.total_amount) if self.total_amount else 0.0,
             'provider': self.provider.value,
             'payment_method': self.payment_method.value,
+            'payment_method_details': self.payment_method_details,
             'provider_transaction_id': self.provider_transaction_id,
         }
 

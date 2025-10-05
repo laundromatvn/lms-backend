@@ -200,9 +200,9 @@ class Order(Base):
     def update_totals(self) -> None:
         """Update washer/dryer counts and total amount"""
         self.total_washer = sum(1 for detail in self.order_details 
-                               if detail.machine.machine_type.value == "WASHER")
+                                if detail.machine.machine_type.value == "WASHER")
         self.total_dryer = sum(1 for detail in self.order_details 
-                              if detail.machine.machine_type.value == "DRYER")
+                                if detail.machine.machine_type.value == "DRYER")
         self.total_amount = self.calculate_total()
 
     def to_dict(self) -> dict:

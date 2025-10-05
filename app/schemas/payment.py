@@ -41,6 +41,7 @@ class PaymentResponse(BaseModel):
     total_amount: Decimal
     provider: PaymentProvider
     payment_method: PaymentMethod
+    payment_method_details: Optional[dict] = None
     provider_transaction_id: Optional[str] = None
 
     class Config:

@@ -14,7 +14,7 @@ from sqlalchemy import and_
 
 from app.core.logging import logger
 from app.models import payment
-from app.models.payment import Payment, PaymentStatus, PaymentProvider
+from app.models.payment import Payment, PaymentStatus, PaymentProvider, PaymentMethod
 from app.models.order import Order, OrderStatus
 from app.models.store import Store
 from app.models.tenant import Tenant
@@ -53,7 +53,7 @@ class PaymentOperation:
         order = cls._validate_order_for_payment(request.order_id)
 
         # Validate store and tenant exist
-        _ = cls._validate_store_exists(request.store_id)
+        store = cls._validate_store_exists(request.store_id)
         _ = cls._validate_tenant_exists(request.tenant_id)
 
         # Validate amount matches order total
@@ -86,6 +86,9 @@ class PaymentOperation:
         if existing_payment:
             raise ValueError(f"Order {request.order_id} already has an active payment transaction")
 
+        # Get payment method details from store
+        payment_method_details = cls._get_payment_method_details_from_store(store, request.payment_method)
+
         # Create payment transaction
         payment_transaction = Payment(
             order_id=request.order_id,
@@ -94,6 +97,7 @@ class PaymentOperation:
             total_amount=request.total_amount,
             provider=PaymentProvider.VIET_QR,  # Default provider
             payment_method=request.payment_method,
+            payment_method_details=payment_method_details,
             status=PaymentStatus.NEW,
             created_by=created_by,
         )
@@ -166,28 +170,12 @@ class PaymentOperation:
             payment.update_status(PaymentStatus.WAITING_FOR_PAYMENT_DETAIL)
             db.commit()
             
-            # Generate QR code using payment service
-            payment_service = PaymentService(provider_name=PaymentProviderEnum.VIETQR)
-            
-            # Create QR generation request
-            qr_request = GenerateQRCodeRequest(
-                amount=str(int(payment.total_amount)),
-                content=str(order.id),
-                orderId=str(order.id),
-                terminalCode=str(order.store_id)
-            )
-            
-            # Generate QR code
-            qr_code, transaction_id, transaction_ref_id = payment_service.generate_qr_code(request=qr_request)
-            
-            # Update payment with generated details
-            payment.details = {
-                "qr_code": qr_code,
-                "transaction_id": transaction_id,
-                "transaction_ref_id": transaction_ref_id,
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat(),
-            }
+            if payment.payment_method == PaymentMethod.QR:
+                transaction_id, details = cls._generate_payment_qr_code(payment, order)
+            else:
+                raise ValueError(f"Payment {payment_id} cannot generate details for payment method {payment.payment_method.value}")
+
+            payment.details = details
             payment.provider_transaction_id = transaction_id
             payment.update_status(PaymentStatus.WAITING_FOR_PURCHASE)
 
@@ -204,20 +192,44 @@ class PaymentOperation:
             raise e
 
     @classmethod
-    @with_db_session_classmethod
-    def generate_payment_qr_code(cls, db: Session, payment_id: uuid.UUID):
+    def _generate_payment_qr_code(cls, payment: Payment, order: Order):
         """Generate payment QR code."""
         payment_service = PaymentService(provider_name=PaymentProviderEnum.VIETQR)
-        qr_code, transaction_id, transaction_ref_id = payment_service.generate_qr_code(payment_id)
-        payment.details = {
+        
+        # Payment method details
+        _ = payment.payment_method
+        payment_method_details = payment.payment_method_details
+        bank_code = payment_method_details.get('bank_code')
+        bank_account_number = payment_method_details.get('bank_account_number')
+        bank_account_name = payment_method_details.get('bank_account_name')
+        
+        if not bank_code or not bank_account_number or not bank_account_name:
+            raise ValueError("Bank code, bank account number, and bank account name are required")
+        
+        # Create QR generation request
+        qr_request = GenerateQRCodeRequest(
+            amount=str(int(payment.total_amount)),
+            content=str(order.id),
+            orderId=str(order.id),
+            terminalCode=str(order.store_id),
+            bankCode=bank_code,
+            bankAccountNumber=bank_account_number,
+            bankAccountName=bank_account_name,
+        )
+        
+        # Generate QR code
+        qr_code, transaction_id, transaction_ref_id = payment_service.generate_qr_code(request=qr_request)
+        
+        # Update payment with generated details
+        details = {
             "qr_code": qr_code,
             "transaction_id": transaction_id,
-            "transaction_ref_id": transaction_ref_id
+            "transaction_ref_id": transaction_ref_id,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat(),
         }
-        payment.status = PaymentStatus.WAITING_FOR_PURCHASE
-        db.commit()
-        db.refresh(payment)
-        return payment
+
+        return transaction_id, details
 
     @classmethod
     @with_db_session_classmethod
@@ -266,6 +278,28 @@ class PaymentOperation:
             raise ValueError(f"Tenant with ID {tenant_id} not found")
 
         return tenant
+
+    @classmethod
+    def _get_payment_method_details_from_store(cls, store: Store, payment_method: PaymentMethod) -> Optional[Dict[str, Any]]:
+        """
+        Get payment method details from store's payment methods.
+        
+        Args:
+            store: Store instance
+            payment_method: Payment method to get details for
+            
+        Returns:
+            Payment method details dictionary or None if not found
+        """
+        if not store.payment_methods:
+            raise ValueError(f"Store {store.id} does not have any payment methods")
+        
+        # Find the payment method in store's payment methods
+        for method in store.payment_methods:
+            if method.get('payment_method') == payment_method.value:
+                return method.get('details')
+        
+        raise ValueError(f"Payment method {payment_method.value} not found in store {store.id}")
 
     @classmethod
     @with_db_session_classmethod

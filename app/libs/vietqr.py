@@ -10,6 +10,9 @@ class GenerateQRCodeRequest(BaseModel):
     content: str
     orderId: str
     terminalCode: str
+    bankCode: str
+    bankAccountNumber: str
+    bankAccountName: str
 
 
 class GenerateQRCodeResponse(BaseModel):
@@ -71,9 +74,9 @@ class VietQR:
         }
         payload = {
             "amount": request.amount,
-            "bankAccount": self.bank_account,
-            "bankCode": self.bank_code,
-            "userBankName": self.user_bank_name,
+            "bankAccount": request.bankAccountNumber,
+            "bankCode": request.bankCode,
+            "userBankName": request.bankAccountName,
             "content": request.content,
             "transType": self.trans_type,
             "orderId": request.orderId,

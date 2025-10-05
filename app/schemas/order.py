@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, validator, root_validator
 
 from app.models.order import OrderStatus, OrderDetailStatus, AddOnType
 from app.models.machine import MachineType
+from app.schemas.pagination import Pagination
 
 
 class AddOnItem(BaseModel):
@@ -137,15 +138,6 @@ class OrderResponse(BaseModel):
         from_attributes = True
 
 
-class OrderListResponse(BaseModel):
-    """Schema for order list response with pagination"""
-    orders: List[OrderResponse]
-    total: int
-    page: int
-    per_page: int
-    total_pages: int
-
-
 class OrderDetailListResponse(BaseModel):
     """Schema for order detail list response"""
     order_details: List[OrderDetailResponse]
@@ -261,3 +253,11 @@ class OrderCompletionRequest(BaseModel):
             if not v:
                 return None
         return v
+
+
+class ListOrderQueryParams(Pagination):
+    tenant_id: Optional[UUID] = None
+    store_id: Optional[UUID] = None
+    status: Optional[OrderStatus] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None

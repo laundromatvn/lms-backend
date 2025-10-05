@@ -1,13 +1,8 @@
-from datetime import datetime
-import uuid
-
 from paho.mqtt.client import MQTTMessage
 
 from app.core.logging import logger
 from app.enums.mqtt import MQTTEventTypeEnum
 from app.libs import mqtt
-from app.models.controller import Controller
-from app.operations.controller.abandon_controller_operation import AbandonControllerOperation
 from app.operations.machine.machine_operation import MachineOperation
 from app.schemas.mqtt import MessagePayload
 
@@ -56,12 +51,12 @@ class MachineAckSubscriber:
             
             if not controller_device_id or not machine_relay_no:
                 raise ValueError("Invalid payload: missing controller_device_id or relay_id")
-            
+
             # Handle different event types
-            if payload.event_type == "start_ack":
+            if payload.event_type == MQTTEventTypeEnum.MACHINE_START_ACK.value:
                 MachineOperation.mark_as_in_progress(controller_device_id, machine_relay_no)
             else:
                 logger.warning("Unhandled event type", event_type=payload.event_type, topic=topic)
-                
+
         except Exception as e:
             logger.error("machine_ack_message_error", error=str(e), topic=topic)

@@ -181,7 +181,7 @@ class Order(Base):
         """Validate status transition"""
         valid_transitions = {
             OrderStatus.NEW: [OrderStatus.WAITING_FOR_PAYMENT, OrderStatus.CANCELLED],
-            OrderStatus.WAITING_FOR_PAYMENT: [OrderStatus.PAYMENT_SUCCESS, OrderStatus.PAYMENT_FAILED, OrderStatus.CANCELLED],
+            OrderStatus.WAITING_FOR_PAYMENT: [OrderStatus.PAYMENT_SUCCESS, OrderStatus.PAYMENT_FAILED, OrderStatus.CANCELLED, OrderStatus.IN_PROGRESS],
             OrderStatus.PAYMENT_FAILED: [OrderStatus.WAITING_FOR_PAYMENT, OrderStatus.CANCELLED],
             OrderStatus.PAYMENT_SUCCESS: [OrderStatus.IN_PROGRESS],
             OrderStatus.IN_PROGRESS: [OrderStatus.FINISHED, OrderStatus.CANCELLED],

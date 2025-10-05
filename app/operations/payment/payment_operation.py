@@ -356,17 +356,16 @@ class PaymentOperation:
             payment.update_status(new_status)
             
             if new_status == PaymentStatus.SUCCESS:
-                order.update_status(OrderStatus.PAYMENT_SUCCESS)
+                OrderOperation.update_order_status(order.id, OrderStatus.IN_PROGRESS)
                 logger.info(f"Payment completed for order {order.id} via {provider} transaction {transaction_code}")
             elif new_status == PaymentStatus.FAILED:
-                order.update_status(OrderStatus.PAYMENT_FAILED)
+                OrderOperation.update_order_status(order.id, OrderStatus.PAYMENT_FAILED)
                 logger.info(f"Payment failed for order {order.id} via {provider} transaction {transaction_code}")
             elif new_status == PaymentStatus.CANCELLED:
-                order.update_status(OrderStatus.CANCELLED)
+                OrderOperation.update_order_status(order.id, OrderStatus.CANCELLED)
                 logger.info(f"Payment refunded for order {order.id} via {provider} transaction {transaction_code}")
             
             db.add(payment)
-            db.add(order)
             db.commit()
             db.refresh(payment)
             

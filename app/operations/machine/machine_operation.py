@@ -327,3 +327,29 @@ class MachineOperation:
         logger.info("Marked machine as in progress", machine=machine)
 
         return machine
+
+    @classmethod
+    @with_db_session_classmethod
+    def finish(
+        cls,
+        db: Session,
+        controller_device_id: str,
+        machine_relay_no: int,
+    ) -> Machine:
+        machine = (
+            db.query(Machine)
+            .join(Controller, Machine.controller_id == Controller.id)
+            .filter(
+                Controller.device_id == controller_device_id,
+                Machine.relay_no == machine_relay_no,
+            )
+            .first()
+        )
+        if not machine:
+            raise ValueError("Machine not found")
+
+        machine.finish_operation()
+        db.commit()
+        db.refresh(machine)
+
+        return machine

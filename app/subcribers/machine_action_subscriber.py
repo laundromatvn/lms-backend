@@ -37,7 +37,7 @@ class MachineActionSubscriber:
         """Handle incoming controller initialization messages"""
         try:
             event_type = payload.event_type
-            if event_type == "finish":
+            if event_type == MQTTEventTypeEnum.MACHINE_FINISH.value:
                 logger.info("Processing machine finish message", payload=payload)
                 MachineOperation.finish(payload.controller_id, payload.payload.get("relay_id"))
             else:

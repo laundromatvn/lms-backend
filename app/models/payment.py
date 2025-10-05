@@ -76,7 +76,8 @@ class Payment(Base):
     )
     payment_method_details = Column(JSON, nullable=True)
     provider_transaction_id = Column(String(255), nullable=True, index=True)
-    
+    transaction_code = Column(String(8), index=True, unique=True)
+
     # Relationships
     order = relationship("Order", back_populates="payments")
     store = relationship("Store", back_populates="payments")
@@ -170,6 +171,34 @@ class Payment(Base):
             if len(provider_transaction_id) > 255:
                 raise ValueError("Provider transaction ID cannot exceed 255 characters")
         return provider_transaction_id
+    
+    @validates('transaction_code')
+    def validate_transaction_code(self, key: str, transaction_code: str) -> str:
+        if transaction_code is None:
+            raise ValueError("Transaction code is required")
+        
+        transaction_code = transaction_code.strip().upper()
+        if not transaction_code:
+            raise ValueError("Transaction code cannot be empty")
+        
+        # Validate length (exactly 8 characters)
+        if len(transaction_code) != 8:
+            raise ValueError("Transaction code must be exactly 8 characters long")
+        
+        # Validate format (only uppercase letters and digits)
+        if not transaction_code.isalnum():
+            raise ValueError("Transaction code must contain only uppercase letters and digits")
+        
+        # Ensure it contains at least one letter and one digit
+        has_letter = any(c.isalpha() for c in transaction_code)
+        has_digit = any(c.isdigit() for c in transaction_code)
+        
+        if not has_letter:
+            raise ValueError("Transaction code must contain at least one letter")
+        if not has_digit:
+            raise ValueError("Transaction code must contain at least one digit")
+        
+        return transaction_code
     
     @validates('payment_method_details')
     def validate_payment_method_details(self, key: str, payment_method_details: Optional[dict]) -> Optional[dict]:
@@ -287,6 +316,7 @@ class Payment(Base):
             'payment_method': self.payment_method.value,
             'payment_method_details': self.payment_method_details,
             'provider_transaction_id': self.provider_transaction_id,
+            'transaction_code': self.transaction_code,
         }
 
 

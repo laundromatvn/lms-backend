@@ -43,6 +43,7 @@ class PaymentResponse(BaseModel):
     payment_method: PaymentMethod
     payment_method_details: Optional[dict] = None
     provider_transaction_id: Optional[str] = None
+    transaction_code: str
 
     class Config:
         from_attributes = True

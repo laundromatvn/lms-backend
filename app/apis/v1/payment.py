@@ -14,8 +14,9 @@ from sqlalchemy.orm import Session
 from app.apis.deps import get_current_user
 from app.libs.database import get_db
 from app.models.user import User
+from app.models.payment import Payment, PaymentStatus, PaymentProvider
 from app.operations.payment import PaymentOperation
-from app.tasks.payment.payment_tasks import generate_payment_details
+from app.tasks.payment.payment_tasks import generate_payment_details, sync_payment_transaction
 from app.schemas.payment import (
     InitializePaymentRequest,
     PaymentResponse,
@@ -76,16 +77,17 @@ async def test_trigger_payment_success(
     Test trigger payment success.
     """
     try:
-        from app.models.payment import Payment, PaymentStatus
-        
         payment = db.query(Payment).filter(Payment.id == payment_id).first()
         if not payment:
             raise HTTPException(status_code=404, detail="Payment not found")
-        payment.update_status(PaymentStatus.SUCCESS)
-        db.commit()
-        db.refresh(payment)
 
-        return payment
+        sync_payment_transaction(
+            content=payment.transaction_code,
+            status=PaymentStatus.SUCCESS,
+            provider=PaymentProvider.VIET_QR
+        )
+
+        return { "success": True }
     except Exception as e:
         logger.error(f"Error triggering payment success: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")

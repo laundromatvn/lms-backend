@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBasicCredentials
 
 from app.apis.deps import verify_vietqr_partner_credentials, get_vietqr_internal_user
+from app.models.payment import PaymentStatus
 from app.models.user import User
 from app.core.config import settings
 from app.core.logging import logger
@@ -95,19 +96,11 @@ async def transaction_sync(
                 object=None
             )
         
-        # Determine payment status based on transaction type
-        # D = Debit (payment received) -> COMPLETED
-        # C = Credit (payment refunded) -> REFUNDED
-        payment_status = "COMPLETED" if request.transType == "D" else "REFUNDED"
-        
-        # Trigger async payment status update task
-        task = sync_payment_transaction.delay(
-            transaction_id=request.transactionid,
-            status=payment_status,
+        sync_payment_transaction(
+            content=request.content,
+            status=PaymentStatus.SUCCESS,
             provider="VIET_QR"
         )
-        
-        logger.info(f"Payment sync task triggered for transaction {request.transactionid}, task ID: {task.id}")
         
         return VietQRTransactionSyncResponse(
             error=False,

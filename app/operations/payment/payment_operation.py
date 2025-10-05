@@ -6,6 +6,8 @@ creation, status updates, and integration with payment providers.
 """
 
 import uuid
+import random
+import string
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta, timezone
 
@@ -89,6 +91,11 @@ class PaymentOperation:
         # Get payment method details from store
         payment_method_details = cls._get_payment_method_details_from_store(store, request.payment_method)
 
+        # Generate transaction code if not provided
+        transaction_code = getattr(request, 'transaction_code', None)
+        if not transaction_code:
+            transaction_code = cls._generate_transaction_code()
+
         # Create payment transaction
         payment_transaction = Payment(
             order_id=request.order_id,
@@ -99,6 +106,7 @@ class PaymentOperation:
             payment_method=request.payment_method,
             payment_method_details=payment_method_details,
             status=PaymentStatus.NEW,
+            transaction_code=transaction_code,
             created_by=created_by,
             updated_by=created_by,
         )
@@ -299,10 +307,10 @@ class PaymentOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def update_payment_status_by_transaction_id(
+    def update_payment_status_by_transaction_code(
         cls,
         db: Session,
-        transaction_id: str,
+        transaction_code: str,
         status: str,
         provider: str = "VIET_QR"
     ) -> Dict[str, Any]:
@@ -313,7 +321,7 @@ class PaymentOperation:
         its status. It's designed to work with any payment provider.
         
         Args:
-            transaction_id: Payment provider transaction ID
+            transaction_code: Payment provider transaction code
             status: Payment status to update to
             provider: Payment provider name (default: VIET_QR)
             
@@ -324,12 +332,11 @@ class PaymentOperation:
             ValueError: If payment not found or invalid status
         """
         try:
-            # Find payment by provider transaction ID
             payment = (
                 db.query(Payment)
                 .filter(
                     and_(
-                        Payment.provider_transaction_id == transaction_id,
+                        Payment.transaction_code == transaction_code,
                         Payment.deleted_at.is_(None)
                     )
                 )
@@ -337,43 +344,26 @@ class PaymentOperation:
             )
             
             if not payment:
-                raise ValueError(f"Payment with transaction ID {transaction_id} not found")
-            
-            # Validate status
+                raise ValueError(f"Payment with transaction code {transaction_code} not found")
+
             try:
                 new_status = PaymentStatus(status)
             except ValueError:
                 raise ValueError(f"Invalid payment status: {status}")
-            
-            # Get the order for status updates
+
             order = payment.order
             
-            # Update payment status
-            old_status = payment.status
             payment.update_status(new_status)
             
-            # Update order status based on payment status
-            if new_status == PaymentStatus.COMPLETED:
-                order.update_status(OrderStatus.PAID)
-                logger.info(f"Payment completed for order {order.id} via {provider} transaction {transaction_id}")
+            if new_status == PaymentStatus.SUCCESS:
+                order.update_status(OrderStatus.PAYMENT_SUCCESS)
+                logger.info(f"Payment completed for order {order.id} via {provider} transaction {transaction_code}")
             elif new_status == PaymentStatus.FAILED:
                 order.update_status(OrderStatus.PAYMENT_FAILED)
-                logger.info(f"Payment failed for order {order.id} via {provider} transaction {transaction_id}")
-            elif new_status == PaymentStatus.REFUNDED:
-                order.update_status(OrderStatus.REFUNDED)
-                logger.info(f"Payment refunded for order {order.id} via {provider} transaction {transaction_id}")
-            
-            # Update payment details with sync information
-            if not payment.details:
-                payment.details = {}
-            
-            payment.details.update({
-                f"{provider.lower()}_status_update": {
-                    "status": status,
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                    "previous_status": old_status.value
-                }
-            })
+                logger.info(f"Payment failed for order {order.id} via {provider} transaction {transaction_code}")
+            elif new_status == PaymentStatus.CANCELLED:
+                order.update_status(OrderStatus.CANCELLED)
+                logger.info(f"Payment refunded for order {order.id} via {provider} transaction {transaction_code}")
             
             db.add(payment)
             db.add(order)
@@ -384,11 +374,98 @@ class PaymentOperation:
                 "payment_id": str(payment.id),
                 "order_id": str(order.id),
                 "status": payment.status.value,
-                "transaction_id": transaction_id,
+                "transaction_code": transaction_code,
                 "provider": provider
             }
             
         except Exception as e:
             db.rollback()
-            logger.error(f"Error updating payment status for transaction {transaction_id}: {str(e)}")
+            logger.error(f"Error updating payment status for transaction {transaction_code}: {str(e)}")
             raise e
+
+    @classmethod
+    @with_db_session_classmethod
+    def _generate_transaction_code(cls, db: Session) -> str:
+        """
+        Generate a unique 8-character transaction code.
+        
+        The code contains uppercase letters and digits, with at least one letter and one digit.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            Unique 8-character transaction code
+            
+        Raises:
+            RuntimeError: If unable to generate unique code after maximum attempts
+        """
+        max_attempts = 100
+        attempts = 0
+        
+        while attempts < max_attempts:
+            # Generate 8 characters with at least one letter and one digit
+            letters = string.ascii_uppercase
+            digits = string.digits
+            
+            # Ensure at least one letter and one digit
+            code = [
+                random.choice(letters),  # At least one letter
+                random.choice(digits)    # At least one digit
+            ]
+            
+            # Fill remaining 6 positions randomly
+            for _ in range(6):
+                code.append(random.choice(letters + digits))
+            
+            # Shuffle to randomize positions
+            random.shuffle(code)
+            transaction_code = ''.join(code)
+            
+            # Check if code is unique
+            existing_payment = (
+                db.query(Payment)
+                .filter(Payment.transaction_code == transaction_code)
+                .first()
+            )
+            
+            if not existing_payment:
+                return transaction_code
+            
+            attempts += 1
+        
+        raise RuntimeError(f"Unable to generate unique transaction code after {max_attempts} attempts")
+
+    @classmethod
+    @with_db_session_classmethod
+    def get_payment_by_transaction_code(cls, db: Session, transaction_code: str) -> Optional[Payment]:
+        """
+        Get payment transaction by transaction code.
+        
+        Args:
+            transaction_code: 8-character transaction code
+            
+        Returns:
+            Payment transaction instance or None if not found
+            
+        Raises:
+            ValueError: If payment transaction not found
+        """
+        # Normalize transaction code (uppercase, strip whitespace)
+        transaction_code = transaction_code.strip().upper()
+        
+        payment_transaction = (
+            db.query(Payment)
+            .filter(
+                and_(
+                    Payment.transaction_code == transaction_code,
+                    Payment.deleted_at.is_(None)
+                )
+            )
+            .first()
+        )
+        
+        if not payment_transaction:
+            raise ValueError(f"Payment transaction with transaction code {transaction_code} not found")
+        
+        return payment_transaction

@@ -31,6 +31,8 @@ class UpdateControllerRequest(BaseModel):
     name: str | None = None
     store_id: UUID | None = None
     total_relays: int | None = None
+    # TODO: Remove this field after testing
+    device_id: str | None = None
 
 
 class ListControllerQueryParams(Pagination):

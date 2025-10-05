@@ -74,11 +74,24 @@ class OrderOperation:
                     Machine.id == selection.machine_id
                 ).first()
                 
-                price = machine.base_price
-                
-                if selection.add_ons:
-                    add_ons_price = cls._calculate_add_ons_price(selection.add_ons)
-                    price += add_ons_price
+                # Calculate price based on machine type
+                if machine.machine_type == MachineType.WASHER:
+                    # For washer: base_price + addons
+                    price = machine.base_price
+                    if selection.add_ons:
+                        add_ons_price = cls._calculate_add_ons_price(selection.add_ons)
+                        price += add_ons_price
+                elif machine.machine_type == MachineType.DRYER:
+                    # For dryer: base_price * DRYING_DURATION_MINUTE * quantity
+                    price = machine.base_price
+                    if selection.add_ons:
+                        # Find DRYING_DURATION_MINUTE add-on
+                        drying_duration = cls._get_drying_duration_from_addons(selection.add_ons)
+                        if drying_duration > 0:
+                            price = machine.base_price * drying_duration
+                        else:
+                            # If no drying duration specified, use base price
+                            price = machine.base_price
                 
                 # Serialize add_ons to JSON string if it's a list
                 add_ons_json = None
@@ -451,6 +464,21 @@ class OrderOperation:
                 total += price * quantity
         
         return total
+
+    @classmethod
+    def _get_drying_duration_from_addons(cls, add_ons: List[Any]) -> int:
+        """Extract drying duration in minutes from add-ons."""
+        from app.models.order import AddOnType
+        
+        for add_on in add_ons:
+            if isinstance(add_on, dict) and 'type' in add_on and 'quantity' in add_on:
+                if add_on['type'] == AddOnType.DRYING_DURATION_MINUTE.value:
+                    return int(add_on['quantity'])
+            elif hasattr(add_on, 'type') and hasattr(add_on, 'quantity'):
+                if add_on.type == AddOnType.DRYING_DURATION_MINUTE:
+                    return int(add_on.quantity)
+        
+        return 0
 
     @classmethod
     @with_db_session_classmethod

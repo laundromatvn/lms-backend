@@ -35,8 +35,8 @@ class OrderDetailStatus(str, Enum):
     IN_PROGRESS = "IN_PROGRESS"
     FINISHED = "FINISHED"
     CANCELLED = "CANCELLED"
-    
-    
+
+
 class AddOnType(str, Enum):
     """Add-on type enum for validation"""
     HOT_WATER = "HOT_WATER"

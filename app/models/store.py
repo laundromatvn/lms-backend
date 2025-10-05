@@ -11,6 +11,7 @@ from sqlalchemy import (
     Float,
     func,
     event,
+    JSON,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import validates, relationship
@@ -47,6 +48,9 @@ class Store(Base):
     latitude = Column(Float, nullable=True)
     contact_phone_number = Column(String(20), nullable=False, index=True)
     tenant_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, index=True)
+
+    # Payment information
+    payment_methods = Column(JSON, nullable=True, default=list)
 
     # Relationships
     orders = relationship("Order", back_populates="store")
@@ -138,6 +142,41 @@ class Store(Base):
                 raise ValueError("Longitude must be between -180 and 180 degrees")
         return longitude
     
+    @validates('payment_methods')
+    def validate_payment_methods(self, key: str, payment_methods: Optional[list]) -> Optional[list]:
+        if payment_methods is None:
+            return []
+        
+        for method in payment_methods:
+            if not isinstance(method, dict):
+                raise ValueError("Each payment method must be a dictionary")
+            
+            if 'payment_method' not in method:
+                raise ValueError("Each payment method must have a 'payment_method' field")
+            
+            if 'details' not in method:
+                raise ValueError("Each payment method must have a 'details' field")
+            
+            if not isinstance(method['details'], dict):
+                raise ValueError("Payment method details must be a dictionary")
+            
+            # Validate QR payment method structure
+            if method['payment_method'] == 'QR':
+                required_fields = [
+                    'bank_code',
+                    'bank_name',
+                    'bank_account_number',
+                    'bank_account_name',
+                ]
+                for field in required_fields:
+                    if field not in method['details']:
+                        raise ValueError(f"QR payment method must have '{field}' in details")
+                    
+                    if not isinstance(method['details'][field], str):
+                        raise ValueError(f"QR payment method '{field}' must be a string")
+        
+        return payment_methods
+    
     @property
     def is_active(self) -> bool:
         return self.status == StoreStatus.ACTIVE and self.deleted_at is None
@@ -170,6 +209,7 @@ class Store(Base):
             'latitude': self.latitude,
             'contact_phone_number': self.contact_phone_number,
             'tenant_id': str(self.tenant_id),
+            'payment_methods': self.payment_methods or [],
         }
 
 

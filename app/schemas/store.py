@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -7,6 +7,18 @@ from pydantic import BaseModel
 from app.models.store import StoreStatus
 from app.schemas.machine import MachineSerializer
 from app.schemas.pagination import Pagination
+
+
+class PaymentMethodDetails(BaseModel):
+    bank_code: str
+    bank_name: str | None = None
+    bank_account_number: str
+    bank_account_name: str
+
+
+class PaymentMethod(BaseModel):
+    payment_method: str
+    details: PaymentMethodDetails
 
 
 class StoreSerializer(BaseModel):
@@ -24,6 +36,8 @@ class StoreSerializer(BaseModel):
     latitude: float | None = None
     contact_phone_number: str
     tenant_id: UUID
+    payment_details: Optional[Dict[str, Any]] = None
+    payment_methods: List[PaymentMethod] = []
     
     
 class ListStoreQueryParams(Pagination):
@@ -38,6 +52,7 @@ class AddStoreRequest(BaseModel):
     latitude: float | None = None
     contact_phone_number: str
     tenant_id: UUID
+    payment_methods: List[PaymentMethod] = []
 
 
 class UpdateStoreRequest(BaseModel):
@@ -47,6 +62,7 @@ class UpdateStoreRequest(BaseModel):
     latitude: float | None = None
     contact_phone_number: str | None = None
     tenant_id: UUID | None = None
+    payment_methods: List[PaymentMethod] | None = None
 
 
 class ClassifiedMachinesResponse(BaseModel):

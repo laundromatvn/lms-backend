@@ -18,6 +18,7 @@ RESPONSE_TOPIC = "lms/controllers/{device_id}/wait_admin_assign_store"
 class RegisterControllerSubcriber:
     def __init__(self, mqtt_client: mqtt.MQTTClient):
         self.mqtt_client = mqtt_client
+        self.class_name = self.__class__.__name__.lower()
         
     def listen(self):
         """Subscribe to the controller initialization topic pattern"""
@@ -31,7 +32,7 @@ class RegisterControllerSubcriber:
             payload = MessagePayload.model_validate_json(message.payload)
             self.handle_message(payload, message.topic)
         except Exception as e:
-            logger.error("controller_initialization_message_error", error=str(e), topic=message.topic)
+            logger.error(f"{self.class_name}_message_error", error=str(e), topic=message.topic)
             
     def handle_message(self, payload: MessagePayload, topic: str = TOPIC):
         """Handle incoming controller initialization messages"""
@@ -42,10 +43,10 @@ class RegisterControllerSubcriber:
                 payload = self.build_existing_controller_payload(controller)
             else:
                 payload = self.build_pending_controller_payload(payload.controller_id)
-            logger.info("controller_initialization_response_topic", response_topic=response_topic, controller=controller, payload=payload)
+            logger.info(f"{self.class_name}_response_topic", response_topic=response_topic, controller=controller, payload=payload)
             self.mqtt_client.publish(topic=response_topic, payload=payload)
         except Exception as e:
-            logger.error("controller_initialization_message_error", error=str(e), topic=topic)
+            logger.error(f"{self.class_name}_message_error", error=str(e), topic=topic)
             
     def build_existing_controller_payload(self, controller: Controller):
         """Build the existing controller response"""

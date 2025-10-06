@@ -14,6 +14,7 @@ class MachineAckSubscriber:
 
     def __init__(self, mqtt_client: mqtt.MQTTClient):
         self.mqtt_client = mqtt_client
+        self.class_name = self.__class__.__name__.lower()
         
     def listen(self):
         """Subscribe to the controller initialization topic pattern"""
@@ -26,7 +27,7 @@ class MachineAckSubscriber:
             payload = MessagePayload.model_validate_json(message.payload)
             self.handle_message(payload, message.topic)
         except Exception as e:
-            logger.error("controller_initialization_message_error", error=str(e), topic=message.topic)
+            logger.error(f"{self.class_name}_message_error", error=str(e), topic=message.topic)
             
     def handle_message(self, payload: MessagePayload, topic: str = TOPIC_PATTERN):
         """Handle incoming controller initialization messages"""
@@ -41,7 +42,7 @@ class MachineAckSubscriber:
             machine_relay_no = payload.payload.get("relay_id")
             
             logger.info(
-                "Processing machine ack message",
+                f"{self.class_name}_processing_message",
                 store_id=store_id,
                 controller_device_id=controller_device_id,
                 machine_relay_no=machine_relay_no,
@@ -56,7 +57,7 @@ class MachineAckSubscriber:
             if payload.event_type == MQTTEventTypeEnum.MACHINE_START_ACK.value:
                 MachineOperation.mark_as_in_progress(controller_device_id, machine_relay_no)
             else:
-                logger.warning("Unhandled event type", event_type=payload.event_type, topic=topic)
+                logger.warning(f"{self.class_name}_unhandled_event_type", event_type=payload.event_type, topic=topic)
 
         except Exception as e:
-            logger.error("machine_ack_message_error", error=str(e), topic=topic)
+            logger.error(f"{self.class_name}_message_error", error=str(e), topic=topic)

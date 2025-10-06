@@ -19,6 +19,7 @@ class MachineActionSubscriber:
 
     def __init__(self, mqtt_client: mqtt.MQTTClient):
         self.mqtt_client = mqtt_client
+        self.class_name = self.__class__.__name__.lower()
         
     def listen(self):
         """Subscribe to the controller initialization topic pattern"""
@@ -31,16 +32,16 @@ class MachineActionSubscriber:
             payload = MessagePayload.model_validate_json(message.payload)
             self.handle_message(payload, message.topic)
         except Exception as e:
-            logger.error("controller_initialization_message_error", error=str(e), topic=message.topic)
+            logger.error(f"{self.class_name}_message_error", error=str(e), topic=message.topic)
 
     def handle_message(self, payload: MessagePayload, topic: str = TOPIC_PATTERN):
         """Handle incoming controller initialization messages"""
         try:
             event_type = payload.event_type
             if event_type == MQTTEventTypeEnum.MACHINE_FINISH.value:
-                logger.info("Processing machine finish message", payload=payload)
+                logger.info(f"{self.class_name}_processing_message", payload=payload)
                 MachineOperation.finish(payload.controller_id, payload.payload.get("relay_id"))
             else:
-                logger.warning("Unhandled event type", event_type=event_type, topic=topic)
+                logger.warning(f"{self.class_name}_unhandled_event_type", event_type=event_type, topic=topic)
         except Exception as e:
-            logger.error("machine_ack_message_error", error=str(e), topic=topic)
+            logger.error(f"{self.class_name}_message_error", error=str(e), topic=topic)

@@ -77,7 +77,7 @@ def verify_vietqr_internal_user(token: str) -> Optional[Any]:
         )
 
         username = payload.get("username")
-        if username != settings.VIETQR_INTERNAL_USERNAME:
+        if username != settings.VIETQR_PARTNER_USERNAME:
             raise NoResultFound("Invalid token")
 
         return payload

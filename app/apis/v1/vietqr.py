@@ -56,11 +56,10 @@ async def generate_vietqr_token(
         )
 
 
-
 @router.post("/api/transaction_sync", response_model=VietQRTransactionSyncResponse)
 async def transaction_sync(
     request: VietQRTransactionSyncRequest,
-    user: User = Depends(get_vietqr_internal_user),
+    _: User = Depends(get_vietqr_internal_user),
 ):
     """
     Synchronize transaction with VietQR.
@@ -86,7 +85,7 @@ async def transaction_sync(
                 toastMessage="Transaction type must be 'D' (debit) or 'C' (credit)",
                 object=None
             )
-        
+
         # Validate amount
         if float(request.amount) <= 0:
             return VietQRTransactionSyncResponse(
@@ -95,13 +94,13 @@ async def transaction_sync(
                 toastMessage="Transaction amount must be greater than 0",
                 object=None
             )
-        
+
         sync_payment_transaction(
             content=request.content,
             status=PaymentStatus.SUCCESS,
             provider="VIET_QR"
         )
-        
+
         return VietQRTransactionSyncResponse(
             error=False,
             errorReason="",
@@ -110,7 +109,7 @@ async def transaction_sync(
                 "reftransactionid": request.transactionid
             }
         )
-        
+
     except Exception as e:
         logger.error(f"Error synchronizing transaction with VietQR: {str(e)}")
         return VietQRTransactionSyncResponse(

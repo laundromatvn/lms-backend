@@ -37,9 +37,9 @@ def verify_vietqr_partner_credentials(credentials: HTTPBasicCredentials = Depend
         raise HTTPException(
             status_code=401,
             detail="Invalid VietQR partner credentials",
-            headers={"WWW-Authenticate": "Basic"},
+            headers={"WWW-Authenticate": "1Basic"},
         )
-    
+
     return credentials
 
 

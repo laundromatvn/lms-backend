@@ -313,11 +313,11 @@ class OrderOperation:
         order.updated_by = updated_by
 
         if status == OrderStatus.IN_PROGRESS:
-            cls._start_machines(order.id)
+            cls._start_machines(updated_by, order.id)
         elif status == OrderStatus.FINISHED:
-            cls._finish_machines(order.id)
+            cls._finish_machines(updated_by, order.id)
         elif status == OrderStatus.CANCELLED:
-            cls._cancel_machines(order.id)
+            cls._cancel_machines(updated_by, order.id)
 
         db.add(order)
         db.commit()
@@ -563,7 +563,7 @@ class OrderOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def _start_machines(cls, db: Session, order_id: uuid.UUID) -> None:
+    def _start_machines(cls, db: Session, updated_by: Optional[uuid.UUID], order_id: uuid.UUID) -> None:
         """Start machines for an order."""
         order_details = (
             db.query(OrderDetail).filter(OrderDetail.order_id == order_id).all()
@@ -571,14 +571,19 @@ class OrderOperation:
 
         for order_detail in order_details:
             if order_detail.machine.status == MachineStatus.IDLE:
-                MachineOperation.start(db, order_detail.machine.id)
+                MachineOperation.start(
+                    user=updated_by,
+                    total_amount=order_detail.price,
+                    machine_id=order_detail.machine.id
+                )
                 order_detail.update_status(OrderDetailStatus.IN_PROGRESS)
                 db.add(order_detail)
+
         db.commit()
 
     @classmethod
     @with_db_session_classmethod
-    def _finish_machines(cls, db: Session, order_id: uuid.UUID) -> None:
+    def _finish_machines(cls, db: Session, updated_by: Optional[uuid.UUID], order_id: uuid.UUID) -> None:
         """Finish machines for an order."""
         order_details = (
             db.query(OrderDetail).filter(OrderDetail.order_id == order_id).all()
@@ -587,14 +592,14 @@ class OrderOperation:
         """Finish machines for an order."""
         for order_detail in order_details:
             if order_detail.machine.status == MachineStatus.BUSY:
-                MachineOperation.finish(db, order_detail.machine.id)
+                MachineOperation.finish(order_detail.machine.id)
                 order_detail.update_status(OrderDetailStatus.FINISHED)
                 db.add(order_detail)
         db.commit()
 
     @classmethod
     @with_db_session_classmethod
-    def _cancel_machines(cls, db: Session, order_id: uuid.UUID) -> None:
+    def _cancel_machines(cls, db: Session, updated_by: Optional[uuid.UUID], order_id: uuid.UUID) -> None:
         """Cancel machines for an order."""
         order_details = (
             db.query(OrderDetail).filter(OrderDetail.order_id == order_id).all()
@@ -603,7 +608,7 @@ class OrderOperation:
         """Cancel machines for an order."""
         for order_detail in order_details:
             if order_detail.machine.status == MachineStatus.BUSY:
-                MachineOperation.finish(db, order_detail.machine.id)
+                MachineOperation.finish(order_detail.machine.id)
                 order_detail.update_status(OrderDetailStatus.CANCELLED)
                 db.add(order_detail)
         db.commit()

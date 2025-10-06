@@ -9,8 +9,10 @@ from app.schemas.machine import (
     AddMachineRequest,
     UpdateMachineRequest,
     ListMachineQueryParams,
+    StartMachineRequest,
 )
 from app.schemas.pagination import PaginatedResponse
+from app.utils.coin import calculate_pulse_value
 from app.utils.pagination import get_total_pages
 
 router = APIRouter()
@@ -126,11 +128,16 @@ async def delete_machine(
 @router.post("/{machine_id}/start")
 async def start_machine_operation(
     machine_id: UUID,
+    request: StartMachineRequest,
     current_user: User = Depends(get_current_user),
 ):
     """Start machine operation (set status to BUSY)"""
     try:
-        MachineOperation.start(current_user, machine_id)
+        MachineOperation.start(
+            user=current_user,
+            machine_id=machine_id,
+            total_amount=request.total_amount,
+        )
         return {"message": "Machine operation started"}
     except ValueError as e:
         raise HTTPException(

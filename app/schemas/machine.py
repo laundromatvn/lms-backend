@@ -24,7 +24,7 @@ class MachineSerializer(BaseModel):
     store_id: UUID | None = None
     store_name: str | None = None
     pulse_duration: int
-    pulse_value: int
+    coin_value: int
     add_ons_options: List[Dict[str, Any]]
 
 class AddMachineRequest(BaseModel):
@@ -35,7 +35,7 @@ class AddMachineRequest(BaseModel):
     details: Dict[str, Any] = {}
     base_price: Decimal = Field(default=Decimal('0.00'), ge=0)
     pulse_duration: int = Field(default=1000, ge=1)
-    pulse_value: int = Field(default=10, ge=1)
+    coin_value: int = Field(default=10, ge=1)
     add_ons_options: List[Dict[str, Any]] = Field(default_factory=list)
     
 
@@ -46,7 +46,7 @@ class UpdateMachineRequest(BaseModel):
     base_price: Decimal | None = Field(None, ge=0)
     status: MachineStatus | None = None
     pulse_duration: int | None = None
-    pulse_value: int | None = None
+    coin_value: int | None = None
     add_ons_options: List[Dict[str, Any]] | None = None
 
 
@@ -55,3 +55,7 @@ class ListMachineQueryParams(Pagination):
     store_id: UUID | None = None
     machine_type: MachineType | None = None
     status: MachineStatus | None = None
+
+
+class StartMachineRequest(BaseModel):
+    total_amount: Decimal | None = None

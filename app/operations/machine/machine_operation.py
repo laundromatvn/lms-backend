@@ -17,6 +17,7 @@ from app.schemas.machine import (
     UpdateMachineRequest,
     ListMachineQueryParams,
 )
+from app.utils.coin import calculate_pulse_value
 
 
 class MachineOperation:
@@ -46,7 +47,7 @@ class MachineOperation:
     @classmethod
     @with_db_session_classmethod
     def list(
-        cls, 
+        cls,
         db: Session,
         query_params: ListMachineQueryParams,
     ) -> tuple[int, List[Machine]]:
@@ -134,7 +135,7 @@ class MachineOperation:
             details=request.details,
             base_price=request.base_price,
             pulse_duration=request.pulse_duration,
-            pulse_value=request.pulse_value,
+            coin_value=request.coin_value,
             add_ons_options=request.add_ons_options,
         )
         db.add(machine)
@@ -233,7 +234,7 @@ class MachineOperation:
                 details={},
                 base_price=Decimal("0.00"),
                 pulse_duration=1000,
-                pulse_value=10,
+                coin_value=10,
                 add_ons_options=[],
             )
             db.add(machine)
@@ -262,14 +263,24 @@ class MachineOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def start(cls, db: Session, user: User, machine_id: UUID) -> Machine:
+    def start(
+        cls,
+        db: Session,
+        user: User,
+        machine_id: UUID,
+        total_amount: Decimal = None,
+        pulse_value: int = 10,
+    ) -> Machine:
         machine = db.query(Machine).filter_by(id=machine_id).first()
         if not machine:
             raise ValueError("Machine not found")
-        
+
         machine.start()
         db.commit()
         db.refresh(machine)
+        
+        if total_amount:
+            pulse_value = calculate_pulse_value(total_amount, machine.coin_value)
 
         topic = cls.MACHINE_ACTION_TOPIC.format(
             store_id=str(machine.controller.store_id),
@@ -280,7 +291,7 @@ class MachineOperation:
             "machine_type": machine.machine_type.value,
             "relay_id": machine.relay_no,
             "pulse_duration": machine.pulse_duration,
-            "value": machine.pulse_value,
+            "value": pulse_value,
         }
 
         payload = {
@@ -323,7 +334,7 @@ class MachineOperation:
         machine.mark_as_in_progress()
         db.commit()
         db.refresh(machine)
-        
+
         logger.info("Marked machine as in progress", machine=machine)
 
         return machine

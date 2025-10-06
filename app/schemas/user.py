@@ -17,3 +17,22 @@ class UserSerializer(BaseModel):
     phone: str | None = None
     role: UserRole
     status: UserStatus
+    
+    
+class CreateUserRequest(BaseModel):
+    email: str | None = None
+    phone: str | None = None
+    role: UserRole
+    status: UserStatus
+    password: str
+
+
+class UpdateUserRequest(BaseModel):
+    email: str | None = None
+    phone: str | None = None
+    role: UserRole | None = None
+    status: UserStatus | None = None
+
+
+class ResetPasswordRequest(BaseModel):
+    password: str

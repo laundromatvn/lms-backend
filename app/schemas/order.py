@@ -88,6 +88,10 @@ class UpdateOrderDetailStatusRequest(BaseModel):
         return v
 
 
+class ListOrderDetailQueryParams(Pagination):
+    order_id: Optional[UUID] = None
+
+
 class OrderDetailResponse(BaseModel):
     """Schema for order detail response"""
     id: UUID

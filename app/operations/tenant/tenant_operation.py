@@ -121,11 +121,19 @@ class TenantOperation:
         return tenant
 
     @classmethod
-    def _have_permission(cls, current_user: User, tenant: Tenant) -> bool:
+    @with_db_session_classmethod
+    def _have_permission(cls, db: Session, current_user: User, tenant: Tenant) -> bool:
         if current_user.is_admin:
             return True
 
-        if current_user.id == tenant.created_by:
+        is_tenant_member = (
+            db.query(TenantMember)
+            .filter(TenantMember.user_id == current_user.id)
+            .filter(TenantMember.tenant_id == tenant.id)
+            .filter(TenantMember.is_enabled == True)
+            .first()
+        )
+        if is_tenant_member:
             return True
 
         return False

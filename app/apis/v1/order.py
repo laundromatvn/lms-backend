@@ -17,16 +17,41 @@ from app.models.payment import PaymentStatus, PaymentProvider
 from app.models.payment import Payment
 from app.models.user import User
 from app.operations.order import OrderOperation
+from app.operations.order.order_detail_operation import OrderDetailOperation
 from app.schemas.order import (
     CreateOrderRequest,
     OrderResponse,
     ListOrderQueryParams,
+    OrderDetailResponse,
+    ListOrderDetailQueryParams,
 )
 from app.schemas.pagination import PaginatedResponse
 from app.tasks.payment.payment_tasks import sync_payment_transaction
 from app.utils.pagination import get_total_pages
 
 router = APIRouter()
+
+
+@router.get("/details", response_model=PaginatedResponse[OrderDetailResponse])
+async def list_order_details(
+    query_params: ListOrderDetailQueryParams = Depends(),
+    _: User = Depends(get_current_user)
+):
+    """
+    Get order details.
+    """
+    try:
+        total, order_details = OrderDetailOperation.list(query_params)
+        return {
+            "page": query_params.page,
+            "page_size": query_params.page_size,
+            "total": total,
+            "total_pages": get_total_pages(total, query_params.page_size),
+            "data": order_details,
+        }
+    except Exception as e:
+        logger.error(f"Error getting order details: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("", response_model=OrderResponse, status_code=201)

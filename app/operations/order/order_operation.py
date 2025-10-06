@@ -158,7 +158,11 @@ class OrderOperation:
             Order instance or None if not found
         """
         order = (
-            db.query(Order)
+            db.query(
+                *Order.__table__.columns,
+                Store.name.label("store_name"),
+            )
+            .join(Store, Order.store_id == Store.id)
             .filter(and_(Order.id == order_id, Order.deleted_at.is_(None)))
             .first()
         )
@@ -301,12 +305,12 @@ class OrderOperation:
         Raises:
             ValueError: If order not found or invalid status transition
         """
-        order = cls.get_order_by_id(order_id)
+        order = db.query(Order).filter(Order.id == order_id).first()
         if not order:
             raise ValueError(f"Order with ID {order_id} not found")
 
-        # Update status with validation
-        order.update_status(status, updated_by)
+        order.status = status
+        order.updated_by = updated_by
 
         if status == OrderStatus.IN_PROGRESS:
             cls._start_machines(order.id)

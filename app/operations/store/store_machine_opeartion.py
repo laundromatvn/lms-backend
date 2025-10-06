@@ -3,7 +3,7 @@ from uuid import UUID
 from typing import List
 
 from app.libs.database import with_db_session_classmethod
-from app.models.machine import Machine, MachineType
+from app.models.machine import Machine, MachineType, MachineStatus
 from app.models.controller import Controller
 
 
@@ -17,7 +17,14 @@ class StoreMachineOperation:
         machines = (
             db.query(Machine)
             .join(Controller, Machine.controller_id == Controller.id)
-            .filter(Controller.store_id == store_id)
+            .filter(
+                Controller.store_id == store_id,
+                Machine.status.in_([
+                    MachineStatus.IDLE,
+                    MachineStatus.BUSY,
+                    MachineStatus.STARTING,
+                ]),
+            )
             .order_by(Machine.relay_no.asc())
             .all()
         )

@@ -56,7 +56,7 @@ async def generate_vietqr_token(
         )
 
 
-@router.post("/api/transaction_sync", response_model=VietQRTransactionSyncResponse)
+@router.post("/api/transaction-sync", response_model=VietQRTransactionSyncResponse)
 async def transaction_sync(
     request: VietQRTransactionSyncRequest,
     _: User = Depends(get_vietqr_internal_user),

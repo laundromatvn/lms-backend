@@ -14,11 +14,11 @@ class VietQRTokenGenerateRequest(BaseModel):
 
 class VietQRTransactionSyncRequest(BaseModel):
     bankaccount: str
-    amount: str
+    amount: str | int
     transType: str
     content: str
     transactionid: str
-    transactiontime: str
+    transactiontime: str | int
     referencenumber: str
     orderId: str
     terminalCode: str | None = None

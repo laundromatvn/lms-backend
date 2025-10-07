@@ -136,8 +136,11 @@ async def get_sign_in_session(session_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/sso/generate-token-by-one-time-access-token", response_model=RefreshTokenResponse)
-async def generate_token_by_one_time_access_token(request: GenerateTokenByOneTimeAccessTokenRequest):
+@router.post("/sso/sign-in-by-one-time-access-token", response_model=RefreshTokenResponse)
+async def sign_in_by_one_time_access_token(request: GenerateTokenByOneTimeAccessTokenRequest):
+    """
+    Sign in by one time access token.
+    """
     try:
         access_token, refresh_token = await OneTimeAccessTokenOperation.generate_tokens(request.one_time_access_token)
         return {
@@ -145,8 +148,8 @@ async def generate_token_by_one_time_access_token(request: GenerateTokenByOneTim
             "refresh_token": refresh_token,
         }
     except ValueError as e:
-        logger.error("Generate token by one time access token failed", error=str(e))
+        logger.error("Sign in by one time access token failed", error=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error("Generate token by one time access token failed", error=str(e))
+        logger.error("Sign in by one time access token failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))

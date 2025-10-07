@@ -14,8 +14,9 @@ class Settings(BaseSettings):
     TEMPLATE_DIR: str = os.path.join(ROOT_DIR, "templates")
     
     APP_NAME: str = os.getenv("APP_NAME", "laundry-backend")
+    APP_ENV: str = os.getenv("APP_ENV", "development")
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
-    
+
     ALLOW_HOSTS: List[str] = [
         s.strip() for s in os.getenv("ALLOW_HOSTS", "").split(",") if s.strip()]
     CORS_ALLOW_ORIGINS: List[str] = [

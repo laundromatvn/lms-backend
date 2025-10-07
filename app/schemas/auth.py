@@ -45,10 +45,6 @@ class VerifyOTPRequest(BaseModel):
     otp: str
 
 
-class VerifyOTPResponse(BaseModel):
-    message: str
-
-
 class LMSProfileResponse(BaseModel):
     user: UserSerializer
     tenant: TenantSerializer

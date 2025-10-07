@@ -65,16 +65,16 @@ async def refresh_token(request: RefreshTokenRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/generate-email-otp", response_model=SendOTPResponse)
-async def send_otp(request: SendOTPRequest):
+@router.post("/send-otp", response_model=SendOTPResponse)
+async def send_otp(current_user: User = Depends(get_current_user)):
     try:
-        await SendOTPOperation.execute(request.email)
+        await SendOTPOperation.execute(current_user.email)
         return {
             "message": "OTP sent successfully",
-            "email": request.email,
+            "email": current_user.email,
             "expires_in_minutes": 10,
         }
-        
+
     except ValueError as e:
         logger.error("Send OTP validation failed", error=str(e))
         raise HTTPException(status_code=400, detail=str(e))

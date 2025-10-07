@@ -1,6 +1,5 @@
 import os
 from typing import List, Optional
-import sys
 
 from pydantic_settings import BaseSettings
 
@@ -80,8 +79,12 @@ class Settings(BaseSettings):
     VIETQR_PARTNER_USERNAME: str = os.getenv("VIETQR_PARTNER_USERNAME", "vietqr-partner-username")
     VIETQR_PARTNER_PASSWORD: str = os.getenv("VIETQR_PARTNER_PASSWORD", "vietqr-partner-password")
     VIETQR_TOKEN_EXPIRE_SECONDS: int = int(os.getenv("VIETQR_TOKEN_EXPIRE_SECONDS", 300))
-    
-    # Mailer
+
+    # Email
+    EMAIL_SENDER: str = os.getenv("EMAIL_SENDER", "mailer-sender")
+    EMAIL_SENDER_NAME: str = os.getenv("EMAIL_SENDER_NAME", "mailer-sender-name")
+
+    # SMTP
     SMTP_SERVER: str = os.getenv("SMTP_SERVER", "smtp.gmail.com")
     SMTP_PORT: int = os.getenv("SMTP_PORT", 587)
     SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "mailer-username")

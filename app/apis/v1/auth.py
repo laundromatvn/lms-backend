@@ -136,6 +136,15 @@ async def get_sign_in_session(session_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/sso/session/{session_id}/proceed", response_model=AuthSession)
+async def proceed_sign_in_session(session_id: str):
+    try:
+        return await AuthSessionOperation.mark_as_in_progress(session_id)
+    except Exception as e:
+        logger.error("Proceed SSO sign in session failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/sso/sign-in-by-one-time-access-token", response_model=RefreshTokenResponse)
 async def sign_in_by_one_time_access_token(request: GenerateTokenByOneTimeAccessTokenRequest):
     """

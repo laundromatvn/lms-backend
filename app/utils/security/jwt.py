@@ -49,6 +49,7 @@ def create_refresh_token(
     )
     return encoded_jwt 
 
+
 @with_db_session
 def verify_token(db: Session, token: str) -> Optional[User]:
     try:

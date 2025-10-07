@@ -1,9 +1,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import NoResultFound
 
+from app.enums.auth_session import AuthSessionStatusEnum
 from app.libs.database import with_db_session_classmethod
 from app.models.tenant_member import TenantMember
 from app.models.user import User, UserRole
+from app.operations.auth.auth_session_operation import AuthSessionOperation
 from app.utils.security import jwt
 from app.schemas.auth import SignInRequest
 
@@ -12,7 +14,9 @@ class SignInOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def execute(cls, db: Session, request: SignInRequest) -> tuple[str, str]:
+    async def execute(cls, db: Session, request: SignInRequest) -> tuple[str, str]:
+        await AuthSessionOperation.mark_as_in_progress(request.session_id)
+        
         if request.email:
             user = db.query(User).filter(User.email == request.email).first()
         elif request.phone:
@@ -29,6 +33,8 @@ class SignInOperation:
         payload = cls.get_payload(user)
         access_token = jwt.create_access_token(payload)
         refresh_token = jwt.create_refresh_token(payload)
+        
+        await AuthSessionOperation.mark_as_success(request.session_id, user)
         
         return access_token, refresh_token
     

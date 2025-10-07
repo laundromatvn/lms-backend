@@ -15,6 +15,7 @@ class SignInRequest(BaseModel):
     email: str | None = None
     phone: str | None = None
     password: str
+    session_id: str | None = None
 
 
 class SignInResponse(BaseModel):
@@ -48,3 +49,7 @@ class VerifyOTPRequest(BaseModel):
 class LMSProfileResponse(BaseModel):
     user: UserSerializer
     tenant: TenantSerializer
+
+
+class GenerateTokenByOneTimeAccessTokenRequest(BaseModel):
+    one_time_access_token: str

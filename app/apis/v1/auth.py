@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from app.apis.deps import get_current_user
 from app.core.logging import logger
 from app.models.user import User
+from app.operations.auth.auth_session_operation import AuthSessionOperation
 from app.schemas.auth import (
     RegisterLMSUserRequest,
     SignInRequest,
@@ -13,10 +14,13 @@ from app.schemas.auth import (
     SendOTPResponse,
     VerifyOTPRequest,
     LMSProfileResponse,
+    GenerateTokenByOneTimeAccessTokenRequest,
 )
+from app.schemas.auth_session import AuthSession
 from app.operations.auth.register_lms_user_operation import RegisterLMSUserOperation
 from app.operations.auth.sign_in_operation import SignInOperation
 from app.operations.auth.refresh_token_operation import RefreshTokenOperation
+from app.operations.auth.one_time_access_token_operation import OneTimeAccessTokenOperation
 from app.operations.tenant.tenant_operation import TenantOperation
 from app.operations.auth.send_otp_operation import SendOTPOperation
 from app.operations.auth.verify_otp_operation import VerifyOTPOperation
@@ -41,7 +45,7 @@ async def register(request: RegisterLMSUserRequest):
 @router.post("/sign-in", response_model=SignInResponse)
 async def sign_in(request: SignInRequest):
     try:
-        access_token, refresh_token = SignInOperation.execute(request)
+        access_token, refresh_token = await SignInOperation.execute(request)
         return SignInResponse(
             access_token=access_token,
             refresh_token=refresh_token,
@@ -111,4 +115,38 @@ def get_lms_profile(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         logger.error("Get LMS profile failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sso/generate-sign-in-session", response_model=AuthSession)
+async def generate_sign_in_session():
+    try:
+        return await AuthSessionOperation.create()
+    except Exception as e:
+        logger.error("Generate SSO sign in session failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/sso/session/{session_id}", response_model=AuthSession)
+async def get_sign_in_session(session_id: str):
+    try:
+        return await AuthSessionOperation.get(session_id)
+    except Exception as e:
+        logger.error("Get SSO sign in session failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sso/generate-token-by-one-time-access-token", response_model=RefreshTokenResponse)
+async def generate_token_by_one_time_access_token(request: GenerateTokenByOneTimeAccessTokenRequest):
+    try:
+        access_token, refresh_token = await OneTimeAccessTokenOperation.generate_tokens(request.one_time_access_token)
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
+    except ValueError as e:
+        logger.error("Generate token by one time access token failed", error=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Generate token by one time access token failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))

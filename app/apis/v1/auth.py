@@ -10,20 +10,24 @@ from app.schemas.auth import (
     SignInResponse,
     RefreshTokenRequest,
     RefreshTokenResponse,
+    SendOTPRequest,
+    SendOTPResponse,
     VerifyOTPRequest,
+    VerifyOTPResponse,
     LMSProfileResponse,
 )
 from app.operations.auth.register_lms_user_operation import RegisterLMSUserOperation
 from app.operations.auth.sign_in_operation import SignInOperation
 from app.operations.auth.refresh_token_operation import RefreshTokenOperation
 from app.operations.tenant.tenant_operation import TenantOperation
+from app.operations.auth.send_otp_operation import SendOTPOperation
 
 
 router = APIRouter()
 
 
 @router.post("/lms/register")
-def register(request: RegisterLMSUserRequest):
+async def register(request: RegisterLMSUserRequest):
     try:
         user = RegisterLMSUserOperation.execute(request)
         return user.to_dict()
@@ -36,7 +40,7 @@ def register(request: RegisterLMSUserRequest):
 
 
 @router.post("/sign-in", response_model=SignInResponse)
-def sign_in(request: SignInRequest):
+async def sign_in(request: SignInRequest):
     try:
         access_token, refresh_token = SignInOperation.execute(request)
         return SignInResponse(
@@ -49,7 +53,7 @@ def sign_in(request: SignInRequest):
 
 
 @router.post("/refresh-token", response_model=RefreshTokenResponse)
-def refresh_token(request: RefreshTokenRequest):
+async def refresh_token(request: RefreshTokenRequest):
     try:
         access_token, refresh_token = RefreshTokenOperation.execute(request)
         return RefreshTokenResponse(
@@ -61,22 +65,35 @@ def refresh_token(request: RefreshTokenRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/generate-email-otp")
-def generate_email_otp(current_user: User = Depends(get_current_user)):
-    logger.info("Generating email OTP", email=current_user.email)
-    
-    return {
-        "message": "OTP generated successfully",
-    }    
+@router.post("/generate-email-otp", response_model=SendOTPResponse)
+async def send_otp(request: SendOTPRequest):
+    try:
+        await SendOTPOperation.execute(request.email)
+        return {
+            "message": "OTP sent successfully",
+            "email": request.email,
+            "expires_in_minutes": 10,
+        }
+        
+    except ValueError as e:
+        logger.error("Send OTP validation failed", error=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Send OTP failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/verify-otp")
-def verify_otp(request: VerifyOTPRequest, current_user: User = Depends(get_current_user)):
-    logger.info("Verifying OTP", email=current_user.email, otp=request.otp)
-    
-    return {
-        "message": "OTP verified successfully",
-    }
+@router.post("/verify-otp", response_model=VerifyOTPResponse)
+async def verify_otp(request: VerifyOTPRequest):
+    try:
+        return {
+            "message": "OTP verified successfully",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Verify OTP failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/lms-profile", response_model=LMSProfileResponse)

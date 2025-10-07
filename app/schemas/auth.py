@@ -31,8 +31,22 @@ class RefreshTokenResponse(BaseModel):
     refresh_token: str
 
 
+class SendOTPRequest(BaseModel):
+    email: str
+
+
+class SendOTPResponse(BaseModel):
+    message: str
+    email: str
+    expires_in_minutes: int
+
+
 class VerifyOTPRequest(BaseModel):
     otp: str
+
+
+class VerifyOTPResponse(BaseModel):
+    message: str
 
 
 class LMSProfileResponse(BaseModel):

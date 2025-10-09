@@ -44,6 +44,7 @@ class SendOTPResponse(BaseModel):
 
 class VerifyOTPRequest(BaseModel):
     otp: str
+    session_id: str | None = None
 
 
 class LMSProfileResponse(BaseModel):

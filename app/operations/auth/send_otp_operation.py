@@ -43,28 +43,6 @@ class SendOTPOperation:
 
     @classmethod
     def _render_template(cls, otp: str) -> str:
-        """
-        Render the template with the OTP code and expiry minutes.
-        For example:
-        {
-            "otp_code": "123456",
-            "expiry_minutes": 10,
-        }
-        
-        Template:
-        <div class="otp-container">
-            <div class="otp-label">Your Verification Code</div>
-            <div class="otp-code">{{ otp_code }}</div>
-            <div class="otp-expiry">Expires in {{ expiry_minutes }} minutes</div>
-        </div>
-        
-        Return:
-        <div class="otp-container">
-            <div class="otp-label">Your Verification Code</div>
-            <div class="otp-code">123456</div>
-            <div class="otp-expiry">Expires in 10 minutes</div>
-        </div>
-        """
         template_path = cls.TEMPLATE_PATH
 
         with open(template_path, "r", encoding="utf-8") as file:

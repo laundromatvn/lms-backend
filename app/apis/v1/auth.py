@@ -45,6 +45,7 @@ async def register(request: RegisterLMSUserRequest):
 @router.post("/sign-in", response_model=SignInResponse)
 async def sign_in(request: SignInRequest):
     try:
+        await AuthSessionOperation.mark_as_in_progress(request.session_id)
         access_token, refresh_token = await SignInOperation.execute(request)
         return SignInResponse(
             access_token=access_token,
@@ -87,9 +88,13 @@ async def send_otp(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/verify-otp")
-async def verify_otp(request: VerifyOTPRequest, current_user: User = Depends(get_current_user)):
+async def verify_otp(
+    request: VerifyOTPRequest,
+    current_user: User = Depends(get_current_user),
+):
     try:
         await VerifyOTPOperation.execute(current_user, request.otp)
+        await AuthSessionOperation.mark_as_success(current_user, request.session_id)
         return {
             "message": "OTP verified successfully",
         }

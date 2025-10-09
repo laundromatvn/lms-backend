@@ -69,7 +69,7 @@ class AuthSessionOperation:
         return cls._to_session(cached_data)
     
     @classmethod
-    async def mark_as_success(cls, session_id: str, user: User) -> None:
+    async def mark_as_success(cls, user: User, session_id: str) -> None:
         cached_key = cls.CACHED_KEY_TEMPLATE.format(session_id=session_id)
         cached_data = cache_manager.get(cached_key)
         if not cached_data:

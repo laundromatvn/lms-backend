@@ -1,6 +1,8 @@
+from datetime import timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import NoResultFound
 
+from app.core.config import settings
 from app.libs.database import with_db_session_classmethod
 from app.models.tenant_member import TenantMember
 from app.models.user import User, UserRole
@@ -27,10 +29,16 @@ class SignInOperation:
             raise NoResultFound("Invalid password")
 
         payload = cls.get_payload(user)
-        access_token = jwt.create_access_token(payload)
-        refresh_token = jwt.create_refresh_token(payload)
+        temporary_access_token = jwt.create_access_token(
+            payload,
+            expires_delta=timedelta(seconds=settings.JWT_TEMPORARY_ACCESS_TOKEN_EXPIRE_SECONDS)
+        )
+        temp_access_token_payload = jwt.create_refresh_token(
+            payload,
+            expires_delta=timedelta(seconds=settings.JWT_REFRESH_TOKEN_EXPIRE_SECONDS)
+        )
 
-        return access_token, refresh_token
+        return temporary_access_token, temp_access_token_payload
     
     @classmethod
     @with_db_session_classmethod

@@ -36,7 +36,6 @@ class MachineMetricSubscriber:
         except Exception as e:
             logger.error(f"{self.class_name}_message_error", error=str(e), topic=topic)
 
-
     def _handle_machine_state(self, payload: MessagePayload, topic: str = TOPIC_PATTERN):
         try:
             machines = payload.payload.get("machines")

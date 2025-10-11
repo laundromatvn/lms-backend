@@ -213,7 +213,7 @@ class PaymentOperation:
         # Create QR generation request
         qr_request = GenerateQRCodeRequest(
             amount=str(int(payment.total_amount)),
-            content=str(order.id),
+            content=str(payment.transaction_code),
             orderId=str(order.id),
             terminalCode=str(order.store_id),
             bankCode=bank_code,

@@ -8,7 +8,7 @@ from app.core.logging import logger
 from app.enums.mqtt import MQTTEventTypeEnum
 from app.libs.database import with_db_session_classmethod
 from app.libs.mqtt import mqtt_client
-from app.models.machine import Machine, MachineType
+from app.models.machine import Machine, MachineType, MachineStatus
 from app.models.controller import Controller
 from app.models.store import Store
 from app.models.user import User
@@ -360,6 +360,35 @@ class MachineOperation:
             raise ValueError("Machine not found")
 
         machine.finish_operation()
+        db.commit()
+        db.refresh(machine)
+
+        return machine
+
+
+    @classmethod
+    @with_db_session_classmethod
+    def update_status(
+        cls,
+        db: Session,
+        controller_device_id: str,
+        machine_relay_no: int,
+        status: MachineStatus,
+    ) -> Machine:
+        logger.info("Updating machine status", controller_device_id=controller_device_id, machine_relay_no=machine_relay_no, status=status)
+        machine = (
+            db.query(Machine)
+            .join(Controller, Machine.controller_id == Controller.id)
+            .filter(
+                Controller.device_id == controller_device_id,
+                Machine.relay_no == machine_relay_no,
+            )
+            .first()
+        )
+        if not machine:
+            raise ValueError("Machine not found")
+
+        machine.status = status.upper()
         db.commit()
         db.refresh(machine)
 

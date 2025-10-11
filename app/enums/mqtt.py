@@ -13,3 +13,4 @@ class MQTTEventTypeEnum(str, Enum):
     MACHINE_START_ACK = "start_ack"
     MACHINE_FINISH = "finish"
     MACHINE_FINISH_ACK = "finish_ack"
+    MACHINE_STATE = "machine_state"

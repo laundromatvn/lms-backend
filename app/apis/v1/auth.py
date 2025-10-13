@@ -24,6 +24,7 @@ from app.operations.auth.one_time_access_token_operation import OneTimeAccessTok
 from app.operations.tenant.tenant_operation import TenantOperation
 from app.operations.auth.send_otp_operation import SendOTPOperation
 from app.operations.auth.verify_otp_operation import VerifyOTPOperation
+from app.tasks.auth.send_otp_task import send_otp_task
 
 
 router = APIRouter()
@@ -72,7 +73,7 @@ async def refresh_token(request: RefreshTokenRequest):
 @router.post("/send-otp", response_model=SendOTPResponse)
 async def send_otp(current_user: User = Depends(get_current_user)):
     try:
-        await SendOTPOperation.execute(current_user.email)
+        send_otp_task.apply_async(args=[current_user.email])
         return {
             "message": "OTP sent successfully",
             "email": current_user.email,

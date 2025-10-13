@@ -20,6 +20,7 @@ class SignInRequest(BaseModel):
 
 class SignInResponse(BaseModel):
     access_token: str
+    refresh_token: str
 
 
 class RefreshTokenRequest(BaseModel):

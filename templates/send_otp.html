@@ -276,8 +276,6 @@
             <div class="message">
                 You have requested a One-Time Password (OTP) for your account verification. 
                 Please use the following code to complete your verification process:
-                <br><br>
-                <strong>💡 Tip:</strong> On mobile devices, you can tap the code below to auto-fill it in your app!
             </div>
 
             <!-- OTP Code Container -->
@@ -304,6 +302,10 @@
                        pattern="[0-9]*"
                        data-otp-code="{{ otp_code }}"
                        readonly>
+            </div>
+
+            <div class="message">
+                <strong>💡 Tip:</strong> On mobile devices, you can tap the code below to auto-fill it in your app!
             </div>
 
             <!-- Security Notice -->

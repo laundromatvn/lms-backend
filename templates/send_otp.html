@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OTP Verification</title>
+    
+    <!-- Auto-fill meta tags for mobile devices -->
+    <meta name="format-detection" content="telephone=no">
+    <meta name="x-apple-disable-message-reformatting">
     <style>
         /* Reset styles */
         body, table, td, p, a, li, blockquote {
@@ -111,6 +115,77 @@
             font-weight: 500;
         }
 
+        .copy-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .copy-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .copy-button:active {
+            transform: translateY(0);
+        }
+
+        .copy-button.copied {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .copy-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* Mobile auto-fill optimizations */
+        .otp-container {
+            position: relative;
+        }
+
+        /* Ensure hidden input doesn't affect layout */
+        .otp-container input[type="text"] {
+            position: absolute !important;
+            left: -9999px !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            width: 1px !important;
+            height: 1px !important;
+            overflow: hidden !important;
+        }
+
+        /* Mobile-specific touch optimizations */
+        @media only screen and (max-width: 600px) {
+            .copy-button {
+                padding: 14px 28px;
+                font-size: 16px;
+                min-height: 48px; /* iOS recommended touch target */
+            }
+            
+            .otp-code {
+                font-size: 32px;
+                letter-spacing: 6px;
+                padding: 10px;
+                background-color: rgba(102, 126, 234, 0.1);
+                border-radius: 8px;
+                margin: 15px 0;
+            }
+        }
+
         .security-notice {
             background-color: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -201,13 +276,34 @@
             <div class="message">
                 You have requested a One-Time Password (OTP) for your account verification. 
                 Please use the following code to complete your verification process:
+                <br><br>
+                <strong>💡 Tip:</strong> On mobile devices, you can tap the code below to auto-fill it in your app!
             </div>
 
             <!-- OTP Code Container -->
             <div class="otp-container">
                 <div class="otp-label">Your Verification Code</div>
-                <div class="otp-code">{{ otp_code }}</div>
+                <div class="otp-code" id="otp-code" 
+                     data-otp-code="{{ otp_code }}"
+                     data-otp-length="{{ otp_code|length }}"
+                     data-otp-type="verification">{{ otp_code }}</div>
                 <div class="otp-expiry">Expires in {{ expiry_minutes }} minutes</div>
+                <button class="copy-button" onclick="copyOTP()" id="copy-btn">
+                    <svg class="copy-icon" viewBox="0 0 24 24">
+                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                    Copy Code
+                </button>
+                
+                <!-- Hidden input for mobile auto-fill detection -->
+                <input type="text" 
+                       value="{{ otp_code }}" 
+                       style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;"
+                       autocomplete="one-time-code"
+                       inputmode="numeric"
+                       pattern="[0-9]*"
+                       data-otp-code="{{ otp_code }}"
+                       readonly>
             </div>
 
             <!-- Security Notice -->
@@ -235,5 +331,143 @@
             </p>
         </div>
     </div>
+
+    <script>
+        // Detect if running on mobile device
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   (window.innerWidth <= 768);
+        }
+
+        // Initialize mobile auto-fill features
+        function initMobileAutoFill() {
+            if (isMobileDevice()) {
+                const otpCodeElement = document.getElementById('otp-code');
+                const hiddenInput = document.querySelector('input[type="text"]');
+                
+                // Add click handler to OTP code for mobile auto-fill
+                otpCodeElement.style.cursor = 'pointer';
+                otpCodeElement.addEventListener('click', function() {
+                    // Focus the hidden input to trigger auto-fill
+                    hiddenInput.focus();
+                    hiddenInput.select();
+                    
+                    // Show a brief message
+                    showMobileTip();
+                });
+                
+                // Add visual feedback for mobile users
+                otpCodeElement.title = 'Tap to auto-fill in your app';
+            }
+        }
+
+        function showMobileTip() {
+            const tip = document.createElement('div');
+            tip.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #28a745;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            tip.textContent = 'Code ready for auto-fill!';
+            document.body.appendChild(tip);
+            
+            setTimeout(() => {
+                document.body.removeChild(tip);
+            }, 2000);
+        }
+
+        function copyOTP() {
+            const otpCode = document.getElementById('otp-code').textContent;
+            const copyBtn = document.getElementById('copy-btn');
+            
+            // Use the modern Clipboard API if available
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(otpCode).then(function() {
+                    showCopySuccess(copyBtn);
+                }).catch(function(err) {
+                    console.error('Failed to copy: ', err);
+                    fallbackCopyTextToClipboard(otpCode, copyBtn);
+                });
+            } else {
+                // Fallback for older browsers or non-secure contexts
+                fallbackCopyTextToClipboard(otpCode, copyBtn);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text, button) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            
+            // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess(button);
+                } else {
+                    showCopyError(button);
+                }
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+                showCopyError(button);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        function showCopySuccess(button) {
+            const originalText = button.innerHTML;
+            button.classList.add('copied');
+            button.innerHTML = `
+                <svg class="copy-icon" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+                Copied!
+            `;
+            
+            setTimeout(function() {
+                button.classList.remove('copied');
+                button.innerHTML = originalText;
+            }, 2000);
+        }
+
+        function showCopyError(button) {
+            const originalText = button.innerHTML;
+            button.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+            button.innerHTML = `
+                <svg class="copy-icon" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+                Failed
+            `;
+            
+            setTimeout(function() {
+                button.style.background = '';
+                button.innerHTML = originalText;
+            }, 2000);
+        }
+
+        // Initialize mobile auto-fill when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initMobileAutoFill();
+        });
+    </script>
 </body>
 </html>

@@ -19,6 +19,7 @@ from app.operations.auth.register_lms_user_operation import RegisterLMSUserOpera
 from app.operations.auth.sign_in_operation import SignInOperation
 from app.operations.auth.refresh_token_operation import RefreshTokenOperation
 from app.operations.auth.verify_otp_operation import VerifyOTPOperation
+from app.operations.system_task_operation import SystemTaskOperation
 from app.tasks.auth.send_otp_task import send_otp_task
 
 
@@ -98,6 +99,7 @@ async def verify_otp(
     try:
         await VerifyOTPOperation.execute(current_user, request.otp, request.action)
         await AuthSessionOperation.mark_as_success(current_user, request.session_id)
+        SystemTaskOperation.mark_as_success(request.session_id)
         return {
             "message": "OTP verified successfully",
         }

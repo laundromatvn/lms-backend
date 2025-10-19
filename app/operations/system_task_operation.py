@@ -63,3 +63,48 @@ class SystemTaskOperation:
         Get system task by ID.
         """
         return db.query(SystemTask).get(task_id)
+
+
+    @classmethod
+    @with_db_session_classmethod
+    def process(cls, db: Session, task_id: UUID) -> SystemTask:
+        """
+        Process a system task.
+        """
+        task = (
+            db.query(SystemTask)
+            .filter(SystemTask.id == task_id)
+            .first()
+        )
+        if not task:
+            raise ValueError("Task not found")
+
+        task.mark_in_progress()
+        db.commit()
+        db.refresh(task)
+
+        return task
+
+
+    @classmethod
+    @with_db_session_classmethod
+    def mark_as_success(cls, db: Session, task_id: UUID, **kwargs: Any) -> SystemTask:
+        """
+        Mark a system task as successful.
+        """
+        print("kwargs", kwargs)
+        
+        task = (
+            db.query(SystemTask)
+            .filter(SystemTask.id == task_id)
+            .first()
+        )
+        if not task:
+            raise ValueError("Task not found")
+
+        task.mark_success()
+        db.commit()
+        db.refresh(task)
+
+        return task
+    

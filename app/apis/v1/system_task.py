@@ -21,11 +21,6 @@ from app.operations.system_task_operation import SystemTaskOperation
 from app.schemas.system_task import (
     SystemTaskSerializer,
     CreateSystemTaskRequest,
-    UpdateSystemTaskRequest,
-    SystemTaskStatusUpdateRequest,
-    SystemTaskExpirationRequest,
-    SystemTaskQueryParams,
-    SystemTaskStatistics,
 )
 
 router = APIRouter()
@@ -74,3 +69,20 @@ async def get_system_task(
     except Exception as e:
         logger.error(f"Error getting system task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/{task_id}/process", response_model=SystemTaskSerializer)
+async def process_system_task(
+    task_id: UUID = Path(..., description="System task ID"),
+):
+    """
+    Process a system task.
+    """
+    try:
+        task = SystemTaskOperation.process(task_id)
+        return task
+    except Exception as e:
+        logger.error(f"Error getting system task status {task_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+

@@ -124,9 +124,6 @@ class SystemTask(Base):
     
     def mark_success(self, result_data: Optional[Dict[str, Any]] = None) -> None:
         """Mark the task as successful with optional result data."""
-        if self.status not in [SystemTaskStatus.NEW, SystemTaskStatus.IN_PROGRESS]:
-            raise ValueError("Only NEW or IN_PROGRESS tasks can be marked as successful")
-        
         self.status = SystemTaskStatus.SUCCESS
         if result_data is not None:
             # Merge result data with existing data
@@ -136,9 +133,6 @@ class SystemTask(Base):
     
     def mark_failed(self, error_data: Optional[Dict[str, Any]] = None) -> None:
         """Mark the task as failed with optional error data."""
-        if self.status not in [SystemTaskStatus.NEW, SystemTaskStatus.IN_PROGRESS]:
-            raise ValueError("Only NEW or IN_PROGRESS tasks can be marked as failed")
-        
         self.status = SystemTaskStatus.FAILED
         if error_data is not None:
             # Merge error data with existing data

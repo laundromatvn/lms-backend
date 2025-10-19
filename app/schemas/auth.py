@@ -35,9 +35,8 @@ class RefreshTokenResponse(BaseModel):
 
 
 class SendOTPRequest(BaseModel):
-    email: str
-    action: OTPActionEnum | None = OTPActionEnum.SIGN_IN
-    data: Any | None = None
+    action: OTPActionEnum
+    data: Any | None = {}
 
 
 class SendOTPResponse(BaseModel):
@@ -48,6 +47,7 @@ class SendOTPResponse(BaseModel):
 
 class VerifyOTPRequest(BaseModel):
     otp: str
+    action: OTPActionEnum
     session_id: str | None = None
 
 

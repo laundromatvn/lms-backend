@@ -15,9 +15,9 @@ class SendOTPOperation:
 
     @classmethod
     @with_db_session_classmethod
-    async def execute(cls, db: Session, email: str, ttl_seconds: int = 600) -> None:
+    async def execute(cls, db: Session, email: str, otp_action: OTPActionEnum, ttl_seconds: int = 600) -> None:
         user = await cls._get_user_by_email(db, email)
-        otp = await OtpGenerator.execute(user.id, OTPActionEnum.SIGN_IN, ttl_seconds)
+        otp = await OtpGenerator.execute(user.id, otp_action.value, ttl_seconds)
         return await cls._send_otp_by_email(email, otp)
 
     @classmethod

@@ -10,15 +10,20 @@ class VerifyOTPOperation:
     CACHED_KEY_TEMPLATE: str = "otp:{action}:{otp}:{user_id}"
 
     @classmethod
-    async def execute(cls, current_user: User, otp: str) -> None:
+    async def execute(
+        cls, 
+        current_user: User, 
+        otp: str, 
+        action: OTPActionEnum,
+    ) -> None:
         if settings.APP_ENV != "production":
             return True
 
         cached_key = cls.CACHED_KEY_TEMPLATE.format(
-                                                action=OTPActionEnum.SIGN_IN,
+                                                action=action.value,
                                                 otp=otp, 
                                                 user_id=current_user.id)
-
+        
         if not cache_manager.get(cached_key):
             raise ValueError("Invalid OTP")
 

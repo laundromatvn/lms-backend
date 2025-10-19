@@ -12,6 +12,7 @@ from app.schemas.auth import (
     RefreshTokenRequest,
     RefreshTokenResponse,
     SendOTPResponse,
+    SendOTPRequest,
     VerifyOTPRequest,
     LMSProfileResponse,
     GenerateTokenByOneTimeAccessTokenRequest,
@@ -71,9 +72,16 @@ async def refresh_token(request: RefreshTokenRequest):
 
 
 @router.post("/send-otp", response_model=SendOTPResponse)
-async def send_otp(current_user: User = Depends(get_current_user)):
+async def send_otp(
+    request: SendOTPRequest,
+    current_user: User = Depends(get_current_user),
+):
     try:
-        send_otp_task.apply_async(args=[current_user.email])
+        send_otp_task.apply_async(kwargs={
+            "email": current_user.email, 
+            "otp_action": request.action.value,
+            "data": request.data,
+        })
         return {
             "message": "OTP sent successfully",
             "email": current_user.email,
@@ -94,7 +102,7 @@ async def verify_otp(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        await VerifyOTPOperation.execute(current_user, request.otp)
+        await VerifyOTPOperation.execute(current_user, request.otp, request.action)
         await AuthSessionOperation.mark_as_success(current_user, request.session_id)
         return {
             "message": "OTP verified successfully",

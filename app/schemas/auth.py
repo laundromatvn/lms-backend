@@ -1,3 +1,4 @@
+from uuid import UUID
 from pydantic import BaseModel
 from typing import Any
 
@@ -58,3 +59,12 @@ class LMSProfileResponse(BaseModel):
 
 class GenerateTokenByOneTimeAccessTokenRequest(BaseModel):
     one_time_access_token: str
+
+
+class VerifyStoreConfigurationAccessRequest(BaseModel):
+    tenant_id: UUID
+
+
+class VerifyStoreConfigurationAccessResponse(BaseModel):
+    system_task_id: UUID
+    

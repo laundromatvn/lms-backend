@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from jinja2 import Template
 
 from app.core.config import settings
+from app.enums.auth import OTPActionEnum
 from app.libs.database import with_db_session_classmethod
 from app.models.user import User
 from app.services.mail_service import MailService
@@ -16,7 +17,7 @@ class SendOTPOperation:
     @with_db_session_classmethod
     async def execute(cls, db: Session, email: str, ttl_seconds: int = 600) -> None:
         user = await cls._get_user_by_email(db, email)
-        otp = await OtpGenerator.execute(user.id, ttl_seconds)
+        otp = await OtpGenerator.execute(user.id, OTPActionEnum.SIGN_IN, ttl_seconds)
         return await cls._send_otp_by_email(email, otp)
 
     @classmethod

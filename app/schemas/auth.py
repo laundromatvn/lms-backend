@@ -1,5 +1,7 @@
 from pydantic import BaseModel
+from typing import Any
 
+from app.enums.auth import OTPActionEnum
 from app.models.user import UserRole
 from app.schemas.user import UserSerializer
 from app.schemas.tenant import TenantSerializer
@@ -34,6 +36,8 @@ class RefreshTokenResponse(BaseModel):
 
 class SendOTPRequest(BaseModel):
     email: str
+    action: OTPActionEnum | None = OTPActionEnum.SIGN_IN
+    data: Any | None = None
 
 
 class SendOTPResponse(BaseModel):

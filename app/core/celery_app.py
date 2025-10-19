@@ -5,7 +5,11 @@ from kombu import Exchange, Queue
 from app.core.config import settings
 from app.core.logging import logger
 
-if settings.REDIS_PASSWORD:
+if settings.REDIS_PASSWORD and settings.REDIS_USERNAME:
+    REDIS_URL = (
+        f"redis://{settings.REDIS_USERNAME}:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
+    )
+elif settings.REDIS_PASSWORD:
     REDIS_URL = (
         f"redis://:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/0"
     )

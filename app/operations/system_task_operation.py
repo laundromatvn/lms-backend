@@ -92,15 +92,13 @@ class SystemTaskOperation:
         """
         Mark a system task as successful.
         """
-        print("kwargs", kwargs)
-        
         task = (
             db.query(SystemTask)
             .filter(SystemTask.id == task_id)
             .first()
         )
         if not task:
-            raise ValueError("Task not found")
+            return
 
         task.mark_success()
         db.commit()

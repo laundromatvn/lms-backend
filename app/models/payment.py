@@ -280,6 +280,7 @@ class Payment(Base):
                 PaymentStatus.CANCELLED
             ],
             PaymentStatus.WAITING_FOR_PAYMENT_DETAIL: [
+                PaymentStatus.WAITING_FOR_PAYMENT_DETAIL,
                 PaymentStatus.WAITING_FOR_PURCHASE,
                 PaymentStatus.FAILED,
                 PaymentStatus.CANCELLED

@@ -74,5 +74,3 @@ async def get_system_task(
     except Exception as e:
         logger.error(f"Error getting system task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-
-

@@ -95,8 +95,8 @@ class SystemTask(Base):
         
         if self.task_type == SystemTaskTypeEnum.SIGN_IN.value:
             self._validate_sign_in_data()
-        elif self.task_type == SystemTaskTypeEnum.AUTHORIZE_STORE_CONFIGURATION_ACCESS.value:
-            self._validate_authorize_store_configuration_access_data()
+        elif self.task_type == SystemTaskTypeEnum.VERIFY_FOR_STORE_CONFIGURATION_ACCESS.value:
+            self._validate_verify_for_store_configuration_access_data()
     
     def _validate_sign_in_data(self) -> None:
         """Validate data for SIGN_IN task type."""
@@ -118,28 +118,28 @@ class SystemTask(Base):
         if len(otp_code) != 6 or not otp_code.isdigit():
             raise ValueError("OTP code must be a 6-digit string for SIGN_IN task type")
     
-    def _validate_authorize_store_configuration_access_data(self) -> None:
-        """Validate data for AUTHORIZE_STORE_CONFIGURATION_ACCESS task type."""
+    def _validate_verify_for_store_configuration_access_data(self) -> None:
+        """Validate data for VERIFY_FOR_STORE_CONFIGURATION_ACCESS task type."""
         required_fields = ['user_id', 'store_id', 'permission_type']
         for field in required_fields:
             if field not in self.data:
-                raise ValueError(f"Field '{field}' is required for AUTHORIZE_STORE_CONFIGURATION_ACCESS task type")
+                raise ValueError(f"Field '{field}' is required for VERIFY_FOR_STORE_CONFIGURATION_ACCESS task type")
         
         # Validate user_id
         user_id = self.data.get('user_id')
         if not user_id:
-            raise ValueError("User ID is required for AUTHORIZE_STORE_CONFIGURATION_ACCESS task type")
+            raise ValueError("User ID is required for VERIFY_FOR_STORE_CONFIGURATION_ACCESS task type")
         
         # Validate store_id
         store_id = self.data.get('store_id')
         if not store_id:
-            raise ValueError("Store ID is required for AUTHORIZE_STORE_CONFIGURATION_ACCESS task type")
+            raise ValueError("Store ID is required for VERIFY_FOR_STORE_CONFIGURATION_ACCESS task type")
         
         # Validate permission_type
         permission_type = self.data.get('permission_type')
         valid_permissions = ['read', 'write', 'admin']
         if permission_type not in valid_permissions:
-            raise ValueError(f"Permission type must be one of {valid_permissions} for AUTHORIZE_STORE_CONFIGURATION_ACCESS task type")
+            raise ValueError(f"Permission type must be one of {valid_permissions} for VERIFY_FOR_STORE_CONFIGURATION_ACCESS task type")
     
     def set_expiration(self, expires_time_seconds: int) -> None:
         """Set the expiration time for this task."""

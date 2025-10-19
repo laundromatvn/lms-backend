@@ -10,6 +10,7 @@ from app.apis.v1.user import router as user_router
 from app.apis.v1.order import router as order_router
 from app.apis.v1.payment import router as payment_router
 from app.apis.v1.vietqr import router as vietqr_router
+from app.apis.v1.system_task import router as system_task_router
 
 
 router = APIRouter()
@@ -24,3 +25,4 @@ router.include_router(user_router, prefix="/user", tags=["User"])
 router.include_router(order_router, prefix="/order", tags=["Order"])
 router.include_router(payment_router, prefix="/payment", tags=["Payment"])
 router.include_router(vietqr_router, prefix="/vietqr", tags=["VietQR"])
+router.include_router(system_task_router, prefix="/system-task", tags=["System Task"])

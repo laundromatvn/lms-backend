@@ -99,7 +99,9 @@ async def verify_otp(
     try:
         await VerifyOTPOperation.execute(current_user, request.otp, request.action)
         await AuthSessionOperation.mark_as_success(current_user, request.session_id)
-        SystemTaskOperation.mark_as_success(request.session_id)
+        
+        if request.session_id:
+            SystemTaskOperation.mark_as_success(request.session_id)
         return {
             "message": "OTP verified successfully",
         }

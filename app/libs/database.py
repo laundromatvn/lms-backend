@@ -204,6 +204,14 @@ def with_db_session_classmethod(func: F) -> F:
     return wrapper
 
 
+def with_db_session_for_class_instance(func: F) -> F:
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        with get_db_session() as db:
+            return func(self, db, *args, **kwargs)
+    return wrapper
+
+
 def with_db_session_manual(func: F) -> F:
     """
     Decorator for functions that need a database session with manual transaction management.

@@ -1,8 +1,12 @@
 from datetime import datetime
-from typing import List
+from typing import List, Any, Dict, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
+
+from app.models.order import OrderStatus
+from app.models.payment import PaymentStatus, PaymentMethod
+from app.schemas.pagination import Pagination
 
 
 class OverviewKeyMetricsQueryParams(BaseModel):
@@ -44,3 +48,46 @@ class OverviewRevenueByDayQueryParams(BaseModel):
 class OverviewRevenueByDayBarChartResponse(BaseModel):
     labels: List[str]
     values: List[float]
+
+
+class StoreKeyMetricsResponse(BaseModel):
+    id: UUID
+    name: str
+    address: str
+    contact_phone_number: str
+    tenant_id: UUID
+    total_orders: int = 0
+    total_revenue: float = 0
+
+
+class StoreKeyMetricsListResponse(BaseModel):
+    store_key_metrics: List[Dict[str, Any]]
+
+
+class ListOverviewOrdersQueryParams(Pagination):
+    tenant_id: Optional[UUID] = None
+    store_id: Optional[UUID] = None
+    status: Optional[OrderStatus] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    payment_status: Optional[PaymentStatus] = None
+    query: Optional[str] = None
+    order_by: Optional[str] = None
+    order_direction: Optional[str] = None
+
+
+class ListOverviewOrdersResponseItem(BaseModel):
+    id: UUID
+    created_at: str
+    updated_at: str
+    deleted_at: str | None
+    created_by: UUID
+    updated_by: UUID | None
+    deleted_by: UUID | None
+    total_amount: float
+    total_washer: int
+    total_dryer: int
+    status: OrderStatus
+    payment_status: PaymentStatus
+    transaction_code: str
+    payment_method: PaymentMethod

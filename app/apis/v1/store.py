@@ -58,9 +58,10 @@ def list_stores(
 @router.get("/{store_id}", response_model=StoreSerializer)
 def get_store(
     store_id: UUID,
+    current_user: User = Depends(get_current_user),
 ):
     try:
-        return StoreOperation.get(store_id)
+        return StoreOperation.get(current_user, store_id)
     except ValueError:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

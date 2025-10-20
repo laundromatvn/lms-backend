@@ -19,13 +19,26 @@ class StoreOperation:
     def get(
         cls,
         db: Session,
+        current_user: User,
         store_id: UUID
     ) -> Store:
-        store = db.query(Store).filter_by(id=store_id).first()
+        authorized_tenants = (
+            db.query(TenantMember)
+            .filter(TenantMember.user_id == current_user.id)
+            .filter(TenantMember.is_enabled == True)
+            .all()
+        )
+        
+        authorized_tenant_ids = [tenant.tenant_id for tenant in authorized_tenants]
+
+        store = (
+            db.query(Store)
+            .filter(Store.id == store_id)
+            .filter(Store.tenant_id.in_(authorized_tenant_ids))
+            .first()
+        )
         if not store:
             raise ValueError("Store not found")
-        
-        # TODO: check permission of admin/tenant/customer
 
         return store
 
@@ -34,13 +47,26 @@ class StoreOperation:
     def list(
         cls,
         db: Session,
-        created_by: User,
+        current_user: User,
         query_params: ListStoreQueryParams
     ) -> tuple[int, list[Store]]:
-        base_query = db.query(Store)
-        
+        authorized_tenants = (
+            db.query(TenantMember.tenant_id)
+            .filter(TenantMember.user_id == current_user.id)
+            .filter(TenantMember.is_enabled == True)
+            .all()
+        )
+
+        authorized_tenant_ids = [tenant.tenant_id for tenant in authorized_tenants]
+
+        base_query = (
+            db.query(Store)
+            .filter(Store.tenant_id.in_(authorized_tenant_ids))
+        )
+
         if query_params.tenant_id:
             base_query = base_query.filter(Store.tenant_id == query_params.tenant_id)
+
         if query_params.status:
             base_query = base_query.filter(Store.status == query_params.status)
 
@@ -59,15 +85,15 @@ class StoreOperation:
     def create(
         cls,
         db: Session,
-        created_by: User,
+        current_user: User,
         request: AddStoreRequest,
     ) -> Store:
-        if not cls._has_permission(created_by, request.tenant_id):
+        if not cls._has_permission(current_user, request.tenant_id):
             raise PermissionError("You don't have permission to create store")
 
         store = Store(
-            created_by=created_by.id,
-            updated_by=created_by.id,
+            created_by=current_user.id,
+            updated_by=current_user.id,
             name=request.name,
             address=request.address,
             longitude=request.longitude,
@@ -86,7 +112,7 @@ class StoreOperation:
     def update_partially(
         cls,
         db: Session,
-        created_by: User,
+        current_user: User,
         store_id: UUID,
         request: UpdateStoreRequest,
     ) -> Store:
@@ -94,7 +120,7 @@ class StoreOperation:
         if not store:
             raise ValueError("Store not found")
 
-        if not cls._has_permission(created_by, store.tenant_id):
+        if not cls._has_permission(current_user, store.tenant_id):
             raise PermissionError("You don't have permission to update store")
         
         update_data = request.model_dump(exclude_unset=True)
@@ -103,7 +129,7 @@ class StoreOperation:
             if hasattr(store, field):
                 setattr(store, field, value)
         
-        store.updated_by = created_by.id
+        store.updated_by = current_user.id
         
         db.commit()
         db.refresh(store)
@@ -119,16 +145,11 @@ class StoreOperation:
         if created_by.is_admin:
             return True
 
-        if not created_by.is_tenant_admin:
-            return False
-
-        is_belongs_to_tenant = (
+        is_authorized_tenant_member = (
             db.query(TenantMember)
-            .filter_by(user_id=created_by.id, tenant_id=tenant_id)
-            .filter_by(is_enabled=True)
-            .first()
+            .filter(TenantMember.user_id == created_by.id)
+            .filter(TenantMember.tenant_id == tenant_id)
+            .filter(TenantMember.is_enabled == True)
         )
-        if not is_belongs_to_tenant:
-            return False
-
-        return True
+        
+        return is_authorized_tenant_member.exists()

@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.models.machine import MachineStatus
 from app.models.order import OrderStatus
 from app.models.payment import PaymentStatus, PaymentMethod
 from app.schemas.pagination import Pagination
@@ -91,3 +92,16 @@ class ListOverviewOrdersResponseItem(BaseModel):
     payment_status: PaymentStatus
     transaction_code: str
     payment_method: PaymentMethod
+
+
+class GetOverviewMachineStatusLineChartQueryParams(BaseModel):
+    store_id: UUID | None = None
+    machine_id: UUID | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+
+
+class MachineStatusLineChartData(BaseModel):
+    date: str
+    label: str
+    value: str

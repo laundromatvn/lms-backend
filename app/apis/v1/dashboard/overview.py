@@ -1,6 +1,6 @@
-import json
-from fastapi import APIRouter, Depends
 from datetime import datetime
+from fastapi import APIRouter, Depends
+from typing import List
 
 from app.apis.deps import get_current_user
 from app.models.user import User
@@ -17,11 +17,14 @@ from app.schemas.dashboard.overview import (
     StoreKeyMetricsListResponse,
     ListOverviewOrdersQueryParams,
     ListOverviewOrdersResponseItem,
+    GetOverviewMachineStatusLineChartQueryParams,
+    MachineStatusLineChartData,
 )
 from app.operations.dashboard.get_dashboard_overview_key_metrics_operation import GetDashboardOverviewKeyMetricsOperation
 from app.operations.dashboard.get_overview_revenue_by_day_bar_chart_operation import GetOverviewRevenueByDayBarChartOperation
 from app.operations.dashboard.get_overview_store_key_metrics_operation import GetOverviewStoreKeyMetricsOperation
 from app.operations.dashboard.list_overview_order_operation import ListOverviewOrderOperation
+from app.operations.dashboard.get_overview_machine_status_line_chart_operation import GetOverviewMachineStatusLineChartOperation
 from app.utils.pagination import get_total_pages
 from app.utils.timezone import get_tzinfo
 from app.schemas.pagination import PaginatedResponse
@@ -136,3 +139,16 @@ async def list_overview_orders(
         "total_pages": get_total_pages(total, query_params.page_size),
         "data": items,
     }
+
+
+@router.get("/machine-status-line-chart", response_model=List[MachineStatusLineChartData])
+async def get_machine_status_line_chart(
+    query_params: GetOverviewMachineStatusLineChartQueryParams = Depends(),
+):  
+    result = GetOverviewMachineStatusLineChartOperation.execute(
+        store_id=query_params.store_id,
+        machine_id=query_params.machine_id,
+        start_date=query_params.start_date,
+        end_date=query_params.end_date,
+    )
+    return result

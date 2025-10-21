@@ -32,7 +32,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('tenant_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('store_id', postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column('controller_id', postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column('controller_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('machine_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('relay_no', sa.Integer(), nullable=False),
         sa.Column('value', sa.String(length=255), nullable=False),

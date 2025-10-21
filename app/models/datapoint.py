@@ -32,7 +32,7 @@ class Datapoint(Base):
     # Foreign key relationships
     tenant_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=True, index=True)
     store_id = Column(UUID(as_uuid=True), ForeignKey('stores.id'), nullable=True, index=True)
-    controller_id = Column(UUID(as_uuid=True), ForeignKey('controllers.id'), nullable=False, index=True)
+    controller_id = Column(UUID(as_uuid=True), ForeignKey('controllers.id'), nullable=True, index=True)
     machine_id = Column(UUID(as_uuid=True), ForeignKey('machines.id'), nullable=True, index=True)
     
     # Data fields

@@ -56,6 +56,7 @@ class Store(Base):
     orders = relationship("Order", back_populates="store")
     payments = relationship("Payment", back_populates="store")
     controllers = relationship("Controller", back_populates="store")
+    datapoints = relationship("Datapoint", back_populates="store")
 
     @validates('status')
     def validate_status(self, key: str, status) -> StoreStatus:

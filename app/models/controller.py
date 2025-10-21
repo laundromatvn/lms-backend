@@ -47,6 +47,7 @@ class Controller(Base):
     # Relationships
     machines = relationship("Machine", back_populates="controller", cascade="all, delete-orphan")
     store = relationship("Store", back_populates="controllers")
+    datapoints = relationship("Datapoint", back_populates="controller")
 
     @validates('status')
     def validate_status(self, key: str, status) -> ControllerStatus:

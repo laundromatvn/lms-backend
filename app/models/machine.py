@@ -66,6 +66,7 @@ class Machine(Base):
     # Relationships
     controller = relationship("Controller", back_populates="machines")
     order_details = relationship("OrderDetail", back_populates="machine")
+    datapoints = relationship("Datapoint", back_populates="machine")
 
     @validates('controller_id')
     def validate_controller_id(self, key: str, controller_id) -> uuid.UUID:

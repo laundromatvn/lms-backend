@@ -376,6 +376,7 @@ class MachineOperation:
         status: MachineStatus,
     ) -> Machine:
         logger.info("Updating machine status", controller_device_id=controller_device_id, machine_relay_no=machine_relay_no, status=status)
+
         machine = (
             db.query(Machine)
             .join(Controller, Machine.controller_id == Controller.id)
@@ -385,6 +386,7 @@ class MachineOperation:
             )
             .first()
         )
+
         if not machine:
             raise ValueError("Machine not found")
 

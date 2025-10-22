@@ -13,6 +13,7 @@ from app.libs.mqtt import mqtt_client
 from app.models.machine import Machine, MachineType, MachineStatus
 from app.models.controller import Controller
 from app.models.store import Store
+from app.models.tenant_member import TenantMember
 from app.models.user import User
 from app.schemas.machine import (
     AddMachineRequest,
@@ -28,8 +29,8 @@ class MachineOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def get(cls, db: Session, machine_id: UUID) -> Machine:
-        machine = (
+    def get(cls, db: Session, current_user: User, machine_id: UUID) -> Machine:
+        base_query = (
             db.query(
                 *Machine.__table__.columns,
                 Controller.device_id.label("controller_device_id"),
@@ -39,21 +40,25 @@ class MachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .outerjoin(Store, Controller.store_id == Store.id)
             .filter(Machine.id == machine_id)
-            .first()
         )
+        
+        if not current_user.is_admin:
+            authorized_store_ids = cls._get_authorized_store_ids(db, current_user)
+            base_query = base_query.filter(Controller.store_id.in_(authorized_store_ids))
+
+        machine = base_query.first()
         if not machine:
             raise ValueError("Machine not found")
 
         return machine
-
     @classmethod
     @with_db_session_classmethod
     def list(
         cls,
         db: Session,
+        current_user: User,
         query_params: ListMachineQueryParams,
     ) -> tuple[int, List[Machine]]:
-        # Join with Controller and Store tables to get store information
         base_query = (
             db.query(
                 *Machine.__table__.columns,
@@ -64,6 +69,10 @@ class MachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .outerjoin(Store, Controller.store_id == Store.id)
         )
+        
+        if not current_user.is_admin:
+            authorized_store_ids = cls._get_authorized_store_ids(db, current_user)
+            base_query = base_query.filter(Controller.store_id.in_(authorized_store_ids))
         
         if query_params.store_id:
             base_query = base_query.filter(
@@ -398,7 +407,6 @@ class MachineOperation:
 
         return machine
 
-
     @classmethod
     @with_db_session_classmethod
     def update_status(
@@ -428,3 +436,18 @@ class MachineOperation:
         db.refresh(machine)
 
         return machine
+
+    @classmethod
+    def _get_authorized_store_ids(cls, db: Session, current_user: User):
+        if current_user.is_admin:
+            return [store.id for store in db.query(Store).all()]
+
+        authorized_stores = (
+            db.query(Store)
+            .join(TenantMember, Store.tenant_id == TenantMember.tenant_id)
+            .filter(TenantMember.user_id == current_user.id)
+            .filter(TenantMember.is_enabled == True)
+            .all()
+        )
+
+        return [store.id for store in authorized_stores]

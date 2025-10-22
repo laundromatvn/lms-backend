@@ -25,7 +25,7 @@ async def list_machines(
 ):
     """List machines with pagination and filtering"""
     try:
-        total, machines = MachineOperation.list(query_params)
+        total, machines = MachineOperation.list(current_user, query_params)
 
         return {
             "page": query_params.page,
@@ -69,7 +69,7 @@ async def get_machine(
 ):
     """Get a specific machine by ID"""
     try:
-        machine = MachineOperation.get(machine_id)
+        machine = MachineOperation.get(current_user, machine_id)
         return machine
     except ValueError as e:
         raise HTTPException(

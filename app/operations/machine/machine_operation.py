@@ -51,6 +51,7 @@ class MachineOperation:
             raise ValueError("Machine not found")
 
         return machine
+
     @classmethod
     @with_db_session_classmethod
     def list(
@@ -83,10 +84,12 @@ class MachineOperation:
             base_query = base_query.filter(
                 Machine.controller_id == query_params.controller_id
             )
+
         if query_params.machine_type:
             base_query = base_query.filter(
                 Machine.machine_type == query_params.machine_type
             )
+
         if query_params.relay_no:
             base_query = base_query.filter(Machine.relay_no == query_params.relay_no)
 
@@ -97,12 +100,8 @@ class MachineOperation:
             base_query = base_query.filter(Machine.status == query_params.status)
 
         if query_params.search:
-            base_query = base_query.filter(
-                or_(
-                    Machine.name.ilike(f"%{query_params.search}%"),
-                    Machine.relay_no.ilike(f"%{query_params.search}%"),
-                )
-            )
+            search = f"%{query_params.search}%"
+            base_query = base_query.filter(Machine.name.like(search))
         
         if query_params.order_by:
             if query_params.order_direction == "desc":

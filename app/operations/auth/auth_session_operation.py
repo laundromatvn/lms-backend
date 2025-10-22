@@ -83,7 +83,7 @@ class AuthSessionOperation:
         cache_manager.set(cached_key, cached_data, cached_data["expires_in"])
         
         return cls._to_session(cached_data)
-
+    
     @classmethod
     def _to_cached_data(cls, session: AuthSession) -> dict:
         data = session.model_dump()

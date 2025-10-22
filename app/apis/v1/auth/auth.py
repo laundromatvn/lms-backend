@@ -43,7 +43,12 @@ async def register(request: RegisterLMSUserRequest):
 async def sign_in(request: SignInRequest):
     try:
         await AuthSessionOperation.mark_as_in_progress(request.session_id)
-        access_token, refresh_token = await SignInOperation.execute(request)
+        user, access_token, refresh_token = await SignInOperation.execute(request)
+        
+        await AuthSessionOperation.mark_as_success(user, request.session_id)
+        if request.session_id:
+            SystemTaskOperation.mark_as_success(request.session_id)
+
         return SignInResponse(
             access_token=access_token,
             refresh_token=refresh_token,
@@ -102,6 +107,7 @@ async def verify_otp(
         
         if request.session_id:
             SystemTaskOperation.mark_as_success(request.session_id)
+
         return {
             "message": "OTP verified successfully",
         }

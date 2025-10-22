@@ -14,7 +14,7 @@ class SignInOperation:
 
     @classmethod
     @with_db_session_classmethod
-    async def execute(cls, db: Session, request: SignInRequest) -> tuple[str, str]:
+    async def execute(cls, db: Session, request: SignInRequest) -> tuple[User, str, str]:
         if request.email:
             user = db.query(User).filter(User.email == request.email).first()
         elif request.phone:
@@ -38,7 +38,7 @@ class SignInOperation:
             expires_delta=timedelta(seconds=settings.JWT_REFRESH_TOKEN_EXPIRE_SECONDS)
         )
 
-        return temporary_access_token, temp_access_token_payload
+        return user, temporary_access_token, temp_access_token_payload
     
     @classmethod
     @with_db_session_classmethod

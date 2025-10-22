@@ -1,7 +1,8 @@
 from paho.mqtt.client import MQTTMessage
-from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.core.logging import logger
+from app.core.config import settings
 from app.enums.mqtt import MQTTEventTypeEnum
 from app.libs import mqtt
 from app.models.controller import Controller

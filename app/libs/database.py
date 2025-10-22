@@ -60,10 +60,10 @@ def get_engine() -> Engine:
         
         # Add connection event listeners
         @event.listens_for(_engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, connection_record):
-            """Set connection-level settings."""
+        def set_postgresql_timezone(dbapi_connection, connection_record):
+            """Set PostgreSQL timezone for each connection."""
             with dbapi_connection.cursor() as cursor:
-                cursor.execute("SET timezone TO 'UTC'")
+                cursor.execute(f"SET timezone TO '{settings.DATABASE_TIMEZONE}'")
         
         @event.listens_for(_engine, "checkout")
         def receive_checkout(dbapi_connection, connection_record, connection_proxy):

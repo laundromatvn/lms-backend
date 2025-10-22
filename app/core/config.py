@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     # Time
     ACK_TIMEOUT_SECONDS: int = os.getenv("ACK_TIMEOUT_SECONDS", 5)
     TIMEZONE_NAME: str = os.getenv("TIMEZONE_NAME", "Asia/Ho_Chi_Minh")
+    DATABASE_TIMEZONE: str = os.getenv("DATABASE_TIMEZONE", "UTC+7")
     
     # JWT Configuration
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "secret")

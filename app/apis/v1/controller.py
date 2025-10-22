@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.apis.deps import get_current_user
 from app.core.logging import logger
@@ -37,10 +37,10 @@ def add_controller(
 @router.get("", response_model=PaginatedResponse[ControllerSerializer])
 def list_controllers(
     query_params: ListControllerQueryParams = Depends(),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     try:
-        total, controllers = ControllerOperation.list(query_params)
+        total, controllers = ControllerOperation.list(current_user, query_params)
         return {
             "page": query_params.page,
             "page_size": query_params.page_size,
@@ -111,10 +111,10 @@ def verify_abandoned_controllers(
 @router.get("/{controller_id}", response_model=ControllerSerializer)
 def get_controller(
     controller_id: str,
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     try:
-        return ControllerOperation.get(controller_id)
+        return ControllerOperation.get(current_user, controller_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
@@ -138,6 +138,21 @@ def update_partially_controller(
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         logger.error("Update partially controller failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{controller_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_controller(
+    controller_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        ControllerOperation.delete(current_user, controller_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 

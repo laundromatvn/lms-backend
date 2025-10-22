@@ -51,8 +51,12 @@ class UpdateMachineRequest(BaseModel):
 
 
 class ListMachineQueryParams(Pagination):
-    controller_id: UUID | None = None
+    search: str | None = None
+    order_by: str | None = "created_at"
+    order_direction: str | None = "asc"
     store_id: UUID | None = None
+    controller_id: UUID | None = None
+    relay_no: int | None = None
     machine_type: MachineType | None = None
     status: MachineStatus | None = None
 

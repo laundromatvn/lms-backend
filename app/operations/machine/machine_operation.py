@@ -1,8 +1,10 @@
 from datetime import datetime
-from sqlalchemy.orm import Session
-from uuid import UUID, uuid4
 from decimal import Decimal
-from typing import List, Any
+from typing import List
+from uuid import UUID, uuid4
+
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.core.logging import logger
 from app.enums.mqtt import MQTTEventTypeEnum
@@ -62,6 +64,11 @@ class MachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .outerjoin(Store, Controller.store_id == Store.id)
         )
+        
+        if query_params.store_id:
+            base_query = base_query.filter(
+                Controller.store_id == query_params.store_id
+            )
 
         if query_params.controller_id:
             base_query = base_query.filter(
@@ -71,14 +78,40 @@ class MachineOperation:
             base_query = base_query.filter(
                 Machine.machine_type == query_params.machine_type
             )
+        if query_params.relay_no:
+            base_query = base_query.filter(Machine.relay_no == query_params.relay_no)
+
+        if query_params.machine_type:
+            base_query = base_query.filter(Machine.machine_type == query_params.machine_type)
+
         if query_params.status:
             base_query = base_query.filter(Machine.status == query_params.status)
-        if query_params.store_id:
-            base_query = base_query.filter(Controller.store_id == query_params.store_id)
+
+        if query_params.search:
+            base_query = base_query.filter(
+                or_(
+                    Machine.name.ilike(f"%{query_params.search}%"),
+                    Machine.relay_no.ilike(f"%{query_params.search}%"),
+                )
+            )
+        
+        if query_params.order_by:
+            if query_params.order_direction == "desc":
+                base_query = base_query.order_by(
+                    getattr(Machine, query_params.order_by).desc(),
+                )
+            else:
+                base_query = base_query.order_by(
+                    getattr(Machine, query_params.order_by).asc(),
+                )
+        else:
+            base_query = base_query.order_by(
+                Machine.relay_no.asc(),
+            )
 
         total = base_query.count()
         results = (
-            base_query.order_by(Machine.relay_no.asc())
+            base_query
             .offset((query_params.page - 1) * query_params.page_size)
             .limit(query_params.page_size)
             .all()

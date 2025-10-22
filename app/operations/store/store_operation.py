@@ -60,7 +60,11 @@ class StoreOperation:
         authorized_tenant_ids = [tenant.tenant_id for tenant in authorized_tenants]
 
         base_query = (
-            db.query(Store)
+            db.query(
+                *Store.__table__.columns,
+                Tenant.name.label("tenant_name"),
+            )
+            .join(Tenant, Store.tenant_id == Tenant.id)
             .filter(Store.tenant_id.in_(authorized_tenant_ids))
         )
 
@@ -88,7 +92,7 @@ class StoreOperation:
         current_user: User,
         request: AddStoreRequest,
     ) -> Store:
-        if not cls._has_permission(current_user, request.tenant_id):
+        if not cls._has_permission(db, current_user, request.tenant_id):
             raise PermissionError("You don't have permission to create store")
 
         store = Store(
@@ -145,11 +149,12 @@ class StoreOperation:
         if created_by.is_admin:
             return True
 
-        is_authorized_tenant_member = (
+        authorized_tenant_members = (
             db.query(TenantMember)
             .filter(TenantMember.user_id == created_by.id)
             .filter(TenantMember.tenant_id == tenant_id)
             .filter(TenantMember.is_enabled == True)
+            .all()
         )
         
-        return is_authorized_tenant_member.exists()
+        return len(authorized_tenant_members) > 0

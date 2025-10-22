@@ -36,6 +36,7 @@ class StoreSerializer(BaseModel):
     latitude: float | None = None
     contact_phone_number: str
     tenant_id: UUID
+    tenant_name: str | None = None
     payment_details: Optional[Dict[str, Any]] = None
     payment_methods: List[PaymentMethod] = []
     

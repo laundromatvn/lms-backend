@@ -17,6 +17,7 @@ from sqlalchemy import and_, func
 from app.libs.database import with_db_session_classmethod
 from app.models.machine import Machine, MachineStatus, MachineType
 from app.models.order import Order, OrderStatus, OrderDetail, OrderDetailStatus
+from app.models.payment import Payment
 from app.models.store import Store, StoreStatus
 from app.models.tenant_member import TenantMember
 from app.models.user import User
@@ -161,8 +162,10 @@ class OrderOperation:
             db.query(
                 *Order.__table__.columns,
                 Store.name.label("store_name"),
+                Payment.transaction_code.label("transaction_code"),
             )
             .join(Store, Order.store_id == Store.id)
+            .join(Payment, Order.id == Payment.order_id)
             .filter(and_(Order.id == order_id, Order.deleted_at.is_(None)))
             .first()
         )
@@ -243,8 +246,10 @@ class OrderOperation:
             db.query(
                 *Order.__table__.columns,
                 Store.name.label("store_name"),
+                Payment.transaction_code.label("transaction_code"),
             )
             .join(Store, Order.store_id == Store.id)
+            .join(Payment, Order.id == Payment.order_id)
         )
 
         if query_params.status:

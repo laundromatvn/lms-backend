@@ -2,8 +2,9 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.libs.database import with_db_session_classmethod
-from app.models.controller import Controller
+from app.models.controller import Controller, ControllerStatus
 from app.models.store import Store
+from app.models.tenant_member import TenantMember
 from app.models.user import User
 from app.schemas.controller import (
     AddControllerRequest,
@@ -19,21 +20,40 @@ class ControllerOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def get(cls, db: Session, controller_id: UUID) -> Controller:
-        controller = db.query(Controller).filter_by(id=controller_id).first()
+    def get(cls, db: Session, current_user: User, controller_id: UUID) -> Controller:
+        controller = (
+            db.query(Controller)
+            .filter_by(id=controller_id)
+            .first()
+        )
         if not controller:
             raise ValueError("Controller not found")
         
+        if not current_user.is_admin:
+            authorized_store_ids = cls._get_authorized_store_ids(db, current_user)
+            if controller.store_id not in authorized_store_ids:
+                raise PermissionError("You don't have permission to get this controller")
+
         return controller
-    
+
     @classmethod
     @with_db_session_classmethod
-    def list(cls, db: Session, query_params: ListControllerQueryParams) -> tuple[int, list[dict]]:
-        # Join with Store table to get store_name
-        base_query = db.query(
-            Controller,
-            Store.name.label('store_name')
-        ).outerjoin(Store, Controller.store_id == Store.id)
+    def list(cls, db: Session, current_user: User, query_params: ListControllerQueryParams) -> tuple[int, list[dict]]:
+        base_query = (
+            db.query(
+                Controller,
+                Store.name.label('store_name')
+            )
+            .outerjoin(Store, Controller.store_id == Store.id)
+            .filter(
+                Controller.deleted_at.is_(None),
+                Controller.status.notin_([ControllerStatus.INACTIVE]),
+            )
+        )
+        
+        if not current_user.is_admin:
+            authorized_store_ids = cls._get_authorized_store_ids(db, current_user)
+            base_query = base_query.filter(Controller.store_id.in_(authorized_store_ids))
 
         if query_params.status:
             base_query = base_query.filter(Controller.status == query_params.status)
@@ -63,9 +83,15 @@ class ControllerOperation:
         if not cls._has_permission(created_by, request.store_id):
             raise PermissionError("You don't have permission to create controller")
 
-        is_exist = db.query(Controller).filter(Controller.device_id == request.device_id).first()
-        if is_exist:
-            raise ValueError("Controller with this device ID already exists")
+        existing_controllers = db.query(Controller).filter(
+            Controller.device_id == request.device_id,
+            Controller.deleted_at.is_(None)  # Only get non-deleted controllers
+        ).all()
+        
+        for existing_controller in existing_controllers:
+            existing_controller.soft_delete()
+            for machine in existing_controller.machines:
+                machine.soft_delete()
         
         controller = Controller(
             device_id=request.device_id,
@@ -94,6 +120,23 @@ class ControllerOperation:
         
         update_data = request.model_dump(exclude_unset=True)
         
+        # Handle device_id changes - ensure only one active controller per device_id
+        if 'device_id' in update_data:
+            new_device_id = update_data['device_id']
+            if new_device_id != controller.device_id:
+                # Find and soft delete existing controllers with the new device_id
+                existing_controllers = db.query(Controller).filter(
+                    Controller.device_id == new_device_id,
+                    Controller.deleted_at.is_(None),
+                    Controller.id != controller.id  # Don't delete the current controller
+                ).all()
+                
+                for existing_controller in existing_controllers:
+                    existing_controller.soft_delete()
+                    # Also soft delete all machines associated with these controllers
+                    for machine in existing_controller.machines:
+                        machine.soft_delete()
+        
         # Handle total_relays changes before updating the controller
         if 'total_relays' in update_data:
             new_total_relays = update_data['total_relays']
@@ -113,12 +156,19 @@ class ControllerOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def delete(cls, db: Session, controller_id: UUID) -> None:
+    def delete(cls, db: Session, deleted_by: User, controller_id: UUID) -> None:
         controller = db.query(Controller).filter_by(id=controller_id).first()
         if not controller:
             raise ValueError("Controller not found")
+        
+        if not cls._has_permission(deleted_by, controller):
+            raise PermissionError("You don't have permission to delete this controller")
 
-        db.delete(controller)
+        # delete all machines
+        for machine in controller.machines:
+            machine.soft_delete()
+
+        controller.soft_delete()
         db.commit()
 
     @classmethod
@@ -214,3 +264,18 @@ class ControllerOperation:
     @classmethod
     def _has_permission(cls, current_user: User, store_id_or_controller) -> bool:
         return True
+
+    @classmethod
+    def _get_authorized_store_ids(cls, db: Session, current_user: User):
+        if current_user.is_admin:
+            return [store.id for store in db.query(Store).all()]
+
+        authorized_stores = (
+            db.query(Store)
+            .join(TenantMember, Store.tenant_id == TenantMember.tenant_id)
+            .filter(TenantMember.user_id == current_user.id)
+            .filter(TenantMember.is_enabled == True)
+            .all()
+        )
+
+        return [store.id for store in authorized_stores]

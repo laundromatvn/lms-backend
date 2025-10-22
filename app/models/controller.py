@@ -39,13 +39,13 @@ class Controller(Base):
         default=ControllerStatus.NEW,
         index=True
     )
-    device_id = Column(String(255), nullable=False, unique=True, index=True)
+    device_id = Column(String(255), nullable=False, index=True)
     name = Column(String(255), nullable=True, index=True)
     store_id = Column(UUID(as_uuid=True), ForeignKey('stores.id'), nullable=True, index=True)
     total_relays = Column(Integer, nullable=False, default=0)
 
     # Relationships
-    machines = relationship("Machine", back_populates="controller", cascade="all, delete-orphan")
+    machines = relationship("Machine", back_populates="controller")
     store = relationship("Store", back_populates="controllers")
     datapoints = relationship("Datapoint", back_populates="controller")
 

@@ -131,6 +131,7 @@ class OrderResponse(BaseModel):
     id: UUID
     created_at: datetime
     updated_at: datetime
+    transaction_code: str | None = None
     status: OrderStatus
     total_amount: Decimal
     total_washer: int

@@ -12,7 +12,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, or_
 
 from app.libs.database import with_db_session_classmethod
 from app.models.machine import Machine, MachineStatus, MachineType
@@ -23,7 +23,6 @@ from app.models.tenant_member import TenantMember
 from app.models.user import User
 from app.operations.machine.machine_operation import MachineOperation
 from app.schemas.order import CreateOrderRequest, ListOrderQueryParams
-from app.libs.database import get_db_session
 
 
 class OrderOperation:
@@ -521,7 +520,10 @@ class OrderOperation:
                 and_(
                     Machine.id.in_(machine_ids),
                     Machine.deleted_at.is_(None),
-                    Machine.status == MachineStatus.IDLE,
+                    or_(
+                        Machine.status == MachineStatus.IDLE,
+                        Machine.machine_type == MachineType.DRYER,
+                    ),
                 )
             )
             .all()

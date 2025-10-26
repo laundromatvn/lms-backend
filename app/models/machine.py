@@ -59,7 +59,7 @@ class Machine(Base):
         default=MachineStatus.PENDING_SETUP,
         index=True
     )
-    pulse_duration = Column(Integer, nullable=False, default=1000)
+    pulse_duration = Column(Integer, nullable=False, default=50)
     coin_value = Column(Integer, nullable=False, default=10)
     add_ons_options = Column(JSON, nullable=True, default=list)
 

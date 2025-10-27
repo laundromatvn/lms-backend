@@ -12,7 +12,10 @@ class SyncUpInProgressOrdersOperation:
     def execute(cls, db: Session):
         orders = (
             db.query(Order)
-            .filter(Order.status == OrderStatus.IN_PROGRESS)
+            .filter(
+                Order.status.in_([OrderStatus.IN_PROGRESS, OrderStatus.WAITING_FOR_PAYMENT]),
+                Order.deleted_at.is_(None)
+            )
             .order_by(Order.created_at.desc())
             .all()
         )

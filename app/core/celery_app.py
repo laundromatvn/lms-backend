@@ -1,6 +1,5 @@
 from celery import Celery
 from celery.schedules import crontab
-from kombu import Exchange, Queue
 
 from app.core.config import settings
 from app.core.logging import logger
@@ -36,6 +35,10 @@ celery_app.conf.beat_schedule = {
     },
     "sync-up-in-progress-orders": {
         "task": "app.tasks.order.sync_up_in_progress_orders_task",
+        "schedule": crontab(minute="*/1"),
+    },
+    "sync-up-timeout-payments": {
+        "task": "app.tasks.payment.sync_up_timeout_payments_task",
         "schedule": crontab(minute="*/1"),
     },
 }

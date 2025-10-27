@@ -27,7 +27,6 @@ class CacheManager:
     def _connect(self):
         """Connect to Redis server."""
         try:
-            print(settings.REDIS_HOST, settings.REDIS_PORT, settings.REDIS_PASSWORD)
             self.redis_client = redis.Redis(
                 host=settings.REDIS_HOST,
                 port=settings.REDIS_PORT,
@@ -79,7 +78,6 @@ class CacheManager:
                 serialized_value = str(value)
             
             result = self.redis_client.setex(key, ttl_seconds, serialized_value)
-            logger.debug(f"Cache set: {key} (TTL: {ttl_seconds}s)")
             return bool(result)
         except Exception as e:
             logger.error(f"Failed to set cache key {key}: {e}")
@@ -129,7 +127,6 @@ class CacheManager:
         
         try:
             result = self.redis_client.delete(key)
-            logger.debug(f"Cache delete: {key}")
             return bool(result)
         except Exception as e:
             logger.error(f"Failed to delete cache key {key}: {e}")
@@ -189,7 +186,6 @@ class CacheManager:
         
         try:
             result = self.redis_client.expire(key, ttl_seconds)
-            logger.debug(f"Cache TTL extended: {key} (TTL: {ttl_seconds}s)")
             return bool(result)
         except Exception as e:
             logger.error(f"Failed to extend TTL for cache key {key}: {e}")

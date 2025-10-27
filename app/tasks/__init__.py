@@ -4,6 +4,7 @@ from app.tasks.payment.payment_tasks import (
     sync_payment_transaction,
 )
 from app.tasks.auth.send_otp_task import send_otp_task
+from app.tasks.order.sync_up_in_progress_orders_task import sync_up_in_progress_orders_task
 
 
 __all__ = [
@@ -16,6 +17,9 @@ __all__ = [
 
     # Auth tasks
     "send_otp_task",
+
+    # Order tasks
+    "sync_up_in_progress_orders_task",
 ]
 
 

@@ -34,4 +34,10 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.health_check",
         "schedule": crontab(minute="*/1"),
     },
+    "sync-up-in-progress-orders": {
+        "task": "app.tasks.order.sync_up_in_progress_orders_task",
+        "schedule": crontab(minute="*/1"),
+    },
 }
+
+

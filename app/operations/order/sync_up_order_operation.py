@@ -15,6 +15,8 @@ class SyncUpOrderOperation:
     @classmethod
     @with_db_session_classmethod
     def execute(cls, db: Session, order_id: uuid.UUID):
+        logger.info(f"Syncing up order {order_id}")
+        
         cls.__sync_up_order_details(db, order_id)
 
         cls.__sync_up_order(db, order_id)

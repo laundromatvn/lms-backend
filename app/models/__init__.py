@@ -5,6 +5,7 @@ This package contains all SQLAlchemy models for the application.
 """
 
 from .controller import Controller, ControllerStatus
+from .datapoint import Datapoint, DatapointValueType
 from .machine import Machine, MachineType, MachineStatus
 from .tenant import Tenant, TenantStatus
 from .tenant_member import TenantMember
@@ -22,6 +23,10 @@ __all__ = [
     # Controller
     "Controller",
     "ControllerStatus",
+
+    # Datapoint
+    "Datapoint",
+    "DatapointValueType",
 
     # Machine
     "Machine",

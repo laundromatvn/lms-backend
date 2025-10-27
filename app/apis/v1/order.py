@@ -15,9 +15,10 @@ from app.core.logging import logger
 from app.libs.database import get_db
 from app.models.payment import PaymentStatus, PaymentProvider
 from app.models.payment import Payment
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.operations.order import OrderOperation
 from app.operations.order.order_detail_operation import OrderDetailOperation
+from app.operations.order.sync_up_order_operation import SyncUpOrderOperation
 from app.schemas.order import (
     CreateOrderRequest,
     OrderResponse,
@@ -147,6 +148,25 @@ async def test_trigger_payment_timeout(
         return { "success": True }
     except Exception as e:
         logger.error(f"Error triggering payment timeout: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/{order_id}/sync-up")
+async def sync_up_order(
+    order_id: uuid.UUID = Path(..., description="Order ID"),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Sync up order.
+    """
+    if current_user.role == UserRole.CUSTOMER:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    try:
+        SyncUpOrderOperation.execute(order_id)
+        return { "success": True }
+    except Exception as e:
+        logger.error(f"Error syncing up order: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 

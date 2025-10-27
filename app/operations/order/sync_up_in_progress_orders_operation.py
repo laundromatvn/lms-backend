@@ -20,6 +20,8 @@ class SyncUpInProgressOrdersOperation:
             logger.info("No in progress orders found")
             return
         
+        logger.info(f"Found {len(orders)} in progress orders")
+        
         for order in orders:
             SyncUpOrderOperation.execute(order.id)
 

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, validator, root_validator
 
 from app.models.order import OrderStatus, OrderDetailStatus, AddOnType
 from app.models.machine import MachineType
+from app.models.payment import PaymentStatus
 from app.schemas.pagination import Pagination
 
 
@@ -266,3 +267,7 @@ class ListOrderQueryParams(Pagination):
     status: Optional[OrderStatus] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
+    payment_status: Optional[PaymentStatus] = None
+    query: Optional[str] = None
+    order_by: Optional[str] = None
+    order_direction: Optional[str] = None

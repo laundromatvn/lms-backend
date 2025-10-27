@@ -263,6 +263,9 @@ class OrderOperation:
         if query_params.store_id:
             base_query = base_query.filter(Order.store_id == query_params.store_id)
 
+        if query_params.payment_status:
+            base_query = base_query.filter(Payment.status == query_params.payment_status)
+
         if query_params.tenant_id:
             tenant_member = db.query(TenantMember).filter(
                 TenantMember.tenant_id == query_params.tenant_id,
@@ -274,10 +277,20 @@ class OrderOperation:
             base_query = base_query.filter(
                 Store.tenant_id == query_params.tenant_id
             )
+        
+        if query_params.query:
+            base_query = base_query.filter(
+                Payment.transaction_code.ilike(f"%{query_params.query}%"),
+            )
+            
+        if query_params.order_by:
+            if query_params.order_direction == "desc":
+                base_query = base_query.order_by(getattr(Order, query_params.order_by).desc())
+            else:
+                base_query = base_query.order_by(getattr(Order, query_params.order_by).asc())
 
         result = (
             base_query
-            .order_by(Order.created_at.desc())
             .offset((query_params.page - 1) * query_params.page_size)
             .limit(query_params.page_size)
             .all()

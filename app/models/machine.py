@@ -60,6 +60,7 @@ class Machine(Base):
         index=True
     )
     pulse_duration = Column(Integer, nullable=False, default=50)
+    pulse_interval = Column(Integer, nullable=False, default=100)
     coin_value = Column(Integer, nullable=False, default=10)
     add_ons_options = Column(JSON, nullable=True, default=list)
 
@@ -230,6 +231,7 @@ class Machine(Base):
             'base_price': float(self.base_price) if self.base_price else 0.0,
             'status': self.status.value,
             'pulse_duration': self.pulse_duration,
+            'pulse_interval': self.pulse_interval,
             'coin_value': self.coin_value,
             'add_ons_options': self.add_ons_options,
         }

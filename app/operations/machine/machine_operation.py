@@ -332,6 +332,7 @@ class MachineOperation:
             "machine_type": machine.machine_type.value,
             "relay_id": machine.relay_no,
             "pulse_duration": machine.pulse_duration,
+            "pulse_interval": machine.pulse_interval,
             "value": pulse_value,
         }
 

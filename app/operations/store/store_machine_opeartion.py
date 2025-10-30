@@ -4,7 +4,7 @@ from typing import List
 
 from app.libs.database import with_db_session_classmethod
 from app.models.machine import Machine, MachineType, MachineStatus
-from app.models.controller import Controller
+from app.models.controller import Controller, ControllerStatus
 
 
 class StoreMachineOperation:
@@ -19,6 +19,8 @@ class StoreMachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .filter(
                 Controller.store_id == store_id,
+                Controller.deleted_at.is_(None),
+                Controller.status.notin_([ControllerStatus.INACTIVE]),
                 Machine.status.in_([
                     MachineStatus.IDLE,
                     MachineStatus.BUSY,

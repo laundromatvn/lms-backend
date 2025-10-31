@@ -27,7 +27,10 @@ class StoreMachineOperation:
                     MachineStatus.STARTING,
                 ]),
             )
-            .order_by(Machine.relay_no.asc())
+            .order_by(
+                Machine.name.asc(),
+                Machine.relay_no.asc(),
+            )
             .all()
         )
 

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 
 from app.core.logging import logger
+from app.core.config import settings
 from app.libs.database import with_db_session_for_class_instance
 from app.models.machine import Machine, MachineType, MachineStatus
 from app.models.store import Store, StoreStatus
@@ -147,13 +148,16 @@ class GetDashboardOverviewKeyMetricsOperation:
         today = date.today()
         
         # Get today's orders (excluding soft deleted)
+        # Use timezone conversion to ensure consistent date extraction
         today_orders = (
             db.query(Order)
             .join(Store)
             .filter(
                 and_(
                     Store.tenant_id == self.tenant_id,
-                    func.date(Order.created_at) == today,
+                    func.date(
+                        func.timezone(settings.TIMEZONE_NAME, Order.created_at)
+                    ) == today,
                     Order.deleted_at.is_(None)
                 )
             )
@@ -168,7 +172,9 @@ class GetDashboardOverviewKeyMetricsOperation:
                 and_(
                     Store.tenant_id == self.tenant_id,
                     Order.status == OrderStatus.IN_PROGRESS,
-                    func.date(Order.created_at) == today,
+                    func.date(
+                        func.timezone(settings.TIMEZONE_NAME, Order.created_at)
+                    ) == today,
                     Order.deleted_at.is_(None)
                 )
             )
@@ -184,6 +190,8 @@ class GetDashboardOverviewKeyMetricsOperation:
         current_year = today.year
         
         # Get today's revenue from successful payments
+        # Use timezone conversion to ensure consistent date extraction
+        # Convert Payment.created_at to application timezone before extracting date
         revenue_by_day = (
             db.query(func.coalesce(func.sum(Payment.total_amount), 0))
             .join(Store)
@@ -191,7 +199,9 @@ class GetDashboardOverviewKeyMetricsOperation:
                 and_(
                     Store.tenant_id == self.tenant_id,
                     Payment.status == PaymentStatus.SUCCESS,
-                    func.date(Payment.created_at) == today,
+                    func.date(
+                        func.timezone(settings.TIMEZONE_NAME, Payment.created_at)
+                    ) == today,
                     Payment.deleted_at.is_(None)
                 )
             )
@@ -202,6 +212,7 @@ class GetDashboardOverviewKeyMetricsOperation:
         logger.info(f"revenue_by_day: {revenue_by_day}")
         
         # Get current month's revenue from successful payments
+        # Use timezone conversion for month extraction as well
         revenue_by_month = (
             db.query(func.coalesce(func.sum(Payment.total_amount), 0))
             .join(Store)
@@ -209,8 +220,14 @@ class GetDashboardOverviewKeyMetricsOperation:
                 and_(
                     Store.tenant_id == self.tenant_id,
                     Payment.status == PaymentStatus.SUCCESS,
-                    func.extract('year', Payment.created_at) == current_year,
-                    func.extract('month', Payment.created_at) == current_month,
+                    func.extract(
+                        'year',
+                        func.timezone(settings.TIMEZONE_NAME, Payment.created_at)
+                    ) == current_year,
+                    func.extract(
+                        'month',
+                        func.timezone(settings.TIMEZONE_NAME, Payment.created_at)
+                    ) == current_month,
                     Payment.deleted_at.is_(None)
                 )
             )

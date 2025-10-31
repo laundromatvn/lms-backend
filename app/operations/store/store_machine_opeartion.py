@@ -21,6 +21,7 @@ class StoreMachineOperation:
                 Controller.store_id == store_id,
                 Controller.deleted_at.is_(None),
                 Controller.status.notin_([ControllerStatus.INACTIVE]),
+                Machine.deleted_at.is_(None),
                 Machine.status.in_([
                     MachineStatus.IDLE,
                     MachineStatus.BUSY,

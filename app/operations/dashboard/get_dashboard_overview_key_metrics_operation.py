@@ -1,10 +1,10 @@
 from uuid import UUID
-from datetime import datetime, date
-from decimal import Decimal
+from datetime import date
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 
+from app.core.logging import logger
 from app.libs.database import with_db_session_for_class_instance
 from app.models.machine import Machine, MachineType, MachineStatus
 from app.models.store import Store, StoreStatus
@@ -198,6 +198,9 @@ class GetDashboardOverviewKeyMetricsOperation:
             .scalar()
         )
         
+        # trigger load
+        logger.info(f"revenue_by_day: {revenue_by_day}")
+        
         # Get current month's revenue from successful payments
         revenue_by_month = (
             db.query(func.coalesce(func.sum(Payment.total_amount), 0))
@@ -214,6 +217,10 @@ class GetDashboardOverviewKeyMetricsOperation:
             .scalar()
         )
         
+        
+        # trigger load
+        logger.info(f"revenue_by_month: {revenue_by_month}")
+
         # Convert to float for JSON serialization
         return (
             float(revenue_by_day) if revenue_by_day else 0.0,

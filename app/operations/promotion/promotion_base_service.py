@@ -94,8 +94,15 @@ class PromotionBaseService:
         payload: PromotionCampaignUpdate,
     ) -> PromotionCampaign:
         promotion_campaign = cls._get_promotion_campaign(db, current_user, promotion_campaign_id)
-        
-        update_data = payload.model_dump(exclude_unset=True)
+
+        update_data = payload.model_dump(exclude_unset=True, exclude={"conditions", "rewards", "limits"})
+
+        if payload.conditions:
+            update_data["conditions"] = [condition.model_dump(mode='json') for condition in payload.conditions]
+        if payload.rewards:
+            update_data["rewards"] = [reward.model_dump(mode='json') for reward in payload.rewards]
+        if payload.limits:
+            update_data["limits"] = [limit.model_dump(mode='json') for limit in payload.limits]
         
         for field, value in update_data.items():
             if hasattr(promotion_campaign, field):

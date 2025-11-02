@@ -17,6 +17,10 @@ from .payment import (
     PaymentStatus, 
     PaymentProvider
 )
+from .promotion_campaign import (
+    PromotionCampaign,
+    PromotionCampaignStatus,
+)
 from .system_task import SystemTask, SystemTaskStatus
 
 __all__ = [
@@ -57,6 +61,10 @@ __all__ = [
     "Payment",
     "PaymentStatus",
     "PaymentProvider",
+    
+    # Promotion Campaign
+    "PromotionCampaign",
+    "PromotionCampaignStatus",
 
     # SystemTask
     "SystemTask",

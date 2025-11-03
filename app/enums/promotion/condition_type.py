@@ -11,3 +11,10 @@ class ConditionType(Enum):
     AMOUNT_PER_USER = "AMOUNT_PER_USER"
     AMOUNT_PER_STORE = "AMOUNT_PER_STORE"
     AMOUNT_PER_TENANT = "AMOUNT_PER_TENANT"
+    
+    
+class ConditionValueType(Enum):
+    STRING = "STRING"
+    NUMBER = "NUMBER"
+    BOOLEAN = "BOOLEAN"
+    OPTIONS = "OPTIONS"

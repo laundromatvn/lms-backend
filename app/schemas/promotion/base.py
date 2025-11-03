@@ -13,6 +13,7 @@ class Condition(BaseModel):
     type: ConditionType
     operator: Operator
     value: Any
+    display_value: str | None = None
 
 
 class Reward(BaseModel):

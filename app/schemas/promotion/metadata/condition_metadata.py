@@ -2,7 +2,7 @@ from typing import Any, List
 
 from pydantic import BaseModel, Field
 
-from app.enums.promotion.condition_type import ConditionType
+from app.enums.promotion.condition_type import ConditionType, ConditionValueType
 from app.enums.promotion.operator import Operator
 from app.models.user import UserRole
 
@@ -12,17 +12,32 @@ class ConditionMetadata(BaseModel):
     operators: List[Operator]
     options: List[Any] | None = None
     allowed_roles: List[UserRole] = Field(default_factory=list, exclude=True)
+    value_type: str | None = None
 
 
 CONDITION_METADATA: List[ConditionMetadata] = [
+    # Object conditions
     ConditionMetadata(
         condition_type=ConditionType.TENANTS,
         operators=[Operator.IN, Operator.NOT_IN],
         allowed_roles=[UserRole.ADMIN],
+        value_type=ConditionValueType.OPTIONS,
     ),
     ConditionMetadata(
         condition_type=ConditionType.STORES,
         operators=[Operator.IN, Operator.NOT_IN],
         allowed_roles=[UserRole.ADMIN, UserRole.TENANT_ADMIN],
+        value_type=ConditionValueType.OPTIONS,
+    ),
+    # Amount conditions
+    ConditionMetadata(
+        condition_type=ConditionType.TOTAL_AMOUNT,
+        operators=[
+            Operator.EQUAL, Operator.NOT_EQUAL,
+            Operator.GREATER_THAN, Operator.GREATER_THAN_OR_EQUAL,
+            Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL,
+        ],
+        allowed_roles=[UserRole.ADMIN, UserRole.TENANT_ADMIN],
+        value_type=ConditionValueType.NUMBER,
     )
 ]

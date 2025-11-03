@@ -27,13 +27,15 @@ class StorePromotionConditionBuilder(BasePromotionConditionBuilder):
             return self._get_tenant_store_ids(db)
 
     def _get_admin_store_ids(self, db: Session) -> List[UUID]:
-        stores = (
-            db.query(Store)
-            .filter(Store.deleted_at.is_(None))
-            .all()
-        )
+        stores = db.query(Store).filter(Store.deleted_at.is_(None)).all()
 
-        return [store.id for store in stores]
+        return [
+            {
+                "value": str(store.id),
+                "label": store.name,
+            }
+            for store in stores
+        ]
 
     def _get_tenant_store_ids(self, db: Session) -> List[UUID]:
         current_user_tenant_members = (
@@ -52,4 +54,10 @@ class StorePromotionConditionBuilder(BasePromotionConditionBuilder):
             .all()
         )
 
-        return [store.id for store in stores]
+        return [
+            {
+                "value": str(store.id),
+                "label": store.name,
+            }
+            for store in stores
+        ]

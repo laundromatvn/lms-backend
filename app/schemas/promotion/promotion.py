@@ -27,7 +27,7 @@ class PromotionCampaignSerializer(BaseModel):
     status: PromotionCampaignStatus
     tenant_id: uuid.UUID | None = None
     start_time: datetime.datetime
-    end_time: datetime.datetime
+    end_time: datetime.datetime | None = None
     conditions: list[Condition]
     rewards: list[Reward]
     limits: list[Limit]

@@ -20,9 +20,5 @@ CONDITION_METADATA: List[ConditionMetadata] = [
     ConditionMetadata(
         condition_type=ConditionType.STORES,
         operators=[Operator.IN, Operator.NOT_IN]
-    ),
-    ConditionMetadata(
-        condition_type=ConditionType.USERS,
-        operators=[Operator.IN, Operator.NOT_IN]
-    ),
+    )
 ]

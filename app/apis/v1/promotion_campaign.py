@@ -6,6 +6,7 @@ from app.apis.deps import get_current_user
 from app.core.logging import logger
 from app.models.user import User
 from app.operations.promotion.promotion_base_service import PromotionBaseService
+from app.operations.promotion.promotion_metadata.build_promotion_metadata_operation import BuildPromotionMetadataOperation
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.promotion.promotion import (
     PromotionCampaignSerializer,
@@ -13,9 +14,21 @@ from app.schemas.promotion.promotion import (
     PromotionCampaignCreate,
     PromotionCampaignUpdate,
 )
+from app.schemas.promotion.promotion import PromotionMetadata
 from app.utils.pagination import get_total_pages
 
 router = APIRouter()
+
+
+@router.get("/metadata", response_model=PromotionMetadata)
+async def get_promotion_metadata(
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return await BuildPromotionMetadataOperation(current_user).execute()
+    except Exception as e:
+        logger.error("Get promotion metadata failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("", response_model=PaginatedResponse[PromotionCampaignSerializer])

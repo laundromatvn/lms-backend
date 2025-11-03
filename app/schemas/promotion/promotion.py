@@ -69,3 +69,5 @@ class PromotionMetadata(BaseModel):
     conditions: List[ConditionMetadata]
     rewards: List[RewardMetadata]
     limits: List[LimitMetadata]
+
+

@@ -97,11 +97,12 @@ class PromotionBaseService:
 
         update_data = payload.model_dump(exclude_unset=True, exclude={"conditions", "rewards", "limits"})
 
-        if payload.conditions:
+        # accept [] as empty list
+        if isinstance(payload.conditions, list):
             update_data["conditions"] = [condition.model_dump(mode='json') for condition in payload.conditions]
-        if payload.rewards:
+        if isinstance(payload.rewards, list):
             update_data["rewards"] = [reward.model_dump(mode='json') for reward in payload.rewards]
-        if payload.limits:
+        if isinstance(payload.limits, list):
             update_data["limits"] = [limit.model_dump(mode='json') for limit in payload.limits]
         
         for field, value in update_data.items():

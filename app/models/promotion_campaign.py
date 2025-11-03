@@ -46,8 +46,8 @@ class PromotionCampaign(Base):
     
     tenant_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=True, index=True)
 
-    start_time = Column(DateTime(timezone=True), nullable=True, index=True)
-    end_time = Column(DateTime(timezone=True), nullable=False, index=True)
+    start_time = Column(DateTime(timezone=True), nullable=False, index=True)
+    end_time = Column(DateTime(timezone=True), nullable=True, index=True)
     
     conditions = Column(JSON, nullable=False, default=list) # JSON field to store list of Condition schemas
     rewards = Column(JSON, nullable=False, default=list) # JSON field to store list of Reward schemas
@@ -119,6 +119,9 @@ class PromotionCampaign(Base):
     
     @validates('end_time')
     def validate_end_time(self, key: str, end_time) -> datetime.datetime:
+        if end_time is None:
+            return end_time
+
         if not isinstance(end_time, datetime.datetime):
             try:
                 end_time = datetime.datetime.fromisoformat(end_time)

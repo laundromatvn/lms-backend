@@ -56,3 +56,5 @@ class BuildPromotionMetadataOperation:
             raise ValueError("allowed_roles is required")
 
         return current_user_role in allowed_roles
+
+

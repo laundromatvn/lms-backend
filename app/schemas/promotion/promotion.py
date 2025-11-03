@@ -1,4 +1,5 @@
 import datetime
+from typing import List
 import uuid
 
 from pydantic import BaseModel
@@ -6,6 +7,11 @@ from pydantic import BaseModel
 from app.models.promotion_campaign import PromotionCampaignStatus
 from app.schemas.pagination import Pagination
 from app.schemas.promotion.base import Condition, Reward, Limit
+from app.schemas.promotion.metadata import (
+    ConditionMetadata,
+    RewardMetadata,
+    LimitMetadata,
+)
 
 
 class PromotionCampaignSerializer(BaseModel):
@@ -57,3 +63,9 @@ class ListPromotionCampaignQueryParams(Pagination):
     query: str | None = None
     order_by: str | None = "created_at"
     order_direction: str | None = "desc"
+
+
+class PromotionMetadata(BaseModel):
+    conditions: List[ConditionMetadata]
+    rewards: List[RewardMetadata]
+    limits: List[LimitMetadata]

@@ -103,6 +103,9 @@ class PromotionBaseService:
             rewards=rewards_json,
             limits=limits_json,
         )
+        
+        if not current_user.is_admin:
+            promotion_campaign.tenant_id = current_user.tenant_id
 
         db.add(promotion_campaign)
         db.commit()
@@ -134,6 +137,8 @@ class PromotionBaseService:
         for field, value in update_data.items():
             if hasattr(promotion_campaign, field):
                 setattr(promotion_campaign, field, value)
+                
+        update_data["updated_by"] = current_user.id
 
         db.commit()
         db.refresh(promotion_campaign)

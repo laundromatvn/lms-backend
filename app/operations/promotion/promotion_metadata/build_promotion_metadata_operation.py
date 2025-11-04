@@ -41,10 +41,26 @@ class BuildPromotionMetadataOperation:
         return conditions
 
     async def _build_rewards(self) -> List[RewardMetadata]:
-        return REWARD_METADATA
+        rewards = []
+
+        for meta in REWARD_METADATA:
+            if not self._has_permission(self.current_user.role, meta.allowed_roles):
+                continue
+
+            rewards.append(meta)
+
+        return rewards
 
     async def _build_limits(self) -> List[LimitMetadata]:
-        return LIMIT_METADATA
+        limits = []
+
+        for meta in LIMIT_METADATA:
+            if not self._has_permission(self.current_user.role, meta.allowed_roles):
+                continue
+
+            limits.append(meta)
+
+        return limits
 
     def _has_permission(
         self,

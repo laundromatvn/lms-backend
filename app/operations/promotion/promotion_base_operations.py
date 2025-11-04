@@ -16,7 +16,7 @@ from app.schemas.promotion.promotion import (
 )
 
 
-class PromotionBaseService:
+class PromotionBaseOperations:
 
     @classmethod
     @with_db_session_classmethod

@@ -5,7 +5,7 @@ from fastapi import status
 from app.apis.deps import get_current_user
 from app.core.logging import logger
 from app.models.user import User
-from app.operations.promotion.promotion_base_service import PromotionBaseService
+from app.operations.promotion.promotion_base_operations import PromotionBaseOperations
 from app.operations.promotion.promotion_metadata.build_promotion_metadata_operation import BuildPromotionMetadataOperation
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.promotion.promotion import (
@@ -37,7 +37,7 @@ async def list_promotion_campaigns(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        total, promotion_campaigns = PromotionBaseService.list(current_user, query_params)
+        total, promotion_campaigns = PromotionBaseOperations.list(current_user, query_params)
         
         return {
             "page": query_params.page,
@@ -57,7 +57,7 @@ async def create_promotion_campaign(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return PromotionBaseService.create(current_user, request)
+        return PromotionBaseOperations.create(current_user, request)
     except Exception as e:
         logger.error("Create promotion campaign failed", type=type(e).__name__, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
@@ -69,7 +69,7 @@ async def get_promotion_campaign(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        promotion_campaign = PromotionBaseService.get(current_user, promotion_campaign_id)
+        promotion_campaign = PromotionBaseOperations.get(current_user, promotion_campaign_id)
         return promotion_campaign
     except Exception as e:
         logger.error("Get promotion campaign failed", type=type(e).__name__, error=str(e))
@@ -83,7 +83,7 @@ async def update_partially_promotion_campaign(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return PromotionBaseService.update_partially(current_user, promotion_campaign_id, request)
+        return PromotionBaseOperations.update_partially(current_user, promotion_campaign_id, request)
     except Exception as e:
         logger.error("Update promotion campaign failed", type=type(e).__name__, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
@@ -95,7 +95,7 @@ async def delete_promotion_campaign(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        PromotionBaseService.delete(current_user, promotion_campaign_id)
+        PromotionBaseOperations.delete(current_user, promotion_campaign_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         logger.error("Delete promotion campaign failed", type=type(e).__name__, error=str(e))
@@ -108,7 +108,7 @@ async def schedule_promotion_campaign(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        PromotionBaseService.schedule(current_user, promotion_campaign_id)
+        PromotionBaseOperations.schedule(current_user, promotion_campaign_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         logger.error("Schedule promotion campaign failed", type=type(e).__name__, error=str(e))
@@ -121,7 +121,7 @@ async def pause_promotion_campaign(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        PromotionBaseService.pause(current_user, promotion_campaign_id)
+        PromotionBaseOperations.pause(current_user, promotion_campaign_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         logger.error("Pause promotion campaign failed", type=type(e).__name__, error=str(e))
@@ -134,7 +134,7 @@ async def resume_promotion_campaign(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        PromotionBaseService.resume(current_user, promotion_campaign_id)
+        PromotionBaseOperations.resume(current_user, promotion_campaign_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         logger.error("Resume promotion campaign failed", type=type(e).__name__, error=str(e))

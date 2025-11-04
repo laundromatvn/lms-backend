@@ -105,7 +105,8 @@ class PromotionBaseService:
         )
         
         if not current_user.is_admin:
-            promotion_campaign.tenant_id = current_user.tenant_id
+            tenant_member = db.query(TenantMember).filter(TenantMember.user_id == current_user.id).first()
+            promotion_campaign.tenant_id = tenant_member.tenant_id
 
         db.add(promotion_campaign)
         db.commit()

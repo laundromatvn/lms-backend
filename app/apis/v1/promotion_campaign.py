@@ -102,3 +102,42 @@ async def delete_promotion_campaign(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/{promotion_campaign_id}/schedule", status_code=status.HTTP_204_NO_CONTENT)
+async def schedule_promotion_campaign(
+    promotion_campaign_id: UUID,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        PromotionBaseService.schedule(current_user, promotion_campaign_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        logger.error("Schedule promotion campaign failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{promotion_campaign_id}/pause", status_code=status.HTTP_204_NO_CONTENT)
+async def pause_promotion_campaign(
+    promotion_campaign_id: UUID,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        PromotionBaseService.pause(current_user, promotion_campaign_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        logger.error("Pause promotion campaign failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{promotion_campaign_id}/resume", status_code=status.HTTP_204_NO_CONTENT)
+async def resume_promotion_campaign(
+    promotion_campaign_id: UUID,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        PromotionBaseService.resume(current_user, promotion_campaign_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        logger.error("Resume promotion campaign failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+

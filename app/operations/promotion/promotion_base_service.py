@@ -1,3 +1,4 @@
+import datetime
 from typing import List
 from uuid import UUID
 
@@ -152,6 +153,83 @@ class PromotionBaseService:
         promotion_campaign.soft_delete(current_user.id)
         db.add(promotion_campaign)
         db.commit()
+
+    @classmethod
+    @with_db_session_classmethod
+    def schedule(
+        cls,
+        db: Session,
+        current_user: User,
+        promotion_campaign_id: UUID,
+    ) -> PromotionCampaign:
+        promotion_campaign = cls._get_promotion_campaign(db, current_user, promotion_campaign_id)
+        
+        if promotion_campaign.deleted_at is not None:
+            raise ValueError("Cannot schedule a deleted promotion campaign")
+        
+        if promotion_campaign.status != PromotionCampaignStatus.DRAFT:
+            raise ValueError(f"Cannot schedule promotion campaign with status {promotion_campaign.status.value}. Only DRAFT campaigns can be scheduled.")
+        
+        promotion_campaign.status = PromotionCampaignStatus.SCHEDULED
+        promotion_campaign.updated_by = current_user.id
+        db.commit()
+        db.refresh(promotion_campaign)
+        
+        return promotion_campaign
+
+    @classmethod
+    @with_db_session_classmethod
+    def pause(
+        cls,
+        db: Session,
+        current_user: User,
+        promotion_campaign_id: UUID,
+    ) -> PromotionCampaign:
+        promotion_campaign = cls._get_promotion_campaign(db, current_user, promotion_campaign_id)
+        
+        if promotion_campaign.deleted_at is not None:
+            raise ValueError("Cannot pause a deleted promotion campaign")
+        
+        if promotion_campaign.status not in [PromotionCampaignStatus.ACTIVE, PromotionCampaignStatus.SCHEDULED]:
+            raise ValueError(f"Cannot pause promotion campaign with status {promotion_campaign.status.value}. Only ACTIVE or SCHEDULED campaigns can be paused.")
+        
+        promotion_campaign.status = PromotionCampaignStatus.PAUSED
+        promotion_campaign.updated_by = current_user.id
+        db.commit()
+        db.refresh(promotion_campaign)
+        
+        return promotion_campaign
+
+    @classmethod
+    @with_db_session_classmethod
+    def resume(
+        cls,
+        db: Session,
+        current_user: User,
+        promotion_campaign_id: UUID,
+    ) -> PromotionCampaign:
+        promotion_campaign = cls._get_promotion_campaign(db, current_user, promotion_campaign_id)
+        
+        if promotion_campaign.deleted_at is not None:
+            raise ValueError("Cannot resume a deleted promotion campaign")
+        
+        if promotion_campaign.status != PromotionCampaignStatus.PAUSED:
+            raise ValueError(f"Cannot resume promotion campaign with status {promotion_campaign.status.value}. Only PAUSED campaigns can be resumed.")
+        
+        # Determine the appropriate status based on current time
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if promotion_campaign.start_time <= now:
+            # Campaign should be active if start time has passed
+            promotion_campaign.status = PromotionCampaignStatus.ACTIVE
+        else:
+            # Campaign should be scheduled if start time is in the future
+            promotion_campaign.status = PromotionCampaignStatus.SCHEDULED
+        
+        promotion_campaign.updated_by = current_user.id
+        db.commit()
+        db.refresh(promotion_campaign)
+        
+        return promotion_campaign
         
     @classmethod
     def _get_promotion_campaign(
@@ -163,17 +241,17 @@ class PromotionBaseService:
         base_query = (
             db.query(PromotionCampaign).filter(PromotionCampaign.id == promotion_campaign_id)
         )
-        
+
         if not current_user.is_admin:
             tenant_ids = cls._get_tenant_ids(db, current_user)
             base_query = base_query.filter(
                 or_(PromotionCampaign.tenant_id.in_(tenant_ids), 
                     PromotionCampaign.tenant_id == None))
-            
+
         promotion_campaign = base_query.first()
         if not promotion_campaign:
             raise ValueError("Promotion campaign not found")
-        
+
         return promotion_campaign
 
     @classmethod

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.libs.database import with_db_session_classmethod
 from app.models.user import User
-from app.models.promotion_campaign import PromotionCampaign
+from app.models.promotion_campaign import PromotionCampaign, PromotionCampaignStatus
 from app.models.tenant_member import TenantMember
 from app.schemas.promotion.promotion import (
     ListPromotionCampaignQueryParams,
@@ -25,8 +25,14 @@ class PromotionBaseService:
         current_user: User,
         query_params: ListPromotionCampaignQueryParams,
     ) -> tuple[int, list[PromotionCampaign]]:
-        base_query = db.query(PromotionCampaign)
-
+        base_query = (
+            db.query(PromotionCampaign)
+            .filter(
+                PromotionCampaign.deleted_at.is_(None),
+                PromotionCampaign.status.not_in([PromotionCampaignStatus.INACTIVE])
+            )
+        )
+        
         # Get system and tenant promotion campaigns
         if not current_user.is_admin:
             tenant_ids = cls._get_tenant_ids(db, current_user)
@@ -34,9 +40,28 @@ class PromotionBaseService:
             base_query = base_query.filter(
                 or_(PromotionCampaign.tenant_id.in_(tenant_ids), 
                     PromotionCampaign.tenant_id == None))
-
-        # Order
-        base_query = base_query.order_by(PromotionCampaign.created_at.desc())
+            
+        if query_params.status:
+            base_query = base_query.filter(PromotionCampaign.status == query_params.status)
+        
+        if query_params.start_time:
+            base_query = base_query.filter(PromotionCampaign.start_time >= query_params.start_time)
+        
+        if query_params.end_time:
+            base_query = base_query.filter(PromotionCampaign.end_time <= query_params.end_time)
+        
+        if query_params.query:
+            base_query = base_query.filter(
+                PromotionCampaign.name.ilike(f"%{query_params.query}%"),
+            )
+        
+        if query_params.order_by:
+            if query_params.order_direction == "asc":
+                base_query = base_query.order_by(getattr(PromotionCampaign, query_params.order_by).asc())
+            else:
+                base_query = base_query.order_by(getattr(PromotionCampaign, query_params.order_by).desc())
+        else:
+            base_query = base_query.order_by(PromotionCampaign.created_at.desc())
 
         total = base_query.count()
         promotion_campaigns = base_query.all()
@@ -113,7 +138,21 @@ class PromotionBaseService:
         db.refresh(promotion_campaign)
         
         return promotion_campaign
-    
+
+    @classmethod
+    @with_db_session_classmethod
+    def delete(
+        cls,
+        db: Session,
+        current_user: User,
+        promotion_campaign_id: UUID,
+    ) -> None:
+        promotion_campaign = cls._get_promotion_campaign(db, current_user, promotion_campaign_id)
+
+        promotion_campaign.soft_delete(current_user.id)
+        db.add(promotion_campaign)
+        db.commit()
+        
     @classmethod
     def _get_promotion_campaign(
         cls,

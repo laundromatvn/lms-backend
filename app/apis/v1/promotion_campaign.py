@@ -1,7 +1,7 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
-
+from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import status
 from app.apis.deps import get_current_user
 from app.core.logging import logger
 from app.models.user import User
@@ -87,3 +87,18 @@ async def update_partially_promotion_campaign(
     except Exception as e:
         logger.error("Update promotion campaign failed", type=type(e).__name__, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{promotion_campaign_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_promotion_campaign(
+    promotion_campaign_id: UUID,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        PromotionBaseService.delete(current_user, promotion_campaign_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        logger.error("Delete promotion campaign failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+

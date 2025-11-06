@@ -2,7 +2,7 @@ import datetime
 from typing import List
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 from app.models.promotion_campaign import PromotionCampaignStatus
 from app.schemas.pagination import Pagination
@@ -12,6 +12,7 @@ from app.schemas.promotion.metadata import (
     RewardMetadata,
     LimitMetadata,
 )
+from app.utils.timezone import to_local
 
 
 class PromotionCampaignSerializer(BaseModel):
@@ -31,6 +32,41 @@ class PromotionCampaignSerializer(BaseModel):
     conditions: list[Condition]
     rewards: list[Reward]
     limits: list[Limit]
+
+    @field_serializer('start_time')
+    def serialize_start_time(self, dt: datetime.datetime | None, _info) -> datetime.datetime | None:
+        """Convert UTC datetime to local timezone (Vietnam) for API responses."""
+        if dt is None:
+            return None
+        return to_local(dt)
+    
+    @field_serializer('end_time')
+    def serialize_end_time(self, dt: datetime.datetime | None, _info) -> datetime.datetime | None:
+        """Convert UTC datetime to local timezone (Vietnam) for API responses."""
+        if dt is None:
+            return None
+        return to_local(dt)
+    
+    @field_serializer('created_at')
+    def serialize_created_at(self, dt: datetime.datetime | None, _info) -> datetime.datetime | None:
+        """Convert UTC datetime to local timezone (Vietnam) for API responses."""
+        if dt is None:
+            return None
+        return to_local(dt)
+    
+    @field_serializer('updated_at')
+    def serialize_updated_at(self, dt: datetime.datetime | None, _info) -> datetime.datetime | None:
+        """Convert UTC datetime to local timezone (Vietnam) for API responses."""
+        if dt is None:
+            return None
+        return to_local(dt)
+    
+    @field_serializer('deleted_at')
+    def serialize_deleted_at(self, dt: datetime.datetime | None, _info) -> datetime.datetime | None:
+        """Convert UTC datetime to local timezone (Vietnam) for API responses."""
+        if dt is None:
+            return None
+        return to_local(dt)
 
 
 class PromotionCampaignCreate(BaseModel):

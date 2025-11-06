@@ -61,9 +61,10 @@ def get_engine() -> Engine:
         # Add connection event listeners
         @event.listens_for(_engine, "connect")
         def set_postgresql_timezone(dbapi_connection, connection_record):
-            """Set PostgreSQL timezone for each connection."""
+            """Set PostgreSQL timezone for each connection. Use UTC for storage."""
             with dbapi_connection.cursor() as cursor:
-                cursor.execute(f"SET timezone TO '{settings.DATABASE_TIMEZONE}'")
+                # PostgreSQL should store datetimes in UTC
+                cursor.execute("SET timezone TO 'UTC'")
         
         @event.listens_for(_engine, "checkout")
         def receive_checkout(dbapi_connection, connection_record, connection_proxy):

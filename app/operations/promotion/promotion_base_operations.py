@@ -14,6 +14,7 @@ from app.schemas.promotion.promotion import (
     PromotionCampaignCreate,
     PromotionCampaignUpdate
 )
+from app.utils.timezone import to_utc
 
 
 class PromotionBaseOperations:
@@ -46,11 +47,13 @@ class PromotionBaseOperations:
             base_query = base_query.filter(PromotionCampaign.status == query_params.status)
         
         if query_params.start_time:
-            base_query = base_query.filter(PromotionCampaign.start_time >= query_params.start_time)
+            start_time_utc = to_utc(query_params.start_time)
+            base_query = base_query.filter(PromotionCampaign.start_time >= start_time_utc)
         
         if query_params.end_time:
-            base_query = base_query.filter(PromotionCampaign.end_time <= query_params.end_time)
-        
+            end_time_utc = to_utc(query_params.end_time)
+            base_query = base_query.filter(PromotionCampaign.end_time <= end_time_utc)
+
         if query_params.query:
             base_query = base_query.filter(
                 PromotionCampaign.name.ilike(f"%{query_params.query}%"),

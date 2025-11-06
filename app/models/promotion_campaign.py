@@ -13,6 +13,7 @@ from sqlalchemy.orm import relationship, validates
 
 from app.libs.database import Base
 from app.schemas.promotion.base import Condition, Reward, Limit
+from app.utils.timezone import to_utc
 
 
 class PromotionCampaignStatus(str, Enum):
@@ -113,7 +114,8 @@ class PromotionCampaign(Base):
             except (ValueError, TypeError):
                 raise ValueError("Start time must be a datetime object")
 
-        return start_time
+        # Convert to UTC before storing in database
+        return to_utc(start_time)
     
     @validates('end_time')
     def validate_end_time(self, key: str, end_time) -> datetime.datetime:
@@ -126,10 +128,14 @@ class PromotionCampaign(Base):
             except (ValueError, TypeError):
                 raise ValueError("End time must be a datetime object")
 
-        if end_time < datetime.datetime.now():
+        # Convert to UTC before storing in database
+        end_time_utc = to_utc(end_time)
+        
+        # Check if end time is in the future (compare in UTC)
+        if end_time_utc < datetime.datetime.now(datetime.timezone.utc):
             raise ValueError("End time must be in the future")
 
-        return end_time
+        return end_time_utc
 
     @property
     def is_active(self) -> bool:

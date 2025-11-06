@@ -22,6 +22,7 @@ class PromotionCampaignStatus(str, Enum):
     ACTIVE = "ACTIVE" # when campaign is active and can be used
     PAUSED = "PAUSED" # when campaign is paused and cannot be used
     INACTIVE = "INACTIVE" # when campaign is inactive and cannot be used
+    FINISHED = "FINISHED" # when campaign is finished and cannot be used
 
 
 class PromotionCampaign(Base):

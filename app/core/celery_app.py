@@ -41,6 +41,10 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.payment.sync_up_timeout_payments_task",
         "schedule": crontab(minute="*/1"),
     },
+    "sync-up-promotion-campaigns": {
+        "task": "app.tasks.promotion.sync_up_promotion_campaign_task",
+        "schedule": crontab(minute="*/1"),
+    },
 }
 
 

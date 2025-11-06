@@ -33,10 +33,12 @@ class PaymentMethod(str, Enum):
     QR = "QR"
     CARD = "CARD"
     OTHER = "OTHER"
+    DISCOUNT_FULL = "DISCOUNT_FULL"
 
 
 class PaymentProvider(str, Enum):
     VIET_QR = "VIET_QR"
+    INTERNAL_PROMOTION = "INTERNAL_PROMOTION"
 
 
 class Payment(Base):
@@ -131,8 +133,21 @@ class Payment(Base):
             except (ValueError, TypeError):
                 raise ValueError("Total amount must be a number")
         
-        if total_amount <= 0:
-            raise ValueError("Total amount must be greater than 0")
+        if total_amount < 0:
+            raise ValueError("Total amount cannot be negative")
+        
+        # Allow 0 only for internal promotion with discount_full method
+        # Check if provider and payment_method are set (may be None during initialization)
+        if total_amount == 0:
+            # During initialization, provider and payment_method might not be set yet
+            # Allow 0 if provider is INTERNAL_PROMOTION or not set yet (will be validated later)
+            if hasattr(self, 'provider') and self.provider is not None:
+                if self.provider != PaymentProvider.INTERNAL_PROMOTION:
+                    raise ValueError("Total amount must be greater than 0 for non-promotion payments")
+                if hasattr(self, 'payment_method') and self.payment_method is not None:
+                    if self.payment_method != PaymentMethod.DISCOUNT_FULL:
+                        raise ValueError("Total amount of 0 is only allowed for DISCOUNT_FULL payment method")
+            # If provider not set yet, allow 0 (will be validated when provider is set)
         
         return total_amount
     
@@ -189,7 +204,12 @@ class Payment(Base):
         if not transaction_code.isalnum():
             raise ValueError("Transaction code must contain only uppercase letters and digits")
         
-        # Ensure it contains at least one letter and one digit
+        # For PROMO codes (internal promotion), allow them without requiring both letter and digit
+        # since they start with "PROMO" prefix
+        if transaction_code.startswith("PROMO"):
+            return transaction_code
+        
+        # Ensure it contains at least one letter and one digit for regular codes
         has_letter = any(c.isalpha() for c in transaction_code)
         has_digit = any(c.isdigit() for c in transaction_code)
         
@@ -202,12 +222,16 @@ class Payment(Base):
     
     @validates('payment_method_details')
     def validate_payment_method_details(self, key: str, payment_method_details: Optional[dict]) -> Optional[dict]:
+        # DISCOUNT_FULL method doesn't require payment method details
+        if hasattr(self, 'payment_method') and self.payment_method == PaymentMethod.DISCOUNT_FULL:
+            return None
+        
         if payment_method_details is not None:
             if not isinstance(payment_method_details, dict):
                 raise ValueError("Payment method details must be a dictionary")
             
             # Validate required fields based on payment method
-            if self.payment_method == PaymentMethod.QR:
+            if hasattr(self, 'payment_method') and self.payment_method == PaymentMethod.QR:
                 required_fields = [
                     'bank_code',
                     'bank_name', 

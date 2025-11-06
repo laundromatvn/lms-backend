@@ -1,6 +1,6 @@
 from enum import Enum
 import uuid
-from typing import Optional, List
+from typing import Optional
 from decimal import Decimal
 
 from sqlalchemy import (
@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     Integer,
     Numeric,
+    JSON,
     func,
     event,
 )
@@ -64,15 +65,21 @@ class Order(Base):
         default=OrderStatus.NEW,
         index=True
     )
-    total_amount = Column(Numeric(10, 2), nullable=False, default=0.00)
+
+    store_id = Column(UUID(as_uuid=True), ForeignKey('stores.id'), nullable=False, index=True)
     total_washer = Column(Integer, nullable=False, default=0)
     total_dryer = Column(Integer, nullable=False, default=0)
-    store_id = Column(UUID(as_uuid=True), ForeignKey('stores.id'), nullable=False, index=True)
+
+    sub_total = Column(Numeric(10, 2), nullable=False, default=0.00)
+    discount_amount = Column(Numeric(10, 2), nullable=False, default=0.00)
+    promotion_summary = Column(JSON, nullable=True, default=dict)
+    total_amount = Column(Numeric(10, 2), nullable=False, default=0.00)
 
     # Relationships
     store = relationship("Store", back_populates="orders")
     order_details = relationship("OrderDetail", back_populates="order", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
+    promotion_orders = relationship("PromotionOrder", back_populates="order", cascade="all, delete-orphan")
 
     @validates('status')
     def validate_status(self, key: str, status) -> OrderStatus:
@@ -82,6 +89,42 @@ class Order(Base):
             except ValueError:
                 raise ValueError(f"Invalid status: {status}. Must be one of {[s.value for s in OrderStatus]}")
         return status
+
+    @validates('sub_total')
+    def validate_sub_total(self, key: str, sub_total) -> Decimal:
+        if not isinstance(sub_total, (int, float, Decimal)):
+            try:
+                sub_total = Decimal(str(sub_total))
+            except (ValueError, TypeError):
+                raise ValueError("Sub total must be a number")
+        
+        if sub_total < 0:
+            raise ValueError("Sub total cannot be negative")
+        
+        return sub_total
+
+    @validates('discount_amount')
+    def validate_discount_amount(self, key: str, discount_amount) -> Decimal:
+        if not isinstance(discount_amount, (int, float, Decimal)):
+            try:
+                discount_amount = Decimal(str(discount_amount))
+            except (ValueError, TypeError):
+                raise ValueError("Discount amount must be a number")
+        
+        if discount_amount < 0:
+            raise ValueError("Discount amount cannot be negative")
+        
+        return discount_amount
+
+    @validates('promotion_summary')
+    def validate_promotion_summary(self, key: str, promotion_summary) -> dict:
+        if promotion_summary is None:
+            return {}
+        
+        if not isinstance(promotion_summary, dict):
+            raise ValueError("Promotion summary must be a dictionary")
+        
+        return promotion_summary
 
     @validates('total_amount')
     def validate_total_amount(self, key: str, total_amount) -> Decimal:
@@ -198,12 +241,14 @@ class Order(Base):
         return total
 
     def update_totals(self) -> None:
-        """Update washer/dryer counts and total amount"""
+        """Update washer/dryer counts and sub_total"""
         self.total_washer = sum(1 for detail in self.order_details 
                                 if detail.machine.machine_type.value == "WASHER")
         self.total_dryer = sum(1 for detail in self.order_details 
                                 if detail.machine.machine_type.value == "DRYER")
-        self.total_amount = self.calculate_total()
+        self.sub_total = self.calculate_total()
+        # total_amount = sub_total - discount_amount
+        self.total_amount = self.sub_total - self.discount_amount
 
     def to_dict(self) -> dict:
         return {
@@ -215,6 +260,9 @@ class Order(Base):
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,
             'deleted_by': str(self.deleted_by) if self.deleted_by else None,
             'status': self.status.value,
+            'sub_total': float(self.sub_total) if self.sub_total else 0.0,
+            'discount_amount': float(self.discount_amount) if self.discount_amount else 0.0,
+            'promotion_summary': self.promotion_summary or {},
             'total_amount': float(self.total_amount) if self.total_amount else 0.0,
             'total_washer': self.total_washer,
             'total_dryer': self.total_dryer,
@@ -399,3 +447,52 @@ def update_order_timestamp(mapper, connection, target):
 @event.listens_for(OrderDetail, 'before_update', propagate=True)
 def update_order_detail_timestamp(mapper, connection, target):
     target.updated_at = func.now()
+
+
+class PromotionOrder(Base):
+    """Relationship table between orders and promotion campaigns."""
+    __tablename__ = "promotion_orders"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
+    
+    promotion_id = Column(UUID(as_uuid=True), ForeignKey('promotion_campaigns.id'), nullable=False, index=True)
+    order_id = Column(UUID(as_uuid=True), ForeignKey('orders.id'), nullable=False, index=True)
+    
+    # Relationships
+    promotion_campaign = relationship("PromotionCampaign", back_populates="promotion_orders")
+    order = relationship("Order", back_populates="promotion_orders")
+
+    @validates('promotion_id')
+    def validate_promotion_id(self, key: str, promotion_id) -> uuid.UUID:
+        if not promotion_id:
+            raise ValueError("Promotion ID is required")
+        
+        if not isinstance(promotion_id, uuid.UUID):
+            try:
+                promotion_id = uuid.UUID(str(promotion_id))
+            except (ValueError, TypeError):
+                raise ValueError("Invalid promotion ID format")
+        
+        return promotion_id
+
+    @validates('order_id')
+    def validate_order_id(self, key: str, order_id) -> uuid.UUID:
+        if not order_id:
+            raise ValueError("Order ID is required")
+        
+        if not isinstance(order_id, uuid.UUID):
+            try:
+                order_id = uuid.UUID(str(order_id))
+            except (ValueError, TypeError):
+                raise ValueError("Invalid order ID format")
+        
+        return order_id
+
+    def to_dict(self) -> dict:
+        return {
+            'id': str(self.id),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'promotion_id': str(self.promotion_id),
+            'order_id': str(self.order_id),
+        }

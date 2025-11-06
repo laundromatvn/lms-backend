@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 import json
 
@@ -105,6 +104,7 @@ class OrderDetailResponse(BaseModel):
     price: Decimal
     machine_name: Optional[str] = None
     machine_type: Optional[MachineType] = None
+    
 
     class Config:
         from_attributes = True
@@ -134,11 +134,14 @@ class OrderResponse(BaseModel):
     updated_at: datetime
     transaction_code: str | None = None
     status: OrderStatus
+    sub_total: Decimal
+    discount_amount: Decimal
     total_amount: Decimal
     total_washer: int
     total_dryer: int
     store_id: UUID
     store_name: Optional[str] = None
+    promotion_summary: Optional[Dict[str, Any]] = None
 
     class Config:
         from_attributes = True

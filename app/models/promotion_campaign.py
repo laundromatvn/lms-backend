@@ -55,6 +55,7 @@ class PromotionCampaign(Base):
     
     # Relationships
     tenant = relationship("Tenant", back_populates="promotion_campaigns")
+    promotion_orders = relationship("PromotionOrder", back_populates="promotion_campaign")
 
     @validates('conditions')
     def validate_conditions(self, key: str, conditions) -> list:
@@ -111,10 +112,7 @@ class PromotionCampaign(Base):
                 start_time = datetime.datetime.fromisoformat(start_time)
             except (ValueError, TypeError):
                 raise ValueError("Start time must be a datetime object")
-        
-        if start_time < datetime.datetime.now():
-            raise ValueError("Start time must be in the future")
-        
+
         return start_time
     
     @validates('end_time')

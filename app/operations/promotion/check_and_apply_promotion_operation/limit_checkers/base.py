@@ -5,8 +5,11 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.enums.promotion.limit_type import LimitType
+from app.models.order import Order
 from app.schemas.promotion.base import Limit
+
 from .context import LimitCheckContext
+from .result import LimitCheckResult
 
 
 class BaseLimitChecker(ABC):
@@ -26,20 +29,22 @@ class BaseLimitChecker(ABC):
         self.promotion_id = promotion_id
 
     @abstractmethod
-    def check(
+    def check_and_apply(
         self,
+        calculated_reward: Decimal,
         limit: Limit,
         context: LimitCheckContext,
-    ) -> bool:
+    ) -> LimitCheckResult:
         """
-        Check if a limit is not exceeded.
+        Check if a limit is not exceeded and apply it to the calculated reward.
         
         Args:
+            calculated_reward: The calculated reward amount before limit checking
             limit: The limit to check
             context: The context containing order data
             
         Returns:
-            True if limit is not exceeded, False otherwise
+            LimitCheckResult indicating if promotion is allowed and any discount cap
         """
         pass
 

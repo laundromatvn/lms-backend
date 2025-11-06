@@ -23,8 +23,9 @@ class InitializePaymentRequest(BaseModel):
 
     @validator('total_amount')
     def validate_total_amount(cls, v):
-        if v <= 0:
-            raise ValueError("Total amount must be greater than 0")
+        # Allow 0 for full discount promotions (will be validated at model level)
+        if v < 0:
+            raise ValueError("Total amount cannot be negative")
         return v
 
 

@@ -39,7 +39,11 @@ async def initialize_payment(
     """
     try:
         payment = PaymentOperation.initialize_payment(request, user.id)
-        generate_payment_details(str(payment.id))
+        
+        # Only generate payment details for non-full-discount payments
+        if payment.total_amount > 0 and payment.provider != PaymentProvider.INTERNAL_PROMOTION:
+            generate_payment_details(str(payment.id))
+        
         return payment
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

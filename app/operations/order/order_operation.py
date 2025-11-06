@@ -16,12 +16,15 @@ from sqlalchemy import and_, func, or_
 
 from app.libs.database import with_db_session_classmethod
 from app.models.machine import Machine, MachineStatus, MachineType
-from app.models.order import Order, OrderStatus, OrderDetail, OrderDetailStatus
+from app.models.order import Order, OrderStatus, OrderDetail, OrderDetailStatus, PromotionOrder
 from app.models.payment import Payment
 from app.models.store import Store, StoreStatus
 from app.models.tenant_member import TenantMember
 from app.models.user import User
 from app.operations.machine.machine_operation import MachineOperation
+from app.operations.promotion.check_and_apply_promotion_operation import (
+    CheckAndApplyPromotionOperation,
+)
 from app.schemas.order import CreateOrderRequest, ListOrderQueryParams
 
 
@@ -130,11 +133,13 @@ class OrderOperation:
                 elif machine.machine_type == MachineType.DRYER:
                     dryer_count += 1
 
-            order.total_amount = total_amount
+            order.sub_total = total_amount
             order.total_washer = washer_count
             order.total_dryer = dryer_count
-
             order.status = OrderStatus.NEW
+            order.total_amount = total_amount
+
+            order = CheckAndApplyPromotionOperation.execute(order, db=db)
 
             db.commit()
             db.refresh(order)
@@ -152,19 +157,14 @@ class OrderOperation:
         Get order by ID with all details.
 
         Args:
+            db: Database session
             order_id: Order ID
 
         Returns:
             Order instance or None if not found
         """
         order = (
-            db.query(
-                *Order.__table__.columns,
-                Store.name.label("store_name"),
-                Payment.transaction_code.label("transaction_code"),
-            )
-            .join(Store, Order.store_id == Store.id)
-            .join(Payment, Order.id == Payment.order_id)
+            db.query(Order)
             .filter(and_(Order.id == order_id, Order.deleted_at.is_(None)))
             .first()
         )

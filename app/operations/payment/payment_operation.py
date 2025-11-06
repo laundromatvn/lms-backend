@@ -8,6 +8,7 @@ creation, status updates, and integration with payment providers.
 import uuid
 import random
 import string
+from decimal import Decimal
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta, timezone
 
@@ -88,13 +89,25 @@ class PaymentOperation:
         if existing_payment:
             raise ValueError(f"Order {request.order_id} already has an active payment transaction")
 
-        # Get payment method details from store
-        payment_method_details = cls._get_payment_method_details_from_store(store, request.payment_method)
-
-        # Generate transaction code if not provided
-        transaction_code = getattr(request, 'transaction_code', None)
-        if not transaction_code:
-            transaction_code = cls._generate_transaction_code()
+        # Handle 100% discount case (total_amount = 0)
+        is_full_discount = request.total_amount == Decimal("0.00")
+        
+        if is_full_discount:
+            # For full discount, use internal promotion provider and discount_full method
+            provider = PaymentProvider.INTERNAL_PROMOTION
+            payment_method = PaymentMethod.DISCOUNT_FULL
+            payment_method_details = None  # No payment method details needed for full discount
+            initial_status = PaymentStatus.SUCCESS  # Automatically mark as successful
+            transaction_code = cls._generate_transaction_code_for_full_discount()
+        else:
+            # Normal payment flow
+            provider = PaymentProvider.VIET_QR
+            payment_method = request.payment_method
+            payment_method_details = cls._get_payment_method_details_from_store(store, request.payment_method)
+            initial_status = PaymentStatus.NEW
+            transaction_code = getattr(request, 'transaction_code', None)
+            if not transaction_code:
+                transaction_code = cls._generate_transaction_code()
 
         # Create payment transaction
         payment_transaction = Payment(
@@ -102,10 +115,10 @@ class PaymentOperation:
             store_id=request.store_id,
             tenant_id=request.tenant_id,
             total_amount=request.total_amount,
-            provider=PaymentProvider.VIET_QR,  # Default provider
-            payment_method=request.payment_method,
+            provider=provider,
+            payment_method=payment_method,
             payment_method_details=payment_method_details,
-            status=PaymentStatus.NEW,
+            status=initial_status,
             transaction_code=transaction_code,
             created_by=created_by,
             updated_by=created_by,
@@ -113,6 +126,11 @@ class PaymentOperation:
 
         try:
             db.add(payment_transaction)
+            
+            # If full discount, automatically update order status to IN_PROGRESS
+            if is_full_discount:
+                OrderOperation.update_order_status(order.id, OrderStatus.IN_PROGRESS, updated_by=created_by)
+            
             db.commit()
             db.refresh(payment_transaction)
     
@@ -382,6 +400,22 @@ class PaymentOperation:
             logger.error(f"Error updating payment status for transaction {transaction_code}: {str(e)}")
             raise e
 
+    @classmethod
+    def _generate_transaction_code_for_full_discount(cls) -> str:
+        """
+        Generate a transaction code for full discount payments.
+        Uses a special prefix to identify internal promotion payments.
+        """
+        # Generate code with "PROMO" prefix for internal promotions
+        prefix = "PROMO"
+        remaining_chars = 8 - len(prefix)
+        letters = string.ascii_uppercase
+        digits = string.digits
+        
+        # Fill remaining characters
+        code = prefix + ''.join(random.choice(letters + digits) for _ in range(remaining_chars))
+        return code
+    
     @classmethod
     @with_db_session_classmethod
     def _generate_transaction_code(cls, db: Session) -> str:

@@ -11,7 +11,7 @@ from .tenant import Tenant, TenantStatus
 from .tenant_member import TenantMember
 from .store import Store, StoreStatus
 from .user import User, UserRole, UserStatus
-from .order import Order, OrderStatus, OrderDetail, OrderDetailStatus
+from .order import Order, OrderStatus, OrderDetail, OrderDetailStatus, PromotionOrder
 from .payment import (
     Payment, 
     PaymentStatus, 
@@ -56,6 +56,7 @@ __all__ = [
     "OrderStatus",
     "OrderDetail",
     "OrderDetailStatus",
+    "PromotionOrder",
 
     # Payment
     "Payment",

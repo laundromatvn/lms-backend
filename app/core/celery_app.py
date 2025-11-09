@@ -29,18 +29,18 @@ celery_app.conf.update(
 )
 
 celery_app.conf.beat_schedule = {
-    # "health-check": {
-    #     "task": "app.tasks.health_check",
-    #     "schedule": crontab(minute="*/1"),
-    # },
-    # "sync-up-in-progress-orders": {
-    #     "task": "app.tasks.order.sync_up_in_progress_orders_task",
-    #     "schedule": crontab(minute="*/1"),
-    # },
-    # "sync-up-timeout-payments": {
-    #     "task": "app.tasks.payment.sync_up_timeout_payments_task",
-    #     "schedule": crontab(minute="*/1"),
-    # },
+    "health-check": {
+        "task": "app.tasks.health_check",
+        "schedule": crontab(minute="*/1"),
+    },
+    "sync-up-in-progress-orders": {
+        "task": "app.tasks.order.sync_up_in_progress_orders_task",
+        "schedule": crontab(minute="*/1"),
+    },
+    "sync-up-timeout-payments": {
+        "task": "app.tasks.payment.sync_up_timeout_payments_task",
+        "schedule": crontab(minute="*/1"),
+    },
     "sync-up-promotion-campaigns": {
         "task": "app.tasks.promotion.sync_up_promotion_campaign_task",
         "schedule": crontab(minute="*/1"),

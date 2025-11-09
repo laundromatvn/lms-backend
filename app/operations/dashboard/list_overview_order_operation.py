@@ -24,7 +24,6 @@ class ListOverviewOrderOperation:
                 Payment.payment_method.label("payment_method"),
             )
             .join(Payment, Order.id == Payment.order_id)
-            .filter(Payment.status == PaymentStatus.SUCCESS)
         )
         
         if not current_user.is_admin:

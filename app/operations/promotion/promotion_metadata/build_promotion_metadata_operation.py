@@ -33,8 +33,6 @@ class BuildPromotionMetadataOperation:
             if registered_builder:
                 builder = registered_builder(self.current_user)
                 meta.options = builder.build_options()
-            else:
-                meta.options = None
 
             conditions.append(meta)
 

@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Optional
+from zoneinfo import ZoneInfo
 from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.enums.promotion.condition_type import ConditionType
+from app.models.order import Order
 from app.schemas.promotion.base import Condition
 
 
@@ -12,13 +14,16 @@ class OrderPromotionContext:
     
     def __init__(
         self,
+        order: Order,
         order_total_amount: Decimal,
+        time_zone: ZoneInfo,
         store_id: str,
         tenant_id: str | None,
         user_id: str | None,
-        # Additional context can be added here as needed
     ):
+        self.order = order
         self.order_total_amount = order_total_amount
+        self.time_zone = time_zone
         self.store_id = store_id
         self.tenant_id = tenant_id
         self.user_id = user_id

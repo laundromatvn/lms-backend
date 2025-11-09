@@ -8,13 +8,16 @@ class ConditionType(Enum):
 
     # Amount conditions
     TOTAL_AMOUNT = "TOTAL_AMOUNT"
-    AMOUNT_PER_USER = "AMOUNT_PER_USER"
-    AMOUNT_PER_STORE = "AMOUNT_PER_STORE"
-    AMOUNT_PER_TENANT = "AMOUNT_PER_TENANT"
     
+    # Machine conditions
+    MACHINE_TYPES = "MACHINE_TYPES"
     
+    # Time range conditions
+    TIME_IN_DAY = "TIME_IN_DAY"
+
 class ConditionValueType(Enum):
     STRING = "STRING"
     NUMBER = "NUMBER"
     BOOLEAN = "BOOLEAN"
     OPTIONS = "OPTIONS"
+    TIME_IN_DAY = "TIME_IN_DAY"

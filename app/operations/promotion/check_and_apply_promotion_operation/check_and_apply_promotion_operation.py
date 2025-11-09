@@ -31,12 +31,13 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.libs.database import with_db_session_classmethod, get_db_session
+from app.libs.database import get_db_session
 from app.models import OrderStatus
 from app.models.promotion_campaign import PromotionCampaign, PromotionCampaignStatus
 from app.models.order import Order, PromotionOrder
 from app.models.store import Store
 from app.schemas.promotion.base import Condition, Reward, Limit
+from app.utils.timezone import get_tzinfo
 
 from .condition_checkers.base import OrderPromotionContext
 from .condition_checkers.registry import PromotionConditionCheckerRegistry
@@ -105,7 +106,9 @@ class CheckAndApplyPromotionOperation:
 
         sub_total = order.sub_total or order.total_amount
         context = OrderPromotionContext(
+            order=order,
             order_total_amount=sub_total,
+            time_zone=get_tzinfo(),
             store_id=str(order.store_id),
             tenant_id=str(store.tenant_id) if store.tenant_id else None,
             user_id=str(order.created_by) if order.created_by else None,
@@ -113,7 +116,7 @@ class CheckAndApplyPromotionOperation:
 
         eligible_promotions = cls._get_eligible_promotions(db, store.tenant_id)
         valid_promotions: List[Dict[str, Any]] = []
-
+        
         for promotion in eligible_promotions:
             if not cls._check_scope(promotion, store.tenant_id):
                 continue

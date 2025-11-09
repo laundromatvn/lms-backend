@@ -92,7 +92,7 @@ class StoreOperation:
         current_user: User,
         request: AddStoreRequest,
     ) -> Store:
-        if not cls._has_permission(db, current_user, request.tenant_id):
+        if not cls._has_permission(current_user, request.tenant_id):
             raise PermissionError("You don't have permission to create store")
 
         store = Store(

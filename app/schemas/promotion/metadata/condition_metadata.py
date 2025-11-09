@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from app.enums.promotion.condition_type import ConditionType, ConditionValueType
 from app.enums.promotion.operator import Operator
+from app.models.machine import MachineType
 from app.models.user import UserRole
 
 
@@ -39,5 +40,24 @@ CONDITION_METADATA: List[ConditionMetadata] = [
         ],
         allowed_roles=[UserRole.ADMIN, UserRole.TENANT_ADMIN],
         value_type=ConditionValueType.NUMBER,
-    )
+    ),
+    # Machine conditions
+    ConditionMetadata(
+        condition_type=ConditionType.MACHINE_TYPES,
+        operators=[Operator.IN, Operator.NOT_IN],
+        allowed_roles=[UserRole.ADMIN, UserRole.TENANT_ADMIN],
+        value_type=ConditionValueType.OPTIONS,
+        options=[
+            { "value": MachineType.WASHER.value, "label": MachineType.WASHER.value },
+            { "value": MachineType.DRYER.value, "label": MachineType.DRYER.value },
+        ],
+    ),
+    # Time range conditions
+    # Example 1: "09:00 - 18:00"
+    ConditionMetadata(
+        condition_type=ConditionType.TIME_IN_DAY,
+        operators=[Operator.BETWEEN, Operator.NOT_BETWEEN],
+        allowed_roles=[UserRole.ADMIN, UserRole.TENANT_ADMIN],
+        value_type=ConditionValueType.TIME_IN_DAY,
+    ),
 ]

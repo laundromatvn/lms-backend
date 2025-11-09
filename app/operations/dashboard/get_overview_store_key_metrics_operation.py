@@ -1,16 +1,13 @@
 from uuid import UUID
-from datetime import date
+from datetime import datetime
 from typing import List, Dict, Any
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, text
+from sqlalchemy import text
 
 from app.libs.database import with_db_session_for_class_instance
-from app.models.store import Store, StoreStatus
-from app.models.order import Order, OrderStatus
-from app.models.payment import Payment, PaymentStatus
-from app.models.machine import Machine, MachineType, MachineStatus
-from app.models.controller import Controller
+from app.models.payment import PaymentStatus
+from app.utils.timezone import get_tzinfo
 
 
 class GetOverviewStoreKeyMetricsOperation:
@@ -23,6 +20,9 @@ class GetOverviewStoreKeyMetricsOperation:
         return store_key_metrics
 
     def _list_store_key_metrics(self, db: Session) -> List[Dict[str, Any]]:
+        start_date_of_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0).astimezone(get_tzinfo())
+        end_date_of_month = datetime.now().replace(month=datetime.now().month + 1, day=1, hour=0, minute=0, second=0, microsecond=0).astimezone(get_tzinfo())
+        
         """Get all active stores for the tenant with their key metrics"""
         get_key_metrics_query = text("""
             SELECT
@@ -44,6 +44,8 @@ class GetOverviewStoreKeyMetricsOperation:
                 WHERE payments.status = :payment_status
                 AND payments.deleted_at IS NULL
                 AND orders.deleted_at IS NULL
+                AND orders.created_at >= :start_date
+                AND orders.created_at < :end_date
                 GROUP BY orders.store_id
             ) as key_metrics ON s.id = key_metrics.store_id
             WHERE s.tenant_id = :tenant_id
@@ -53,6 +55,8 @@ class GetOverviewStoreKeyMetricsOperation:
         result = db.execute(get_key_metrics_query, {
             "payment_status": PaymentStatus.SUCCESS,
             "tenant_id": self.tenant_id,
+            "start_date": start_date_of_month.isoformat(),
+            "end_date": end_date_of_month.isoformat(),
         }).fetchall()
         
         # Convert SQLAlchemy Row objects to dictionaries

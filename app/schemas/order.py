@@ -103,6 +103,7 @@ class OrderDetailResponse(BaseModel):
     add_ons: Optional[List[AddOnItem]]
     price: Decimal
     machine_name: Optional[str] = None
+    machine_relay_no: Optional[int] = None
     machine_type: Optional[MachineType] = None
     
 

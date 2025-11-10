@@ -40,6 +40,7 @@ class OrderDetailOperation:
             *OrderDetail.__table__.columns,
             Machine.name.label("machine_name"),
             Machine.machine_type.label("machine_type"),
+            Machine.relay_no.label("machine_relay_no"),
         ).join(Machine, OrderDetail.machine_id == Machine.id)
 
         if query_params.order_id:

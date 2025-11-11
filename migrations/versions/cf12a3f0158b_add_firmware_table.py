@@ -51,9 +51,9 @@ def upgrade() -> None:
         sa.Column('description', sa.String(500), nullable=True),
         sa.Column('status', firmware_status_enum, nullable=False, default='DRAFT', server_default='DRAFT', index=True),
         sa.Column('version_type', firmware_version_type_enum, nullable=False, default='PATCH', server_default='PATCH', index=True),
-        sa.Column('file_url', sa.String(512), nullable=False),
-        sa.Column('checksum', sa.String(128), nullable=False),
+        sa.Column('object_name', sa.String(255), nullable=False, index=True),
         sa.Column('file_size', sa.Integer(), nullable=False),
+        sa.Column('checksum', sa.String(128), nullable=False),
     )
 
     # Add foreign key constraints
@@ -62,9 +62,11 @@ def upgrade() -> None:
     op.create_foreign_key('fk_firmwares_deleted_by', 'firmwares', 'users', ['deleted_by'], ['id'])
 
 def downgrade() -> None:
+    # Drop the table (this automatically drops all constraints)
     op.drop_table('firmwares')
-    op.drop_constraint('fk_firmwares_created_by', 'firmwares', type_='foreignkey')
-    op.drop_constraint('fk_firmwares_updated_by', 'firmwares', type_='foreignkey')
-    op.drop_constraint('fk_firmwares_deleted_by', 'firmwares', type_='foreignkey')
+
+    # Drop the enum types
     op.execute('DROP TYPE IF EXISTS firmware_status')
     op.execute('DROP TYPE IF EXISTS firmware_version_type')
+
+

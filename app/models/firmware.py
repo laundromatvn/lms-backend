@@ -51,7 +51,7 @@ class Firmware(Base):
     status = Column(
         SQLEnum(FirmwareStatus, name="firmware_status", create_type=False),
         nullable=False,
-        default=FirmwareStatus.NEW,
+        default=FirmwareStatus.DRAFT,
         index=True
     )
     version_type = Column(
@@ -61,9 +61,9 @@ class Firmware(Base):
         index=True
     )
 
-    file_url = Column(String(512), nullable=False)
-    checksum = Column(String(128), nullable=False)
+    object_name = Column(String(255), nullable=False, index=True)
     file_size = Column(Integer, nullable=False)
+    checksum = Column(String(128), nullable=False)
 
     @validates('version_type')
     def validate_version_type(self, key: str, version_type) -> FirmwareVersionType:
@@ -127,6 +127,25 @@ class Firmware(Base):
     def deprecate(self, updated_by: uuid.UUID) -> None:
         self.status = FirmwareStatus.DEPRECATED
         self.updated_by = updated_by
+        
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
+            "created_by": self.created_by,
+            "updated_by": self.updated_by,
+            "deleted_by": self.deleted_by,
+            "name": self.name,
+            "version": self.version,
+            "description": self.description,
+            "status": self.status,
+            "version_type": self.version_type,
+            "object_name": self.object_name,
+            "file_size": self.file_size,
+            "checksum": self.checksum,
+        }
 
 @event.listens_for(Firmware, 'before_update', propagate=True)
 def update_timestamp(mapper, connection, target):

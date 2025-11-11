@@ -92,6 +92,16 @@ class Settings(BaseSettings):
     SMTP_PORT: int = os.getenv("SMTP_PORT", 587)
     SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "mailer-username")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "mailer-password")
+    
+    # Minio
+    MINIO_ENDPOINT: str = os.getenv("BACKEND_MINIO_ENDPOINT") or os.getenv("MINIO_ENDPOINT", "localhost:9000")
+    MINIO_URL: str = os.getenv("BACKEND_MINIO_URL") or os.getenv("MINIO_URL", "http://localhost:9000")
+    MINIO_ACCESS_KEY: str = os.getenv("BACKEND_MINIO_ACCESS_KEY") or os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+    MINIO_SECRET_KEY: str = os.getenv("BACKEND_MINIO_SECRET_KEY") or os.getenv("MINIO_SECRET_KEY", "minioadmin")
+    MINIO_SECURE: bool = (os.getenv("BACKEND_MINIO_SECURE") or os.getenv("MINIO_SECURE", "false")).lower() in ("true", "1", "yes", "on")
+    
+    BUCKET_NAME: str = os.getenv("BACKEND_BUCKET_NAME") or os.getenv("BUCKET_NAME", "staging")
+    PUBLIC_FOLDER_PATH: str = os.getenv("PUBLIC_FOLDER_PATH", "public")
 
     class Config:
         env_prefix = "BACKEND_"

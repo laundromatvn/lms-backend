@@ -43,8 +43,10 @@ class Controller(Base):
     name = Column(String(255), nullable=True, index=True)
     store_id = Column(UUID(as_uuid=True), ForeignKey('stores.id'), nullable=True, index=True)
     total_relays = Column(Integer, nullable=False, default=0)
+    provisioned_firmware_id = Column(UUID(as_uuid=True), ForeignKey('firmwares.id'), nullable=True, index=True)
 
     # Relationships
+    provisioned_firmware = relationship("Firmware", back_populates="provisioned_controllers")
     machines = relationship("Machine", back_populates="controller")
     store = relationship("Store", back_populates="controllers")
     datapoints = relationship("Datapoint", back_populates="controller")

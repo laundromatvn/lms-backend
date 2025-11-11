@@ -6,17 +6,22 @@ from sqlalchemy.orm import Session
 from app.apis.deps import get_current_user
 from app.core.logging import logger
 from app.libs.database import get_db
-from app.models.firmware import Firmware
+from app.models.firmware import Firmware, FirmwareStatus
 from app.models.user import User
 from app.operations.file.upload_file_operation import UploadFileOperation
 from app.operations.firmware.create_firmware_operation import CreateFirmwareOperation
 from app.operations.firmware.list_firmware_operation import ListFirmwareOperation
+from app.operations.firmware.list_provisioned_controller_operation import ListProvisionedControllersOperation
+from app.operations.firmware.flash_firmware_operation import FlashFirmwareOperation
 from app.operations.firmware.update_firmware_operation import UpdateFirmwareOperation
 from app.schemas.firmware import (
     FirmwareSerializer,
     FirmwareCreateSchema,
     FirmwareUpdateSchema,
     ListFirmwareQueryParams,
+    ListProvisionedControllersQueryParams,
+    ProvisionedControllerSerializer,
+    ProvisionFirmwareSchema,
 )
 from app.schemas.pagination import PaginatedResponse
 from app.utils.pagination import get_total_pages
@@ -140,3 +145,90 @@ async def delete_firmware(
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{firmware_id}/provisioned-controllers", response_model=PaginatedResponse[ProvisionedControllerSerializer])
+async def list_provisioned_controllers(
+    firmware_id: UUID,
+    current_user: User = Depends(get_current_user),
+    query_params: ListProvisionedControllersQueryParams = Depends(),
+):
+    try:
+        list_provisioned_controllers_operation = ListProvisionedControllersOperation()
+        total, controllers = list_provisioned_controllers_operation.execute(current_user, firmware_id, query_params)
+        return {
+            "page": query_params.page,
+            "page_size": query_params.page_size,
+            "total": total,
+            "total_pages": get_total_pages(total, query_params.page_size),
+            "data": controllers,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{firmware_id}/flash", status_code=status.HTTP_204_NO_CONTENT)
+async def flash_firmware(
+    firmware_id: UUID,
+    payload: ProvisionFirmwareSchema,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        flash_firmware_operation = FlashFirmwareOperation()
+        flash_firmware_operation.execute(current_user, firmware_id, payload)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{firmware_id}/release", status_code=status.HTTP_204_NO_CONTENT)
+async def release_firmware(
+    firmware_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        firmware = (
+            db.query(Firmware)
+            .filter(Firmware.id == firmware_id)
+            .filter(Firmware.deleted_at.is_(None))
+            .first()
+        )
+        if not firmware:
+            raise ValueError("Firmware not found")
+        
+        if firmware.status == FirmwareStatus.RELEASED:
+            raise ValueError("Firmware is not in draft status")
+        
+        firmware.release(current_user.id)
+        db.add(firmware)
+        db.commit()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{firmware_id}/deprecate", status_code=status.HTTP_204_NO_CONTENT)
+async def deprecate_firmware(
+    firmware_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        firmware = (
+            db.query(Firmware)
+            .filter(Firmware.id == firmware_id)
+            .filter(Firmware.deleted_at.is_(None))
+            .first()
+        )
+        if not firmware:
+            raise ValueError("Firmware not found")
+        
+        if firmware.status == FirmwareStatus.DRAFT:
+            raise ValueError("Cannot deprecate draft firmware")
+        
+        firmware.deprecate(current_user.id)
+        db.add(firmware)
+        db.commit()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+

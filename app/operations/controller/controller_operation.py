@@ -59,6 +59,8 @@ class ControllerOperation:
             base_query = base_query.filter(Controller.status == query_params.status)
         if query_params.store_id:
             base_query = base_query.filter(Controller.store_id == query_params.store_id)
+            
+        base_query = base_query.order_by(Controller.created_at.desc())
 
         total = base_query.count()
         results = (

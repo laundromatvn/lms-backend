@@ -64,6 +64,9 @@ class Firmware(Base):
     object_name = Column(String(255), nullable=False, index=True)
     file_size = Column(Integer, nullable=False)
     checksum = Column(String(128), nullable=False)
+    
+    # Relationships
+    provisioned_controllers = relationship("Controller", back_populates="provisioned_firmware")
 
     @validates('version_type')
     def validate_version_type(self, key: str, version_type) -> FirmwareVersionType:

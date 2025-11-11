@@ -26,6 +26,10 @@ class CreateFirmwareOperation:
         
         metadata = self._get_firmware_metadata(payload.object_name)
 
+        # check if version is unique
+        if not self._is_version_unique(db, payload.version):
+            raise ValueError(f"Version {payload.version} is already in use")
+
         firmware = Firmware(
             name=payload.name,
             version=payload.version,
@@ -52,4 +56,13 @@ class CreateFirmwareOperation:
         return self.minio_client.get_file_metadata(
             bucket_name=settings.BUCKET_NAME,
             object_name=object_name,
+        )
+        
+    def _is_version_unique(self, db: Session, version: str) -> bool:
+        return (
+            db.query(Firmware)
+            .filter(Firmware.version == version)
+            .filter(Firmware.deleted_at.is_(None))
+            .first()
+            is None
         )

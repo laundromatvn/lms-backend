@@ -12,7 +12,7 @@ from app.models.user import User
 
 
 class UpdateFirmwareOperation:
-    
+
     def __init__(self):
         self.minio_client = MinioClient()
 
@@ -30,7 +30,10 @@ class UpdateFirmwareOperation:
         firmware = db.query(Firmware).filter(Firmware.id == firmware_id).first()
         if not firmware:
             raise ValueError("Firmware not found")
-        
+
+        if not self._is_version_unique(db, payload.version):
+            raise ValueError(f"Version {payload.version} is already in use")
+
         for field, value in payload.model_dump(exclude_unset=True).items():
             if hasattr(firmware, field):
                 setattr(firmware, field, value)
@@ -49,4 +52,16 @@ class UpdateFirmwareOperation:
         return self.minio_client.get_file_metadata(
             bucket_name=settings.BUCKET_NAME,
             object_name=object_name,
+        )
+        
+    def _is_version_unique(self, db: Session, version: str) -> bool:
+        if not version:
+            return True
+        
+        return (
+            db.query(Firmware)
+            .filter(Firmware.version == version)
+            .filter(Firmware.deleted_at.is_(None))
+            .first()
+            is None
         )

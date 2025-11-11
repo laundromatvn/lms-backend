@@ -46,7 +46,7 @@ class Firmware(Base):
     deleted_by = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=True, index=True)
 
     name = Column(String(255), nullable=False, index=True)
-    version = Column(String(50), nullable=False, unique=True, index=True)
+    version = Column(String(50), nullable=False, index=True)
     description = Column(String(500), nullable=True)
     status = Column(
         SQLEnum(FirmwareStatus, name="firmware_status", create_type=False),
@@ -75,6 +75,7 @@ class Firmware(Base):
                 version_type = FirmwareVersionType(version_type)
             except ValueError:
                 raise ValueError(f"Invalid version type: {version_type}. Must be one of {[v.value for v in FirmwareVersionType]}")
+        
         return version_type
 
     @validates('status')

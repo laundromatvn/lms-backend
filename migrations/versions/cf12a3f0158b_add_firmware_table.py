@@ -47,7 +47,7 @@ def upgrade() -> None:
         sa.Column('updated_by', postgresql.UUID(as_uuid=True), nullable=True, index=True),
         sa.Column('deleted_by', postgresql.UUID(as_uuid=True), nullable=True, index=True),
         sa.Column('name', sa.String(255), nullable=False, index=True),
-        sa.Column('version', sa.String(50), nullable=False, unique=True, index=True),
+        sa.Column('version', sa.String(50), nullable=False, index=True),
         sa.Column('description', sa.String(500), nullable=True),
         sa.Column('status', firmware_status_enum, nullable=False, default='DRAFT', server_default='DRAFT', index=True),
         sa.Column('version_type', firmware_version_type_enum, nullable=False, default='PATCH', server_default='PATCH', index=True),

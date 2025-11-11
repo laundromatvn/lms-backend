@@ -47,6 +47,7 @@ class Controller(Base):
 
     # Relationships
     provisioned_firmware = relationship("Firmware", back_populates="provisioned_controllers")
+    deployments = relationship("FirmwareDeployment", back_populates="controller")
     machines = relationship("Machine", back_populates="controller")
     store = relationship("Store", back_populates="controllers")
     datapoints = relationship("Datapoint", back_populates="controller")

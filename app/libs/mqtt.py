@@ -233,6 +233,7 @@ class MQTTClient:
     def publish(self, topic: str, payload: dict, qos: int = 0, retain: bool = False) -> bool:
         if not self.connected_event.is_set():
             return False
+        
         try:
             payload = json.dumps(payload)   
             result = self.client.publish(topic, payload=payload, qos=qos, retain=retain)

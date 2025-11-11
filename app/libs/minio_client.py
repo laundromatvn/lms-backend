@@ -59,7 +59,6 @@ class MinioClient:
             'GET',
             bucket_name=bucket_name,
             object_name=object_name,
-            expires=None,
         )
 
     def get_public_file_url(self, object_name: str) -> str:

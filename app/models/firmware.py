@@ -1,9 +1,7 @@
 from enum import Enum
 import uuid
-from typing import Optional
 
 from sqlalchemy import (
-    Boolean,
     Column,
     DateTime,
     Enum as SQLEnum,
@@ -67,6 +65,7 @@ class Firmware(Base):
     
     # Relationships
     provisioned_controllers = relationship("Controller", back_populates="provisioned_firmware")
+    deployments = relationship("FirmwareDeployment", back_populates="firmware")
 
     @validates('version_type')
     def validate_version_type(self, key: str, version_type) -> FirmwareVersionType:

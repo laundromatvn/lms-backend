@@ -7,6 +7,7 @@ from app.tasks.payment.sync_up_timeout_payments_task import sync_up_timeout_paym
 from app.tasks.auth.send_otp_task import send_otp_task
 from app.tasks.order.sync_up_in_progress_orders_task import sync_up_in_progress_orders_task
 from app.tasks.promotion.sync_up_promotion_campaign_task import sync_up_promotion_campaign_task
+from app.tasks.firmware.flash_new_firmware_to_controllers_task import flash_new_firmware_to_controllers_task
 
 __all__ = [
     # Health check
@@ -25,6 +26,9 @@ __all__ = [
 
     # Promotion tasks
     "sync_up_promotion_campaign_task",
+    
+    # Firmware tasks
+    "flash_new_firmware_to_controllers_task",
 ]
 
 

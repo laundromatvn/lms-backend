@@ -19,7 +19,7 @@ depends_on = None
 def upgrade() -> None:
     # Create firmware_deployment_status enum type
     firmware_deployment_status_enum = postgresql.ENUM(
-        'NEW', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'CANCELLED',
+        'NEW', 'REBOOTING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'CANCELLED',
         name='firmware_deployment_status',
         create_type=False
     )
@@ -40,12 +40,15 @@ def upgrade() -> None:
     op.create_foreign_key('fk_firmware_deployments_firmware_id', 'firmware_deployments', 'firmwares', ['firmware_id'], ['id'])
     op.create_foreign_key('fk_firmware_deployments_controller_id', 'firmware_deployments', 'controllers', ['controller_id'], ['id'])
 
+    # Ensure unique combination of firmware_id and controller_id
+    op.create_unique_constraint('uix_firmware_id_controller_id', 'firmware_deployments', ['firmware_id', 'controller_id'])
+
 def downgrade() -> None:
     op.drop_table('firmware_deployments')
 
     # Drop firmware_deployment_status enum type
     firmware_deployment_status_enum = postgresql.ENUM(
-        'NEW', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'CANCELLED',
+        'NEW', 'REBOOTING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'CANCELLED',
         name='firmware_deployment_status',
         create_type=False
     )

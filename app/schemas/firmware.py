@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.models.controller import ControllerStatus
 from app.models.firmware import FirmwareStatus, FirmwareVersionType
+from app.models.firmware_deployment import FirmwareDeploymentStatus
 from app.schemas.pagination import Pagination
 
 
@@ -71,8 +72,38 @@ class ProvisionedControllerSerializer(BaseModel):
     store_name: str | None = None
     tenant_id: UUID | None = None
     tenant_name: str | None = None
+    firmware_id: UUID | None = None
+    firmware_name: str | None = None
+    firmware_version: str | None = None
 
 
 class ProvisionFirmwareSchema(BaseModel):
     all_controllers: bool = False
     controller_ids: list[UUID] | None = None
+
+
+class ListProvisioningControllersQueryParams(Pagination):
+    deployment_status: FirmwareDeploymentStatus | None = None
+    search: str | None = None
+    order_by: str | None = None
+    order_direction: str | None = None
+
+
+class ProvisioningControllerSerializer(BaseModel):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None = None
+    status: ControllerStatus
+    device_id: str
+    name: str | None = None
+    store_id: UUID | None = None
+    store_name: str | None = None
+    tenant_id: UUID | None = None
+    tenant_name: str | None = None
+    firmware_id: UUID | None = None
+    firmware_name: str | None = None
+    firmware_version: str | None = None
+    deployment_id: UUID | None = None
+    deployment_status: FirmwareDeploymentStatus | None = None
+

@@ -31,9 +31,13 @@ class ListProvisionedControllersOperation:
                 Store.name.label('store_name'),
                 Tenant.id.label('tenant_id'),
                 Tenant.name.label('tenant_name'),
+                Firmware.id.label('firmware_id'),
+                Firmware.name.label('firmware_name'),
+                Firmware.version.label('firmware_version'),
             )
             .outerjoin(Store, Controller.store_id == Store.id)
             .outerjoin(Tenant, Store.tenant_id == Tenant.id)
+            .outerjoin(Firmware, Controller.provisioned_firmware_id == Firmware.id)
             .filter(
                 Controller.deleted_at.is_(None),
                 Controller.provisioned_firmware_id == firmware_id,

@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Enum as SQLEnum,
     event,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import validates, relationship
@@ -17,6 +18,7 @@ from app.libs.database import Base
 
 class FirmwareDeploymentStatus(str, Enum):
     NEW = "NEW"
+    REBOOTING = "REBOOTING"
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
@@ -44,6 +46,10 @@ class FirmwareDeployment(Base):
     # Relationships
     firmware = relationship("Firmware", back_populates="deployments")
     controller = relationship("Controller", back_populates="deployments")
+
+    __table_args__ = (
+        UniqueConstraint('firmware_id', 'controller_id', name='uix_firmware_id_controller_id'),
+    )
 
     @validates('status')
     def validate_status(self, key: str, status) -> FirmwareDeploymentStatus:
@@ -73,6 +79,10 @@ class FirmwareDeployment(Base):
     @property
     def is_cancelled(self) -> bool:
         return self.status == FirmwareDeploymentStatus.CANCELLED
+    
+    @property
+    def is_rebooting(self) -> bool:
+        return self.status == FirmwareDeploymentStatus.REBOOTING
 
 
 @event.listens_for(FirmwareDeployment, 'before_update', propagate=True)

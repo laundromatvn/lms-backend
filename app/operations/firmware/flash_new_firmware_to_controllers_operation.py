@@ -49,27 +49,36 @@ class FlashNewFirmwareToControllersOperation:
         if not controllers:
             raise ValueError("Controllers not found")
         
+        existing_firmware_deployments = self._get_existing_firmware_deployment(
+            db, firmware.id, [controller.id for controller in controllers],
+        )
+        
         for controller in controllers:
-            deployment = FirmwareDeployment(
-                firmware_id=firmware.id,
-                controller_id=controller.id,
-                status=FirmwareDeploymentStatus.NEW,
-            )
-            db.add(deployment)
-            db.flush(deployment)
-            
+            if controller.id in existing_firmware_deployments:
+                deployment = existing_firmware_deployments[controller.id]
+                deployment.status = FirmwareDeploymentStatus.REBOOTING
+                db.add(deployment)
+            else:
+                deployment = FirmwareDeployment(
+                    firmware_id=firmware.id,
+                    controller_id=controller.id,
+                    status=FirmwareDeploymentStatus.NEW,
+                )
+                db.add(deployment)
+                db.flush()
+
             self._publish_firmware_deployment(controller, firmware, deployment)
         db.commit()
-    
+
     def _get_current_user(self, db: Session, current_user_id: UUID) -> User:
         return db.get(User, current_user_id)
-    
+
     def _has_permission(self, current_user: User) -> bool:
         return current_user.is_admin
-    
+
     def _get_firmware(self, db: Session, firmware_id: UUID) -> Firmware:
         return db.get(Firmware, firmware_id)
-    
+
     def _get_controllers(self, db: Session, controller_ids: list[UUID]) -> list[Controller]:
         return (
             db.query(Controller)
@@ -77,6 +86,18 @@ class FlashNewFirmwareToControllersOperation:
             .filter(Controller.deleted_at.is_(None))
             .all()
         )
+
+    def _get_existing_firmware_deployment(self, db: Session, firmware_id: UUID, controller_ids: list[UUID]) -> FirmwareDeployment:
+        deployments = (
+            db.query(FirmwareDeployment)
+            .filter(FirmwareDeployment.firmware_id == firmware_id)
+            .filter(FirmwareDeployment.controller_id.in_(controller_ids))
+            .all()
+        )
+
+        deployments_by_controller_id = {deployment.controller_id: deployment for deployment in deployments}
+        return deployments_by_controller_id
+
     def _publish_firmware_deployment(
         self,
         controller: Controller,

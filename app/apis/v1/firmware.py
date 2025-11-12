@@ -13,6 +13,7 @@ from app.operations.firmware.create_firmware_operation import CreateFirmwareOper
 from app.operations.firmware.list_firmware_operation import ListFirmwareOperation
 from app.operations.firmware.list_provisioned_controller_operation import ListProvisionedControllersOperation
 from app.operations.firmware.flash_firmware_operation import FlashFirmwareOperation
+from app.operations.firmware.list_provisioning_controller_operation import ListProvisioningControllersOperation
 from app.operations.firmware.update_firmware_operation import UpdateFirmwareOperation
 from app.schemas.firmware import (
     FirmwareSerializer,
@@ -22,6 +23,8 @@ from app.schemas.firmware import (
     ListProvisionedControllersQueryParams,
     ProvisionedControllerSerializer,
     ProvisionFirmwareSchema,
+    ListProvisioningControllersQueryParams,
+    ProvisioningControllerSerializer,
 )
 from app.schemas.pagination import PaginatedResponse
 from app.utils.pagination import get_total_pages
@@ -232,3 +235,21 @@ async def deprecate_firmware(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/{firmware_id}/provisioning-controllers", response_model=PaginatedResponse[ProvisioningControllerSerializer])
+async def list_provisioning_controllers(
+    firmware_id: UUID,
+    current_user: User = Depends(get_current_user),
+    query_params: ListProvisioningControllersQueryParams = Depends(),
+):
+    try:
+        list_provisioning_controllers_operation = ListProvisioningControllersOperation(current_user, firmware_id, query_params)
+        total, controllers = list_provisioning_controllers_operation.execute()
+        return {
+            "page": query_params.page,
+            "page_size": query_params.page_size,
+            "total": total,
+            "total_pages": get_total_pages(total, query_params.page_size),
+            "data": controllers,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

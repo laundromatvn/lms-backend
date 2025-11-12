@@ -5,7 +5,7 @@ from sqlalchemy.orm.query import Query
 
 from app.core.celery_app import celery_app
 from app.libs.database import with_db_session_for_class_instance
-from app.models.controller import Controller
+from app.models.controller import Controller, ControllerStatus
 from app.models.firmware import Firmware
 from app.models.user import User
 from app.schemas.firmware import ProvisionFirmwareSchema
@@ -92,9 +92,12 @@ class FlashFirmwareOperation:
     ) -> Query:
         base_query = (
             db.query(Controller)
-            .filter(Controller.deleted_at.is_(None))
+            .filter(
+                Controller.deleted_at.is_(None),
+                Controller.status.not_in([ControllerStatus.INACTIVE]),
+            )
         )
-        
+
         if controller_ids:
             base_query = base_query.filter(Controller.id.in_(controller_ids))
 

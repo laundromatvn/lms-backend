@@ -17,6 +17,9 @@ class ControllerSerializer(BaseModel):
     store_id: UUID | None = None
     store_name: str | None = None
     total_relays: int
+    firmware_id: UUID | None = None
+    firmware_name: str | None = None
+    firmware_version: str | None = None
 
 
 class AddControllerRequest(BaseModel):

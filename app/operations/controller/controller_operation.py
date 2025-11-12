@@ -4,6 +4,7 @@ from uuid import UUID
 from app.libs.database import with_db_session_classmethod
 from app.models.controller import Controller, ControllerStatus
 from app.models.store import Store
+from app.models.firmware import Firmware
 from app.models.tenant_member import TenantMember
 from app.models.user import User
 from app.schemas.controller import (
@@ -22,8 +23,20 @@ class ControllerOperation:
     @with_db_session_classmethod
     def get(cls, db: Session, current_user: User, controller_id: UUID) -> Controller:
         controller = (
-            db.query(Controller)
-            .filter_by(id=controller_id)
+            db.query(
+                *Controller.__table__.columns,
+                Store.id.label('store_id'),
+                Store.name.label('store_name'),
+                Firmware.id.label('firmware_id'),
+                Firmware.name.label('firmware_name'),
+                Firmware.version.label('firmware_version'),
+            )
+            .join(Store, Controller.store_id == Store.id)
+            .join(Firmware, Controller.provisioned_firmware_id == Firmware.id)
+            .filter(
+                Controller.deleted_at.is_(None),
+                Controller.id == controller_id,
+            )
             .first()
         )
         if not controller:
@@ -41,13 +54,19 @@ class ControllerOperation:
     def list(cls, db: Session, current_user: User, query_params: ListControllerQueryParams) -> tuple[int, list[dict]]:
         base_query = (
             db.query(
-                Controller,
-                Store.name.label('store_name')
+                *Controller.__table__.columns,
+                Store.id.label('store_id'),
+                Store.name.label('store_name'),
+                Firmware.id.label('firmware_id'),
+                Firmware.name.label('firmware_name'),
+                Firmware.version.label('firmware_version'),
             )
             .outerjoin(Store, Controller.store_id == Store.id)
+            .outerjoin(Firmware, Controller.provisioned_firmware_id == Firmware.id)
             .filter(
                 Controller.deleted_at.is_(None),
                 Controller.status.notin_([ControllerStatus.INACTIVE]),
+                Firmware.id.isnot(None),
             )
         )
         
@@ -69,15 +88,8 @@ class ControllerOperation:
             .limit(query_params.page_size)
             .all()
         )
-        
-        # Convert results to dictionaries with store_name included
-        controllers = []
-        for controller, store_name in results:
-            controller_dict = controller.to_dict()
-            controller_dict['store_name'] = store_name
-            controllers.append(controller_dict)
-        
-        return total, controllers
+
+        return total, results
     
     @classmethod
     @with_db_session_classmethod

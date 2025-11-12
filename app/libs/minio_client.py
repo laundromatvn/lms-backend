@@ -22,17 +22,18 @@ class MinioClient:
             secure=False,
         )
         
-    def upload_file(self, bucket_name: str, object_name: str, data: Union[BinaryIO, bytes]) -> None:
+    def upload_file(
+        self,
+        bucket_name: str,
+        object_name: str,
+        data: BinaryIO,
+    ) -> None:
         """Upload file bytes to MinIO."""
-        # If data is bytes, wrap it in BytesIO
-        if isinstance(data, bytes):
-            data = io.BytesIO(data)
-        
-        # Get the length of the data
+
         data.seek(0, io.SEEK_END)
         length = data.tell()
         data.seek(0)
-        
+
         self.minio_client.put_object(
             bucket_name=bucket_name,
             object_name=object_name,

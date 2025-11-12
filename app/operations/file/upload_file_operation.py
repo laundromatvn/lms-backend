@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import random
 import string
+from typing import BinaryIO
 
 from fastapi import UploadFile
 
@@ -16,12 +17,12 @@ class UploadFileOperation:
         self.minio_client = MinioClient()
         self.object_name = self._generate_object_name(file_name)
 
-    def execute(self, chunk: bytes):
+    def execute(self, file: BinaryIO):
         try:
             self.minio_client.upload_file(
                 bucket_name=settings.BUCKET_NAME,
                 object_name=self.object_name,
-                data=chunk,
+                data=file,
             )
 
             self.result = self._get_file_metadata()

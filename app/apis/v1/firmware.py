@@ -38,8 +38,7 @@ async def upload_firmware(
 ):
     try:
         upload_operation = UploadFileOperation(file.filename)
-        for chunk in file.file:
-            upload_operation.execute(chunk)
+        upload_operation.execute(file.file)
 
         return upload_operation.result
     except Exception as e:

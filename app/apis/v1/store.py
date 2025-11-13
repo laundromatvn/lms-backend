@@ -1,3 +1,4 @@
+from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,12 +8,14 @@ from app.core.logging import logger
 from app.models.user import User
 from app.operations.store.store_operation import StoreOperation
 from app.operations.store.store_machine_opeartion import StoreMachineOperation
+from app.operations.store.get_store_payment_methods_operation import GetStorePaymentMethodsOperation
 from app.schemas.store import (
     StoreSerializer,
     AddStoreRequest,
     ListStoreQueryParams,
     UpdateStoreRequest,
     ClassifiedMachinesResponse,
+    StorePaymentMethod,
 )
 from app.schemas.pagination import PaginatedResponse
 from app.utils.pagination import get_total_pages
@@ -99,4 +102,16 @@ def classified_machines(
         }
     except Exception as e:
         logger.error("Classified machines failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{store_id}/payment-methods", response_model=List[StorePaymentMethod])
+def get_store_payment_methods(
+    store_id: UUID,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return GetStorePaymentMethodsOperation(current_user, store_id).execute()
+    except Exception as e:
+        logger.error("Get store payment methods failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))

@@ -91,23 +91,26 @@ class PaymentOperation:
 
         # Handle 100% discount case (total_amount = 0)
         is_full_discount = request.total_amount == Decimal("0.00")
-        
+        payment_method = request.payment_method
+        payment_provider = request.payment_provider
+        initial_status = PaymentStatus.NEW
+        transaction_code = (
+            cls._generate_transaction_code_for_full_discount()
+            if is_full_discount
+            else cls._generate_transaction_code()
+        )
+
         if is_full_discount:
-            # For full discount, use internal promotion provider and discount_full method
-            provider = PaymentProvider.INTERNAL_PROMOTION
+            payment_provider = PaymentProvider.INTERNAL_PROMOTION
             payment_method = PaymentMethod.DISCOUNT_FULL
-            payment_method_details = None  # No payment method details needed for full discount
-            initial_status = PaymentStatus.SUCCESS  # Automatically mark as successful
-            transaction_code = cls._generate_transaction_code_for_full_discount()
-        else:
+            payment_method_details = None
+            initial_status = PaymentStatus.SUCCESS
+        elif payment_method == PaymentMethod.QR and payment_provider == PaymentProvider.VIET_QR:
             # Normal payment flow
-            provider = PaymentProvider.VIET_QR
-            payment_method = request.payment_method
-            payment_method_details = cls._get_payment_method_details_from_store(store, request.payment_method)
-            initial_status = PaymentStatus.NEW
-            transaction_code = getattr(request, 'transaction_code', None)
-            if not transaction_code:
-                transaction_code = cls._generate_transaction_code()
+            payment_method_details = cls._get_payment_method_details_from_store(store, payment_method)
+        elif payment_method == PaymentMethod.CARD and payment_provider == PaymentProvider.VNPAY:
+            # Normal payment flow
+            payment_method_details = cls._get_payment_method_details_from_store(store, payment_method)
 
         # Create payment transaction
         payment_transaction = Payment(
@@ -115,7 +118,7 @@ class PaymentOperation:
             store_id=request.store_id,
             tenant_id=request.tenant_id,
             total_amount=request.total_amount,
-            provider=provider,
+            provider=payment_provider,
             payment_method=payment_method,
             payment_method_details=payment_method_details,
             status=initial_status,

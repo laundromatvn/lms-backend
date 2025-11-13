@@ -28,7 +28,7 @@ class StoreOperation:
             .filter(TenantMember.is_enabled == True)
             .all()
         )
-        
+
         authorized_tenant_ids = [tenant.tenant_id for tenant in authorized_tenants]
 
         store = (

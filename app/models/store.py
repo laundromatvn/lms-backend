@@ -162,6 +162,9 @@ class Store(Base):
             if not details:
                 raise ValueError("Each payment method must have a 'details' field")
             
+            if not 'is_enabled' in method:
+                method['is_enabled'] = False
+
             if not isinstance(details, dict):
                 raise ValueError("Payment method details must be a dictionary")
             

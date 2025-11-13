@@ -27,6 +27,7 @@ class VNPAYPaymentMethodDetails(BaseModel):
 class PaymentMethod(BaseModel):
     payment_method: str
     payment_provider: str | None = None
+    is_enabled: bool
     details: Union[QRPaymentMethodDetails, VNPAYPaymentMethodDetails]
 
 
@@ -78,3 +79,8 @@ class UpdateStoreRequest(BaseModel):
 class ClassifiedMachinesResponse(BaseModel):
     washers: List[MachineSerializer]
     dryers: List[MachineSerializer]
+
+
+class StorePaymentMethod(BaseModel):
+    payment_method: str
+    payment_provider: str | None = None

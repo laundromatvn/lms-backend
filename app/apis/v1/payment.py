@@ -16,7 +16,8 @@ from app.libs.database import get_db
 from app.models.user import User
 from app.models.payment import Payment, PaymentStatus, PaymentProvider
 from app.operations.payment import PaymentOperation
-from app.tasks.payment.payment_tasks import generate_payment_details, sync_payment_transaction
+from app.operations.payment.generate_payment_details_operation import GeneratePaymentDetailsOperation
+from app.tasks.payment.payment_tasks import sync_payment_transaction
 from app.schemas.payment import (
     InitializePaymentRequest,
     PaymentResponse,
@@ -39,11 +40,10 @@ async def initialize_payment(
     """
     try:
         payment = PaymentOperation.initialize_payment(request, user.id)
-        
-        # Only generate payment details for non-full-discount payments
-        if payment.total_amount > 0 and payment.provider != PaymentProvider.INTERNAL_PROMOTION:
-            generate_payment_details(str(payment.id))
-        
+
+        operation = GeneratePaymentDetailsOperation(payment.id)
+        operation.execute()
+
         return payment
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

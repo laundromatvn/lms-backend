@@ -20,6 +20,7 @@ class InitializePaymentRequest(BaseModel):
     tenant_id: UUID = Field(..., description="ID of the tenant")
     total_amount: Decimal = Field(..., description="Total payment amount")
     payment_method: PaymentMethod = Field(default=PaymentMethod.QR, description="Payment method")
+    payment_provider: PaymentProvider = Field(default=PaymentProvider.VIET_QR, description="Payment provider")
 
     @validator('total_amount')
     def validate_total_amount(cls, v):

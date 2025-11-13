@@ -17,6 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import validates, relationship
 
+from app.enums.payment_provider import PaymentProviderEnum
 from app.libs.database import Base
 
 
@@ -36,10 +37,7 @@ class PaymentMethod(str, Enum):
     DISCOUNT_FULL = "DISCOUNT_FULL"
 
 
-class PaymentProvider(str, Enum):
-    VIET_QR = "VIET_QR"
-    INTERNAL_PROMOTION = "INTERNAL_PROMOTION"
-
+PaymentProvider = PaymentProviderEnum
 
 class Payment(Base):
     __tablename__ = "payments"

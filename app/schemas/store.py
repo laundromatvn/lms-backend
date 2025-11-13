@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -9,16 +9,25 @@ from app.schemas.machine import MachineSerializer
 from app.schemas.pagination import Pagination
 
 
-class PaymentMethodDetails(BaseModel):
+class QRPaymentMethodDetails(BaseModel):
     bank_code: str
     bank_name: str | None = None
     bank_account_number: str
     bank_account_name: str
+    
+    
+class VNPAYPaymentMethodDetails(BaseModel):
+    merchant_code: str
+    terminal_code: str
+    init_secret_key: str
+    query_secret_key: str
+    ipnv3_secret_key: str
 
 
 class PaymentMethod(BaseModel):
     payment_method: str
-    details: PaymentMethodDetails
+    payment_provider: str | None = None
+    details: Union[QRPaymentMethodDetails, VNPAYPaymentMethodDetails]
 
 
 class StoreSerializer(BaseModel):

@@ -147,22 +147,26 @@ class Store(Base):
     def validate_payment_methods(self, key: str, payment_methods: Optional[list]) -> Optional[list]:
         if payment_methods is None:
             return []
-        
+
         for method in payment_methods:
             if not isinstance(method, dict):
                 raise ValueError("Each payment method must be a dictionary")
             
-            if 'payment_method' not in method:
+            payment_method = method.get('payment_method')
+            payment_provider = method.get('payment_provider')
+            details = method.get('details')
+            
+            if not payment_method:
                 raise ValueError("Each payment method must have a 'payment_method' field")
             
-            if 'details' not in method:
+            if not details:
                 raise ValueError("Each payment method must have a 'details' field")
             
-            if not isinstance(method['details'], dict):
+            if not isinstance(details, dict):
                 raise ValueError("Payment method details must be a dictionary")
             
             # Validate QR payment method structure
-            if method['payment_method'] == 'QR':
+            if payment_method == 'QR':
                 required_fields = [
                     'bank_code',
                     'bank_name',
@@ -170,12 +174,27 @@ class Store(Base):
                     'bank_account_name',
                 ]
                 for field in required_fields:
-                    if field not in method['details']:
+                    if field not in details:
                         raise ValueError(f"QR payment method must have '{field}' in details")
                     
-                    if not isinstance(method['details'][field], str):
+                    if not isinstance(details[field], str):
                         raise ValueError(f"QR payment method '{field}' must be a string")
-        
+            
+            elif payment_method == 'CARD' and payment_provider == 'VNPAY':
+                required_fields = [
+                    'merchant_code',
+                    'terminal_code',
+                    'init_secret_key',
+                    'query_secret_key',
+                    'ipnv3_secret_key',
+                ]
+                for field in required_fields:
+                    if field not in details:
+                        raise ValueError(f"CARD VNPAY payment method must have '{field}' in details")
+            
+            else:
+                raise ValueError(f"Invalid payment method: {payment_method}")
+
         return payment_methods
     
     @property

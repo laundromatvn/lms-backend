@@ -62,7 +62,7 @@ def get_store(
 ):
     try:
         return StoreOperation.get(current_user, store_id)
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error("Get store failed", error=str(e))

@@ -2,7 +2,9 @@ from sqlalchemy.orm import Session
 
 from app.libs.database import with_db_session_for_class_instance
 from app.models.payment import Payment, PaymentProvider, PaymentStatus
+from app.models.order import OrderStatus
 from app.schemas.vnpay import VNPAYSyncUpCancelTransactionRequest
+from app.operations.order.order_operation import OrderOperation
 
 
 class SyncUpVnPayCancelTransactionOperation:
@@ -18,6 +20,8 @@ class SyncUpVnPayCancelTransactionOperation:
         db.add(self.payment)
         db.commit()
         db.refresh(self.payment)
+
+        OrderOperation.update_order_status(self.order.id, OrderStatus.CANCELLED)
 
         return self.payment
 

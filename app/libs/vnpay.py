@@ -126,8 +126,10 @@ class VnPayService:
         }
         """
         
-        transaction_id = response.json().get("paymentRequestId")
-        transaction_details = response.json().get("payments").get("card")
+        data = response.json() if response.status_code == 200 else {}
+        
+        transaction_id = data.get("paymentRequestId")
+        transaction_details = data.get("payments", {}).get("card", {})
 
         return transaction_id, transaction_details
 

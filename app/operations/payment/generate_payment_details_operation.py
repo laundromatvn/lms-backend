@@ -3,11 +3,12 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.core.logging import logger
+from app.enums.vnpay import VNPAYMethodCodeEnum
 from app.libs.database import with_db_session_for_class_instance
 from app.libs.vietqr import GenerateQRCodeRequest
+from app.libs.vnpay import CardPayment
 from app.models.payment import Payment, PaymentMethod, PaymentStatus
-from app.schemas import order, payment
+from app.models.store import Store
 from app.services.payment_service import PaymentService, PaymentProviderEnum
 
 
@@ -17,8 +18,6 @@ class GeneratePaymentDetailsOperation:
         
         self._preload()
         self._validate()
-        
-        logger.info(f"Payment method: {self.payment.payment_method}")
 
     @with_db_session_for_class_instance
     def execute(self, db: Session):
@@ -29,8 +28,6 @@ class GeneratePaymentDetailsOperation:
         db.add(self.payment)
         db.commit()
         
-        print(f"Payment method: {self.payment.payment_method}")
-
         transaction_id, details = self._get_payment_details(db)
         
         self.payment.details = details
@@ -49,6 +46,7 @@ class GeneratePaymentDetailsOperation:
             raise ValueError(f"Payment {self.payment_id} not found")
 
         self.order = self.payment.order
+        self.store = self.payment.store
 
     def _validate(self):
         if self.payment.status != PaymentStatus.NEW:
@@ -110,4 +108,30 @@ class GeneratePaymentDetailsOperation:
         return transaction_id, details
     
     def _generate_payment_card(self, db: Session):
-        pass
+        cfg = self._get_vnpay_cfg(self.store)
+        payment_service = PaymentService(provider_name=PaymentProviderEnum.VNPAY, cfg=cfg)
+
+        card_payment = CardPayment(
+            client_transaction_code=self.payment.transaction_code,
+            amount=int(self.payment.total_amount),
+            method_code=VNPAYMethodCodeEnum.CARD,
+        )
+
+        transaction_id, details = payment_service.pay_by_card(
+            order_code=self.payment.transaction_code,
+            total_payment_amount=int(self.payment.total_amount),
+            card_payment=card_payment,
+        )
+
+        return transaction_id, details
+
+
+    def _get_vnpay_cfg(self, store: Store):
+        vnpay_card_payment_method_details = {}
+        
+        for method in store.payment_methods:
+            if method.get('payment_method') == PaymentMethod.CARD and method.get('payment_provider') == PaymentProviderEnum.VNPAY:
+                vnpay_card_payment_method_details = method.get('details')
+                break
+
+        return vnpay_card_payment_method_details

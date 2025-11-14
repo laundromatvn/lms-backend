@@ -14,6 +14,7 @@ from app.apis.v1.order import router as order_router
 from app.apis.v1.payment import router as payment_router
 from app.apis.v1.promotion_campaign import router as promotion_campaign_router
 from app.apis.v1.vietqr import router as vietqr_router
+from app.apis.v1.vnpay import router as vnpay_router
 from app.apis.v1.user import router as user_router
 
 
@@ -33,4 +34,5 @@ router.include_router(order_router, prefix="/order", tags=["Order"])
 router.include_router(payment_router, prefix="/payment", tags=["Payment"])
 router.include_router(promotion_campaign_router, prefix="/promotion-campaign", tags=["Promotion Campaign"])
 router.include_router(vietqr_router, prefix="/vietqr", tags=["VietQR"])
+router.include_router(vnpay_router, prefix="/vnpay", tags=["VNPAY"])
 router.include_router(user_router, prefix="/user", tags=["User"])

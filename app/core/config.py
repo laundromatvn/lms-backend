@@ -82,6 +82,9 @@ class Settings(BaseSettings):
     VIETQR_PARTNER_USERNAME: str = os.getenv("VIETQR_PARTNER_USERNAME", "vietqr-partner-username")
     VIETQR_PARTNER_PASSWORD: str = os.getenv("VIETQR_PARTNER_PASSWORD", "vietqr-partner-password")
     VIETQR_TOKEN_EXPIRE_SECONDS: int = int(os.getenv("VIETQR_TOKEN_EXPIRE_SECONDS", 300))
+    
+    # VNPAY
+    VNPAY_BASE_URL: str = os.getenv("VNPAY_BASE_URL", "https://spos-api.vnpaytest.vn")
 
     # Email
     EMAIL_SENDER: str = os.getenv("EMAIL_SENDER", "mailer-sender")

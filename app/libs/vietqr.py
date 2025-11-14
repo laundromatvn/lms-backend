@@ -37,7 +37,7 @@ class GenerateQRCodeResponse(BaseModel):
 
 
 class VietQR:
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.base_url = settings.VIETQR_BASE_URL
         self.username = settings.VIETQR_USERNAME
         self.password = settings.VIETQR_PASSWORD

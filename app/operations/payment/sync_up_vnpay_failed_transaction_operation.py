@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from app.libs.database import with_db_session_for_class_instance
 from app.models.payment import Payment, PaymentProvider, PaymentStatus
 from app.models.order import Order, OrderStatus
-from app.operations.order.order_operation import OrderOperation
 from app.schemas.vnpay import VNPAYIpnRequest
+from app.operations.order.order_operation import OrderOperation
 
 
-class SyncUpVnPaySuccessTransactionOperation:
+class SyncUpVnPayFailedTransactionOperation:
     def __init__(self, request: VNPAYIpnRequest):
         self.request = request
 
@@ -16,12 +16,12 @@ class SyncUpVnPaySuccessTransactionOperation:
         self._preload(db)
         self._validate_request(db)
 
-        self.payment.update_status(PaymentStatus.SUCCESS)
+        self.payment.update_status(PaymentStatus.FAILED)
         db.add(self.payment)
         db.commit()
         db.refresh(self.payment)
 
-        OrderOperation.update_order_status(self.order.id, OrderStatus.IN_PROGRESS)
+        OrderOperation.update_order_status(self.order.id, OrderStatus.PAYMENT_FAILED)
 
         return self.payment
 
@@ -29,7 +29,7 @@ class SyncUpVnPaySuccessTransactionOperation:
         self.payment = self._get_payment(db)
         if not self.payment:
             raise ValueError(f"Payment with transaction code {self.request.orderCode} not found")
-        
+
         self.order = self._get_order(db)
         if not self.order:
             raise ValueError(f"Order with payment ID {self.payment.id} not found")

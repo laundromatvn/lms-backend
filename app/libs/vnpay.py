@@ -54,8 +54,6 @@ class CardPayment:
 class VnPayService:
     """Unified service for both QR and Card payments."""
     
-    SUCCESS_URL_PATH = "{backend_url}/api/v1/payment/success"
-    CANCEL_URL_PATH = "{backend_url}/api/v1/payment/cancel"
     CREATE_ORDER_PATH = "{vnpay_base_url}/external/merchantorder"
     
     """
@@ -79,8 +77,8 @@ class VnPayService:
             vnpay_base_url=self.vnpay_base_url,
             merchant_code=self.merchant_code,
         )
-        self.success_url = self.SUCCESS_URL_PATH.format(backend_url=settings.BACKEND_URL)
-        self.cancel_url = self.CANCEL_URL_PATH.format(backend_url=settings.BACKEND_URL)
+        self.success_url = "" # just for QR or Web
+        self.cancel_url = "" # just for QR or Web
 
     def pay_by_card(
         self,
@@ -128,8 +126,8 @@ class VnPayService:
         
         data = response.json() if response.status_code == 200 else {}
         
-        transaction_id = data.get("paymentRequestId")
-        transaction_details = data.get("payments", {}).get("card", {})
+        transaction_id = response.json().get("paymentRequestId")
+        transaction_details = response.json().get("payments", {}).get("card", {})
 
         return transaction_id, transaction_details
 

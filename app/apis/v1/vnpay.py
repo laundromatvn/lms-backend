@@ -10,9 +10,15 @@ router = APIRouter()
 
 
 @router.post("/ipn")
-def sync_up_success_transaction(request: VNPAYIpnRequest):
+def vnpay_ipn(request: VNPAYIpnRequest):
+    """
+    VNPAY IPN endpoint.
+
+    This endpoint receives IPN requests from VNPAY and processes them.
+    It validates the request and updates the payment status accordingly.
+    """
     try:
-        logger.info(f"Syncing up success transaction: {request}")
+        logger.info(f"VNPAY IPN request: {request}")
 
         if request.responseCode == "200":
             operation = SyncUpVnPaySuccessTransactionOperation(request)

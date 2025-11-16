@@ -14,7 +14,6 @@ from app.schemas.dashboard.overview import (
     OverviewOrderByDayBarChartResponse,
     OverviewRevenueByDayQueryParams,
     OverviewRevenueByDayBarChartResponse,
-    StoreKeyMetricsListResponse,
     ListOverviewOrdersQueryParams,
     ListOverviewOrdersResponseItem,
     GetOverviewMachineStatusLineChartQueryParams,
@@ -37,7 +36,10 @@ router = APIRouter()
 async def get_overview_key_metrics(
     query_params: OverviewKeyMetricsQueryParams = Depends(),
 ):  
-    operation = GetDashboardOverviewKeyMetricsOperation(tenant_id=query_params.tenant_id)
+    operation = GetDashboardOverviewKeyMetricsOperation(
+        tenant_id=query_params.tenant_id,
+        store_id=query_params.store_id,
+    )
     result = operation.execute()
     return result
 
@@ -88,17 +90,6 @@ async def get_overview_revenue_by_day_bar_chart(
     return result
 
 
-@router.get("/store-key-metrics", response_model=StoreKeyMetricsListResponse)
-async def get_store_key_metrics(
-    query_params: OverviewKeyMetricsQueryParams = Depends(),
-):  
-    operation = GetOverviewStoreKeyMetricsOperation(tenant_id=query_params.tenant_id)
-    result = operation.execute()
-    return {
-        "store_key_metrics": result,
-    }
-
-
 @router.get("/order", response_model=PaginatedResponse[ListOverviewOrdersResponseItem])
 async def list_overview_orders(
     query_params: ListOverviewOrdersQueryParams = Depends(),
@@ -116,9 +107,9 @@ async def list_overview_orders(
         
         item_dict = {
             "id": order.id,
-            "created_at": order.created_at.strftime("%H:%M %d %b %Y"),  # 17:20 17 Aug 2025
-            "updated_at": order.updated_at.strftime("%H:%M %d %b %Y"),
-            "deleted_at": order.deleted_at.strftime("%H:%M %d %b %Y") if order.deleted_at else None,
+            "created_at": order.created_at,
+            "updated_at": order.updated_at,
+            "deleted_at": order.deleted_at,
             "created_by": order.created_by,
             "updated_by": order.updated_by,
             "deleted_by": order.deleted_by if order.deleted_by else None,

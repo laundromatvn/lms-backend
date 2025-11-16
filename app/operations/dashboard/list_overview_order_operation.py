@@ -60,6 +60,8 @@ class ListOverviewOrderOperation:
                 base_query = base_query.order_by(getattr(Order, query_params.order_by).desc())
             else:
                 base_query = base_query.order_by(getattr(Order, query_params.order_by).asc())
+        else:
+            base_query = base_query.order_by(Order.created_at.desc())
 
         total = base_query.count()
         result = (

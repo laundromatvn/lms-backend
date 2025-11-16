@@ -11,7 +11,8 @@ from app.schemas.pagination import Pagination
 
 
 class OverviewKeyMetricsQueryParams(BaseModel):
-    tenant_id: UUID
+    tenant_id: UUID | None = None
+    store_id: UUID | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
 
@@ -59,10 +60,19 @@ class StoreKeyMetricsResponse(BaseModel):
     tenant_id: UUID
     total_orders: int = 0
     total_revenue: float = 0
-
-
-class StoreKeyMetricsListResponse(BaseModel):
-    store_key_metrics: List[Dict[str, Any]]
+    
+    
+class StoreKeyMetricsResponse(BaseModel):
+    total_active_stores: int = 0
+    total_stores: int = 0
+    total_in_progress_washers: int = 0
+    total_washers: int = 0
+    total_in_progress_dryers: int = 0
+    total_dryers: int = 0
+    total_in_progress_orders: int = 0
+    today_orders: int = 0
+    revenue_by_day: float = 0
+    revenue_by_month: float = 0
 
 
 class ListOverviewOrdersQueryParams(Pagination):
@@ -79,9 +89,9 @@ class ListOverviewOrdersQueryParams(Pagination):
 
 class ListOverviewOrdersResponseItem(BaseModel):
     id: UUID
-    created_at: str
-    updated_at: str
-    deleted_at: str | None
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None
     created_by: UUID
     updated_by: UUID | None
     deleted_by: UUID | None

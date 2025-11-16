@@ -72,5 +72,5 @@ class GetOverviewStoreKeyMetricsOperation:
                 "total_revenue": float(row.total_revenue)
             }
             store_metrics.append(store_dict)
-        
+
         return store_metrics

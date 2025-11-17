@@ -22,21 +22,23 @@ class StoreOperation:
         current_user: User,
         store_id: UUID
     ) -> Store:
-        authorized_tenants = (
-            db.query(TenantMember)
-            .filter(TenantMember.user_id == current_user.id)
-            .filter(TenantMember.is_enabled == True)
-            .all()
-        )
-
-        authorized_tenant_ids = [tenant.tenant_id for tenant in authorized_tenants]
-
-        store = (
+        base_query = (
             db.query(Store)
             .filter(Store.id == store_id)
-            .filter(Store.tenant_id.in_(authorized_tenant_ids))
-            .first()
         )
+        
+        if not current_user.is_admin:
+            authorized_tenants = (
+            db.query(TenantMember)
+                .filter(TenantMember.user_id == current_user.id)
+                .filter(TenantMember.is_enabled == True)
+                .all()
+            )
+
+            authorized_tenant_ids = [tenant.tenant_id for tenant in authorized_tenants]
+            base_query = base_query.filter(Store.tenant_id.in_(authorized_tenant_ids))
+            
+        store = base_query.first()
         if not store:
             raise ValueError("Store not found")
 
@@ -50,23 +52,25 @@ class StoreOperation:
         current_user: User,
         query_params: ListStoreQueryParams
     ) -> tuple[int, list[Store]]:
-        authorized_tenants = (
-            db.query(TenantMember.tenant_id)
-            .filter(TenantMember.user_id == current_user.id)
-            .filter(TenantMember.is_enabled == True)
-            .all()
-        )
-
-        authorized_tenant_ids = [tenant.tenant_id for tenant in authorized_tenants]
-
         base_query = (
             db.query(
                 *Store.__table__.columns,
                 Tenant.name.label("tenant_name"),
             )
             .join(Tenant, Store.tenant_id == Tenant.id)
-            .filter(Store.tenant_id.in_(authorized_tenant_ids))
         )
+        
+        if not current_user.is_admin:
+            authorized_tenants = (
+                db.query(TenantMember.tenant_id)
+                .filter(TenantMember.user_id == current_user.id)
+                .filter(TenantMember.is_enabled == True)
+                .all()
+            )
+
+            authorized_tenant_ids = [tenant.tenant_id for tenant in authorized_tenants]
+            
+            base_query = base_query.filter(Store.tenant_id.in_(authorized_tenant_ids))
 
         if query_params.tenant_id:
             base_query = base_query.filter(Store.tenant_id == query_params.tenant_id)

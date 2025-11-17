@@ -64,12 +64,9 @@ class UserOperation:
         if not cls._have_permission(current_user, user):
             raise PermissionError("You are not allowed to update this user")
         
-        print(f"Updating user {user.id} with request {request}")
-
         update_data = request.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             if field == "password":
-                print(f"Setting password for user {user.id}")
                 user.set_password(value)
                 continue
             else:

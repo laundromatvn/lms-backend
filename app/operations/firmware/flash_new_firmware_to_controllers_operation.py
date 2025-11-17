@@ -116,18 +116,16 @@ class FlashNewFirmwareToControllersOperation:
             store_id=controller.store_id,
             controller_id=controller.device_id,
         )
-    
+
     def _build_firmware_deployment_payload(
         self,
         controller: Controller,
         firmware: Firmware,
         deployment: FirmwareDeployment,
     ) -> dict:
-        file_url = self.minio_client.get_file_url(
-            bucket_name=settings.BUCKET_NAME,
-            object_name=firmware.object_name,
-        )
-        
+        file_path = f"{settings.BUCKET_NAME}/{firmware.object_name}"
+        file_url = self.minio_client.get_public_file_url(file_path)
+
         payload = build_mqtt_payload_template(
             event_type=MQTTEventTypeEnum.UPDATE_FIRMWARE.value,
             controller_id=str(controller.device_id),

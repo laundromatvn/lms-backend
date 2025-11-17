@@ -32,6 +32,7 @@ class UpdateUserRequest(BaseModel):
     phone: str | None = None
     role: UserRole | None = None
     status: UserStatus | None = None
+    password: str | None = None
 
 
 class ResetPasswordRequest(BaseModel):

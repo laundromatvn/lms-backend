@@ -164,8 +164,16 @@ class OrderOperation:
             Order instance or None if not found
         """
         order = (
-            db.query(Order)
-            .filter(and_(Order.id == order_id, Order.deleted_at.is_(None)))
+            db.query(
+                *Order.__table__.columns,
+                Payment.transaction_code.label("transaction_code"),
+            )
+            .join(Payment, Order.id == Payment.order_id)
+            .filter(
+                Order.id == order_id, 
+                Order.deleted_at.is_(None),
+                Payment.deleted_at.is_(None),
+            )
             .first()
         )
         if not order:

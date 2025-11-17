@@ -44,6 +44,7 @@ class ListProvisioningControllersOperation:
             .filter(
                 Controller.deleted_at.is_(None),
                 FirmwareDeployment.id.isnot(None),
+                FirmwareDeployment.firmware_id == self.firmware_id,
             )
         )
 

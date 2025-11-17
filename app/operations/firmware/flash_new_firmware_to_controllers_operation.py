@@ -114,7 +114,7 @@ class FlashNewFirmwareToControllersOperation:
     def _get_controller_action_topic(self, controller: Controller) -> str:
         return self.CONTROLLER_ACTION_TOPIC.format(
             store_id=controller.store_id,
-            controller_id=controller.id,
+            controller_id=controller.device_id,
         )
     
     def _build_firmware_deployment_payload(
@@ -130,7 +130,7 @@ class FlashNewFirmwareToControllersOperation:
         
         payload = build_mqtt_payload_template(
             event_type=MQTTEventTypeEnum.UPDATE_FIRMWARE.value,
-            controller_id=str(controller.id),
+            controller_id=str(controller.device_id),
             store_id=str(controller.store_id),
             payload={
                 "deployment_id": str(deployment.id),

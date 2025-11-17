@@ -6,6 +6,8 @@ This package contains all SQLAlchemy models for the application.
 
 from .controller import Controller, ControllerStatus
 from .datapoint import Datapoint, DatapointValueType
+from .firmware import Firmware, FirmwareStatus, FirmwareVersionType
+from .firmware_deployment import FirmwareDeployment, FirmwareDeploymentStatus
 from .machine import Machine, MachineType, MachineStatus
 from .tenant import Tenant, TenantStatus
 from .tenant_member import TenantMember
@@ -31,6 +33,15 @@ __all__ = [
     # Datapoint
     "Datapoint",
     "DatapointValueType",
+
+    # Firmware
+    "Firmware",
+    "FirmwareStatus",
+    "FirmwareVersionType",
+
+    # Firmware Deployment
+    "FirmwareDeployment",
+    "FirmwareDeploymentStatus",
 
     # Machine
     "Machine",

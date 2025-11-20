@@ -55,7 +55,7 @@ class GetDashboardOverviewKeyMetricsOperation:
             db.query(Store)
             .filter(Store.deleted_at.is_(None))
         )
-        
+
         if self.tenant_id:
             base_query = base_query.filter(Store.tenant_id == self.tenant_id)
         
@@ -153,7 +153,6 @@ class GetDashboardOverviewKeyMetricsOperation:
         base_query = (
             db.query(Order)
             .join(Store)
-            .filter(Store.tenant_id == self.tenant_id)
             .filter(func.date(func.timezone(settings.TIMEZONE_NAME, Order.created_at)) == date.today())
             .filter(Order.deleted_at.is_(None))
         )
@@ -170,7 +169,6 @@ class GetDashboardOverviewKeyMetricsOperation:
         base_query = (
             db.query(Order)
             .join(Store)
-            .filter(Store.tenant_id == self.tenant_id)
             .filter(Order.status == OrderStatus.IN_PROGRESS)
             .filter(Order.deleted_at.is_(None))
         )
@@ -187,7 +185,6 @@ class GetDashboardOverviewKeyMetricsOperation:
         base_query = (
             db.query(func.coalesce(func.sum(Payment.total_amount), 0))
             .join(Store)
-            .filter(Store.tenant_id == self.tenant_id)
             .filter(Payment.status == PaymentStatus.SUCCESS)
             .filter(Payment.deleted_at.is_(None))
             .filter(func.date(func.timezone(settings.TIMEZONE_NAME, Payment.created_at)) == date.today())
@@ -205,7 +202,6 @@ class GetDashboardOverviewKeyMetricsOperation:
         base_query = (
             db.query(func.coalesce(func.sum(Payment.total_amount), 0))
             .join(Store)
-            .filter(Store.tenant_id == self.tenant_id)
             .filter(Payment.status == PaymentStatus.SUCCESS)
             .filter(Payment.deleted_at.is_(None))
             .filter(func.extract('year', func.timezone(settings.TIMEZONE_NAME, Payment.created_at)) == date.today().year)

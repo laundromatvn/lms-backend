@@ -32,7 +32,7 @@ class ControllerOperation:
                 Firmware.version.label('firmware_version'),
             )
             .join(Store, Controller.store_id == Store.id)
-            .join(Firmware, Controller.provisioned_firmware_id == Firmware.id)
+            .outerjoin(Firmware, Controller.provisioned_firmware_id == Firmware.id)
             .filter(
                 Controller.deleted_at.is_(None),
                 Controller.id == controller_id,
@@ -66,7 +66,6 @@ class ControllerOperation:
             .filter(
                 Controller.deleted_at.is_(None),
                 Controller.status.notin_([ControllerStatus.INACTIVE]),
-                Firmware.id.isnot(None),
             )
         )
         
@@ -76,6 +75,7 @@ class ControllerOperation:
 
         if query_params.status:
             base_query = base_query.filter(Controller.status == query_params.status)
+
         if query_params.store_id:
             base_query = base_query.filter(Controller.store_id == query_params.store_id)
             
@@ -281,9 +281,6 @@ class ControllerOperation:
 
     @classmethod
     def _get_authorized_store_ids(cls, db: Session, current_user: User):
-        if current_user.is_admin:
-            return [store.id for store in db.query(Store).all()]
-
         authorized_stores = (
             db.query(Store)
             .join(TenantMember, Store.tenant_id == TenantMember.tenant_id)

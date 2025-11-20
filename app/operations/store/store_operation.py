@@ -29,10 +29,10 @@ class StoreOperation:
         
         if not current_user.is_admin:
             authorized_tenants = (
-            db.query(TenantMember)
-                .filter(TenantMember.user_id == current_user.id)
-                .filter(TenantMember.is_enabled == True)
-                .all()
+                db.query(TenantMember)
+                    .filter(TenantMember.user_id == current_user.id)
+                    .filter(TenantMember.is_enabled == True)
+                    .all()
             )
 
             authorized_tenant_ids = [tenant.tenant_id for tenant in authorized_tenants]

@@ -45,7 +45,7 @@ class Machine(Base):
 
     controller_id = Column(UUID(as_uuid=True), ForeignKey('controllers.id'), nullable=False, index=True)
     relay_no = Column(Integer, nullable=False, index=True)
-    name = Column(String(255), nullable=True, index=True, unique=True)
+    name = Column(String(255), nullable=True)
     machine_type = Column(
         SQLEnum(MachineType, name="machine_type", create_type=False),
         nullable=False,
@@ -94,9 +94,6 @@ class Machine(Base):
 
     @validates('name')
     def validate_name(self, key: str, name: str) -> str:
-        if name is None:
-            return None
-        
         name = name.strip()
         if not name:
             return None

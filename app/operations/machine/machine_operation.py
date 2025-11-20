@@ -69,6 +69,9 @@ class MachineOperation:
             )
             .join(Controller, Machine.controller_id == Controller.id)
             .outerjoin(Store, Controller.store_id == Store.id)
+            .filter(Machine.deleted_at.is_(None))
+            .filter(Controller.deleted_at.is_(None))
+            .filter(Store.deleted_at.is_(None))
         )
         
         if not current_user.is_admin:

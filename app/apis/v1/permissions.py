@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.apis.deps import get_current_user
-from app.enums.access.portal_access import PortalPermissionAccessEnum
 from app.libs.database import get_db
 from app.models.permission import Permission
 from app.models.user import User
@@ -19,18 +18,6 @@ from app.utils.pagination import get_total_pages
 from app.policies.permission_policies import PermissionPolicies
 
 router = APIRouter()
-
-
-@router.get("/access")
-async def get_access(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    policies = PermissionPolicies(db, current_user)
-
-    return {
-        PortalPermissionAccessEnum.PORTAL_PERMISSION_MANAGEMENT.value: policies.can_access_portal_permission_management(),
-    }
 
 
 @router.get("/{permission_id}", response_model=PermissionSerializer)

@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class PortalPermissionAccessEnum(str, Enum):
-    PORTAL_PERMISSION_MANAGEMENT = "portal_permission_management"
-
+class PortalAccessEnum(str, Enum):
+    PORTAL_LAUNDRY_FOUNDATION_MANAGEMENT = "portal_laundry_foundation_management"
+    PORTAL_SYSTEM_MANAGEMENT = "portal_system_management"
 

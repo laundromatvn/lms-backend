@@ -1,42 +1,28 @@
 from sqlalchemy.orm import Session
 
-from app.enums.access.portal_access import PortalPermissionAccessEnum
-from app.models.permission import Permission
+from app.policies.base import BasePolicies
 from app.models.user import User
 
 
-class PermissionPolicies:
+class PermissionPolicies(BasePolicies):
     def __init__(self, db: Session, current_user: User):
-        self.db = db
-        self.current_user = current_user
+        super().__init__(db, current_user, ["portal_system_management"])
         
-        self.preload_permissions()
-        
-    def preload_permissions(self) -> list[Permission]:
-        self.portal_permission_management_enabled = (
-            self.db.query(Permission)
-                .filter_by(
-                    code="portal_permission_management",
-                    is_enabled=True,
-                )
-                .first() is not None
-        )
+    def preload_policies(self) -> None:
+        self.portal_system_management_enabled = "portal_system_management" in self.enabled_policies
 
-    def can_access_portal_permission_management(self) -> bool:
-        return self.portal_permission_management_enabled and self.current_user.is_admin
-    
     def can_get_permission(self) -> bool:
-        return self.portal_permission_management_enabled and self.current_user.is_admin
+        return self.portal_system_management_enabled and self.current_user.is_admin
     
     def can_list_permissions(self) -> bool:
-        return self.portal_permission_management_enabled and self.current_user.is_admin
+        return self.portal_system_management_enabled and self.current_user.is_admin
     
     def can_create_permission(self) -> bool:
-        return self.portal_permission_management_enabled and self.current_user.is_admin
+        return self.portal_system_management_enabled and self.current_user.is_admin
     
     def can_update_permission(self) -> bool:
-        return self.portal_permission_management_enabled and self.current_user.is_admin
+        return self.portal_system_management_enabled and self.current_user.is_admin
     
     def can_delete_permission(self) -> bool:
-        return self.portal_permission_management_enabled and self.current_user.is_admin
+        return self.portal_system_management_enabled and self.current_user.is_admin
 

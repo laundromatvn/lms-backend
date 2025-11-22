@@ -21,5 +21,6 @@ async def get_overview_access(
         PortalAccessEnum.PORTAL_DASHBOARD_OVERVIEW: policies.can_access_portal_dashboard_overview(),
         PortalAccessEnum.PORTAL_DASHBOARD_ORDER_MANAGEMENT: policies.can_access_portal_dashboard_order_management(),
         PortalAccessEnum.PORTAL_DASHBOARD_MACHINE_MANAGEMENT: policies.can_access_portal_dashboard_machine_management(),
+        PortalAccessEnum.PORTAL_DASHBOARD_MACHINE_SETTING: policies.can_access_portal_dashboard_machine_setting(),
     }
 

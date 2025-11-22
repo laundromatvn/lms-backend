@@ -10,4 +10,5 @@ class PortalAccessEnum(str, Enum):
     PORTAL_DASHBOARD_OVERVIEW = "portal_dashboard_overview"
     PORTAL_DASHBOARD_ORDER_MANAGEMENT = "portal_dashboard_order_management"
     PORTAL_DASHBOARD_MACHINE_MANAGEMENT = "portal_dashboard_machine_management"
+    PORTAL_DASHBOARD_MACHINE_SETTING = "portal_dashboard_machine_setting"
 

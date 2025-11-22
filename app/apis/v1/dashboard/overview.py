@@ -5,7 +5,6 @@ from typing import List
 from app.apis.deps import get_current_user
 from app.models.user import User
 from app.operations.dashboard.list_overview_order_operation import ListOverviewOrderOperation
-from app.operations.order import OrderOperation
 from app.operations.dashboard.get_overview_order_by_day_bar_chart_operation import GetOverviewOrderByDayBarChartOperation
 from app.schemas.dashboard.overview import (
     OverviewKeyMetricsQueryParams,
@@ -27,7 +26,6 @@ from app.operations.dashboard.get_overview_machine_status_line_chart_operation i
 from app.utils.pagination import get_total_pages
 from app.utils.timezone import get_tzinfo
 from app.schemas.pagination import PaginatedResponse
-
 
 router = APIRouter()
 
@@ -143,3 +141,4 @@ async def get_machine_status_line_chart(
         end_date=query_params.end_date,
     )
     return result
+

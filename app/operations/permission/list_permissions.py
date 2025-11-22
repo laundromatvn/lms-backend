@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 
 from app.models.permission import Permission
-from app.models.user import User
 from app.schemas.permission import ListPermissionQueryParams
 
 
@@ -10,12 +9,8 @@ class ListPermissionsOperation:
     def execute(
         self,
         db: Session,
-        current_user: User,
         query_params: ListPermissionQueryParams,
     ) -> tuple[int, list[Permission]]:
-        if not self._has_permission(current_user):
-            raise PermissionError("You are not allowed to list permissions")
-        
         base_query = db.query(Permission)
 
         if query_params.is_enabled:
@@ -35,6 +30,4 @@ class ListPermissionsOperation:
         total = base_query.count()
         permissions = base_query.offset((query_params.page - 1) * query_params.page_size).limit(query_params.page_size).all()
         return total, permissions
-    
-    def _has_permission(self, current_user: User) -> bool:
-        return current_user.is_admin
+

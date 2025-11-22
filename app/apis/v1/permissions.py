@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.apis.deps import get_current_user
+from app.enums.access.portal_access import PortalPermissionAccessEnum
 from app.libs.database import get_db
 from app.models.permission import Permission
 from app.models.user import User
@@ -15,8 +16,21 @@ from app.schemas.permission import (
 )
 from app.schemas.pagination import PaginatedResponse
 from app.utils.pagination import get_total_pages
+from app.policies.permission_policies import PermissionPolicies
 
 router = APIRouter()
+
+
+@router.get("/access")
+async def get_access(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    policies = PermissionPolicies(db, current_user)
+
+    return {
+        PortalPermissionAccessEnum.PORTAL_PERMISSION_MANAGEMENT.value: policies.can_access_portal_permission_management(),
+    }
 
 
 @router.get("/{permission_id}", response_model=PermissionSerializer)
@@ -25,15 +39,15 @@ def get_permission(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not current_user.is_admin:
-        raise PermissionError("You are not allowed to get permission")
-    
+    policies = PermissionPolicies(db, current_user)
+    if not policies.can_get_permission():
+        raise HTTPException(status_code=403, detail="You are not allowed to get permission")
+
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
-    
-    return permission
 
+    return permission
 
 
 @router.patch("/{permission_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -43,8 +57,9 @@ def update_permission(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not current_user.is_admin:
-        raise PermissionError("You are not allowed to update permission")
+    policies = PermissionPolicies(db, current_user)
+    if not policies.can_update_permission():
+        raise HTTPException(status_code=403, detail="You are not allowed to update permission")
 
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
     if not permission:
@@ -65,8 +80,9 @@ def delete_permission(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not current_user.is_admin:
-        raise PermissionError("You are not allowed to delete permission")
+    policies = PermissionPolicies(db, current_user)
+    if not policies.can_delete_permission():
+        raise HTTPException(status_code=403, detail="You are not allowed to delete permission")
     
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
     if not permission:
@@ -82,20 +98,19 @@ def list_permissions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    try:
-        total, permissions = ListPermissionsOperation().execute(db, current_user, query_params)
-        return {
-            "page": query_params.page,
-            "page_size": query_params.page_size,
-            "total": total,
-            "total_pages": get_total_pages(total, query_params.page_size),
-            "data": permissions,
-        }
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
+    policies = PermissionPolicies(db, current_user)
+    if not policies.can_list_permissions():
+        raise HTTPException(status_code=403, detail="You are not allowed to list permissions")
+
+    total, permissions = ListPermissionsOperation().execute(db, query_params)
+    return {
+        "page": query_params.page,
+        "page_size": query_params.page_size,
+        "total": total,
+        "total_pages": get_total_pages(total, query_params.page_size),
+        "data": permissions,
+    }
+
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_permission(
@@ -103,11 +118,9 @@ def create_permission(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    try:
-        CreatePermissionOperation().execute(db, current_user, request)
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    policies = PermissionPolicies(db, current_user)
+    if not policies.can_create_permission():
+        raise HTTPException(status_code=403, detail="You are not allowed to create permission")
 
+    CreatePermissionOperation().execute(db, request)
 

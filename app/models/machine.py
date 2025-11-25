@@ -94,6 +94,9 @@ class Machine(Base):
 
     @validates('name')
     def validate_name(self, key: str, name: str) -> str:
+        if name is None:
+            return None
+
         name = name.strip()
         if not name:
             return None

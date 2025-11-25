@@ -31,7 +31,12 @@ class AbandonControllerOperation:
             "correlation_id": str(uuid.uuid4()),
             "controller_id": str(device_id),
             "store_id": None,
-            "payload": {"relay_id": 1, "pulse_duration": 50, "value": 10},
+            "payload": {
+                "relay_id": 1,
+                "pulse_duration": 50,
+                "pulse_interval": 100,
+                "value": 5,
+            },
         }
 
         mqtt_client.publish(

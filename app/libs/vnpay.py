@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 import hmac, hashlib, base64
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 import requests
+import unidecode
+import re
 
 from app.core.config import settings
+from app.core.logging import logger
 
 
 def _hmac_sha256_base64(secret: str, message: str) -> str:
@@ -11,6 +14,26 @@ def _hmac_sha256_base64(secret: str, message: str) -> str:
     msg = message.encode("utf-8")
     mac = hmac.new(key, msg, hashlib.sha256).digest()
     return base64.b64encode(mac).decode("utf-8")
+
+
+def _clean_qr_description(desc: str) -> str:
+    """
+    VNPAY QR requires:
+    - <= 19 characters
+    - no diacritics
+    - only A-Z0-9- and space
+    """
+    if not desc:
+        return ""
+
+    # Remove Vietnamese diacritics
+    desc = unidecode.unidecode(desc)
+
+    # Only keep allowed chars
+    desc = re.sub(r"[^A-Za-z0-9\- ]", "", desc)
+
+    # Limit length 19
+    return desc[:19]
 
 
 @dataclass
@@ -51,11 +74,29 @@ class CardPayment:
         return data
 
 
+@dataclass
+class QrPayment:
+    client_transaction_code: str
+    amount: int
+    method_code: str = "VNPAY_QRCODE"
+    merchant_method_code: str = ""
+    qr_image_type: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "methodCode": self.method_code,
+            "merchantMethodCode": self.merchant_method_code or "",
+            "clientTransactionCode": self.client_transaction_code,
+            "amount": self.amount,
+            "qrImageType": self.qr_image_type,
+        }
+
+
 class VnPayService:
     """Unified service for both QR and Card payments."""
-    
+
     CREATE_ORDER_PATH = "{vnpay_base_url}/external/merchantorder"
-    
+
     """
         cfg: VNPAYPaymentMethodDetails
             merchant_code: str
@@ -75,10 +116,115 @@ class VnPayService:
         self.vnpay_base_url = settings.VNPAY_BASE_URL
         self.create_order_path = self.CREATE_ORDER_PATH.format(
             vnpay_base_url=self.vnpay_base_url,
-            merchant_code=self.merchant_code,
         )
-        self.success_url = "" # just for QR or Web
-        self.cancel_url = "" # just for QR or Web
+        self.success_url = ""
+        self.cancel_url = ""
+
+    def pay_by_qr(
+        self,
+        order_code: str,
+        total_payment_amount: int,
+        qr_payment: QrPayment,
+        user_id: str = "",
+        description: str = "",
+    ) -> Tuple[Optional[str], Optional[str], Dict[str, Any]]:
+        description = _clean_qr_description(description)
+
+        payload = self.build_qr_payment_payload(
+            order_code=order_code,
+            total_payment_amount=total_payment_amount,
+            qr_payment=qr_payment,
+            user_id=user_id,
+            description=description,
+        )
+
+        response = requests.post(
+            self.create_order_path,
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+
+        data = response.json()
+
+        # Check for explicit error indicators first
+        if data.get("errorCode") or data.get("error"):
+            error_msg = data.get("errorMessage") or data.get("error") or "Unknown VNPAY error"
+            logger.error(
+                "[VNPAY] QR API returned error",
+                error_code=data.get("errorCode"),
+                error_message=error_msg,
+                response_data=data
+            )
+            raise ValueError(f"VNPAY API error: {error_msg}")
+
+        response_code = data.get("code")
+        if response_code is not None:
+            try:
+                code_int = int(response_code) if isinstance(response_code, str) else response_code
+                if code_int != 200:
+                    logger.error(
+                        "[VNPAY] QR creation failed",
+                        error_code=code_int,
+                        message=data.get("message"),
+                    )
+                    raise ValueError(f"VNPAY QR Error {code_int}: {data.get('message')}")
+            except (ValueError, TypeError):
+                logger.warning(
+                    "[VNPAY] QR response has non-numeric code",
+                    code=response_code,
+                    message=data.get("message"),
+                )
+
+        # Extract QR data
+        qr_block = data.get("payments", {}).get("qr", {})
+
+        payment_request_id = data.get("paymentRequestId") or qr_block.get("transactionCode")
+        qr_content = qr_block.get("qrContent")
+
+        if not payment_request_id or not qr_content:
+            logger.error(
+                "[VNPAY] QR missing paymentRequestId or qrContent",
+                response=data
+            )
+            raise ValueError("VNPAY QR response missing required fields")
+
+        return payment_request_id, qr_content, qr_block
+
+    def build_qr_payment_payload(
+        self,
+        order_code: str,
+        total_payment_amount: int,
+        qr_payment: QrPayment,
+        user_id: str,
+        description: str,
+    ) -> Dict[str, Any]:
+
+        payments = {"qr": qr_payment.to_dict()}
+
+        payload = {
+            "merchantCode": self.merchant_code,
+            "terminalCode": self.terminal_code,
+            "userId": user_id,
+            "orderCode": order_code,
+            "totalPaymentAmount": total_payment_amount,
+            "description": description,
+            "payments": payments,
+            "successUrl": self.success_url,
+            "cancelUrl": self.cancel_url,
+        }
+
+        checksum_input = (
+            f"{self.init_secret_key}"
+            f"{order_code}|{user_id}|{self.terminal_code}|{self.merchant_code}|"
+            f"{total_payment_amount}|{self.success_url}|{self.cancel_url}|"
+            f"{qr_payment.client_transaction_code}|{qr_payment.merchant_method_code}|"
+            f"{qr_payment.method_code}|{qr_payment.amount}"
+        )
+
+        payload["checksum"] = _hmac_sha256_base64(self.init_secret_key, checksum_input)
+
+        return payload
 
     def pay_by_card(
         self,
@@ -87,7 +233,7 @@ class VnPayService:
         card_payment: CardPayment,
         user_id: str = "",
         description: str = "",
-    ) -> Dict[str, Any]:
+    ) -> Tuple[Optional[str], Dict[str, Any]]:
         payload = self.build_card_payment_payload(
             order_code=order_code,
             total_payment_amount=total_payment_amount,
@@ -95,39 +241,16 @@ class VnPayService:
             user_id=user_id,
             description=description,
         )
-        
-        headers = {
-            "Content-Type": "application/json",
-        }
+
+        headers = {"Content-Type": "application/json"}
 
         response = requests.post(self.create_order_path, json=payload, headers=headers)
         if response.status_code != 200:
             raise ValueError(f"Failed to create order: {response.status_code} {response.text}")
-        
-        """
-        {
-            "orderCode": "VJINST-5078",
-            "paymentRequestId": "MO12522",
-            "payments": {
-                "card": {
-                    "amount": "1000",
-                    "transactionCode": "MO12522",
-                    "responseCode": "200",
-                    "responseMessage": "thành công",
-                    "traceId": "MO12522",
-                    "methodCode": "VNPAY_SPOS_CARD",
-                    "clientTransactionCode": "001bc70b-5a28-48e7-9780-5b217cf2908d"
-                }
-            },
-            "message": "Khởi tạo đơn hàng thành công",
-            "code": "200"
-        }
-        """
-        
-        data = response.json() if response.status_code == 200 else {}
-        
-        transaction_id = response.json().get("paymentRequestId")
-        transaction_details = response.json().get("payments", {}).get("card", {})
+
+        data = response.json()
+        transaction_id = data.get("paymentRequestId") or data.get("payments", {}).get("card", {}).get("transactionCode")
+        transaction_details = data.get("payments", {}).get("card", {})
 
         return transaction_id, transaction_details
 
@@ -173,7 +296,7 @@ class VnPayService:
             self.success_url,
             self.cancel_url,
             card_payment.client_transaction_code,
-            card_payment.merchant_method_code,
+            card_payment.merchant_method_code or "",
             card_payment.method_code,
             str(card_payment.amount),
         ]
@@ -198,5 +321,4 @@ class VnPayService:
         joined = "|".join(fields)
         checksum_input = secret + joined
         return _hmac_sha256_base64(secret, checksum_input)
-
 

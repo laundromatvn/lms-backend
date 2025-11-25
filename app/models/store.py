@@ -169,7 +169,7 @@ class Store(Base):
                 raise ValueError("Payment method details must be a dictionary")
             
             # Validate QR payment method structure
-            if payment_method == 'QR':
+            if payment_method == 'QR' and payment_provider == 'VIET_QR':
                 required_fields = [
                     'bank_code',
                     'bank_name',
@@ -182,7 +182,22 @@ class Store(Base):
                     
                     if not isinstance(details[field], str):
                         raise ValueError(f"QR payment method '{field}' must be a string")
-            
+                    
+            elif payment_method == 'QR' and payment_provider == 'VNPAY':
+                required_fields = [
+                    'merchant_code',
+                    'terminal_code',
+                    'init_secret_key',
+                    'query_secret_key',
+                    'ipnv3_secret_key',
+                ]
+                for field in required_fields:
+                    if field not in details:
+                        raise ValueError(f"QR VNPAY payment method must have '{field}' in details")
+                    
+                    if not isinstance(details[field], str):
+                        raise ValueError(f"QR VNPAY payment method '{field}' must be a string")
+                    
             elif payment_method == 'CARD' and payment_provider == 'VNPAY':
                 required_fields = [
                     'merchant_code',

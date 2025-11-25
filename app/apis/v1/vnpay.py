@@ -1,10 +1,17 @@
 from fastapi import APIRouter, HTTPException
-
 from app.core.logging import logger
-from app.operations.payment.sync_up_vnpay_success_transaction_operation import SyncUpVnPaySuccessTransactionOperation
-from app.operations.payment.sync_up_vnpay_cancel_transaction_operation import SyncUpVnPayCancelTransactionOperation
+
 from app.schemas.vnpay import VNPAYIpnRequest
 
+from app.operations.payment.sync_up_vnpay_success_transaction_operation import (
+    SyncUpVnPaySuccessTransactionOperation,
+)
+from app.operations.payment.sync_up_vnpay_failed_transaction_operation import (
+    SyncUpVnPayFailedTransactionOperation,
+)
+from app.operations.payment.sync_up_vnpay_cancel_transaction_operation import (
+    SyncUpVnPayCancelTransactionOperation,
+)
 
 router = APIRouter()
 
@@ -12,27 +19,47 @@ router = APIRouter()
 @router.post("/ipn")
 def vnpay_ipn(request: VNPAYIpnRequest):
     """
-    VNPAY IPN endpoint.
-
-    This endpoint receives IPN requests from VNPAY and processes them.
-    It validates the request and updates the payment status accordingly.
+    Unified VNPAY IPN handler
+    Supports: Success (200), Failed (431), Cancel (434)
     """
+    logger.info(f"[VNPAY IPN] Request received: {request}")
+
     try:
-        logger.info(f"VNPAY IPN request: {request}")
+        response_code = request.responseCode
 
-        if request.responseCode == "200":
-            operation = SyncUpVnPaySuccessTransactionOperation(request)
-            operation.execute()
-        elif request.responseCode == "434":
-            operation = SyncUpVnPayCancelTransactionOperation(request)
-            operation.execute()
+        if response_code == "200":
+            logger.info("[VNPAY IPN] Status = SUCCESS (200)")
+            op = SyncUpVnPaySuccessTransactionOperation(request)
+            op.execute()
+            return {"code": "200", "message": "Success"}
+
+        elif response_code == "431":
+            logger.info("[VNPAY IPN] Status = FAILED (431)")
+            op = SyncUpVnPayFailedTransactionOperation(request)
+            op.execute()
+            return {"code": "200", "message": "Failed transaction updated"}
+
+        elif response_code == "434":
+            logger.info("[VNPAY IPN] Status = CANCELED (434)")
+            op = SyncUpVnPayCancelTransactionOperation(request)
+            op.execute()
+            return {"code": "200", "message": "Cancelled transaction updated"}
+        
         else:
-            raise ValueError(f"Invalid response code: {request.responseCode}")
+            logger.error(f"[VNPAY IPN] Invalid responseCode: {response_code}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid response code: {response_code}"
+            )
 
-        return {"code": "200", "message": "Success"}
+    except HTTPException as e:
+        raise e
+
     except ValueError as e:
+        logger.error(f"[VNPAY IPN] Business error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Internal server error")
 
+    except Exception as e:
+        logger.exception("[VNPAY IPN] Unexpected server error")
+        raise HTTPException(status_code=500, detail="Internal server error")
 

@@ -22,7 +22,6 @@ from app.models.store import Store
 from app.models.tenant import Tenant
 from app.schemas.payment import InitializePaymentRequest
 from app.libs.database import with_db_session_classmethod
-from app.libs.vietqr import GenerateQRCodeRequest
 from app.services.payment_service import PaymentService, PaymentProviderEnum
 from app.operations.order.order_operation import OrderOperation
 
@@ -108,6 +107,9 @@ class PaymentOperation:
         elif payment_method == PaymentMethod.QR and payment_provider == PaymentProvider.VIET_QR:
             # Normal payment flow
             payment_method_details = cls._get_payment_method_details_from_store(store, payment_method)
+        elif payment_method == PaymentMethod.QR and payment_provider == PaymentProvider.VNPAY:
+            # VNPAY QR payment flow
+            payment_method_details = cls._get_payment_method_details_from_store(store, payment_method, payment_provider)
         elif payment_method == PaymentMethod.CARD and payment_provider == PaymentProvider.VNPAY:
             # Normal payment flow
             payment_method_details = cls._get_payment_method_details_from_store(store, payment_method)
@@ -218,43 +220,87 @@ class PaymentOperation:
 
     @classmethod
     def _generate_payment_qr_code(cls, payment: Payment, order: Order):
-        """Generate payment QR code."""
-        payment_service = PaymentService(provider_name=PaymentProviderEnum.VIETQR)
+        """Generate payment QR code for both VIETQR and VNPAY providers."""
+        payment_provider = payment.provider
         
-        # Payment method details
-        _ = payment.payment_method
-        payment_method_details = payment.payment_method_details
-        bank_code = payment_method_details.get('bank_code')
-        bank_account_number = payment_method_details.get('bank_account_number')
-        bank_account_name = payment_method_details.get('bank_account_name')
-        
-        if not bank_code or not bank_account_number or not bank_account_name:
-            raise ValueError("Bank code, bank account number, and bank account name are required")
-        
-        # Create QR generation request
-        qr_request = GenerateQRCodeRequest(
-            amount=str(int(payment.total_amount)),
-            content=str(payment.transaction_code),
-            orderId=str(order.id),
-            terminalCode=str(order.store_id),
-            bankCode=bank_code,
-            bankAccountNumber=bank_account_number,
-            bankAccountName=bank_account_name,
-        )
-        
-        # Generate QR code
-        qr_code, transaction_id, transaction_ref_id = payment_service.generate_qr_code(request=qr_request)
-        
-        # Update payment with generated details
-        details = {
-            "qr_code": qr_code,
-            "transaction_id": transaction_id,
-            "transaction_ref_id": transaction_ref_id,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat(),
-        }
+        # -------------------------
+        # VIETQR IMPLEMENTATION
+        # -------------------------
+        if payment_provider == PaymentProvider.VIET_QR:
+            payment_service = PaymentService(provider_name=PaymentProviderEnum.VIET_QR)
+            
+            payment_method_details = payment.payment_method_details
+            bank_account_number = payment_method_details.get('bank_account_number') if payment_method_details else None
+            bank_account_name = payment_method_details.get('bank_account_name') if payment_method_details else None
+            qr_code, transaction_id, transaction_ref_id = payment_service.generate_qr_code(
+                order_code=str(order.id),
+                amount=int(payment.total_amount),
+                content=str(payment.transaction_code),
+                terminalCode=str(order.store_id),
+                bankAccountNumber=bank_account_number or "",
+                bankAccountName=bank_account_name or "",
+            )
+            
+            # Update payment with generated details
+            details = {
+                "qr_code": qr_code,
+                "transaction_id": transaction_id,
+                "transaction_ref_id": transaction_ref_id,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat(),
+            }
 
-        return transaction_id, details
+            return transaction_id, details
+        
+        # -------------------------
+        # VNPAY IMPLEMENTATION
+        # -------------------------
+        elif payment_provider == PaymentProvider.VNPAY:
+            # Get VNPAY config from payment method details
+            payment_method_details = payment.payment_method_details
+            if not payment_method_details:
+                raise ValueError("VNPAY payment method details are required")
+            
+            # Extract VNPAY configuration
+            vnpay_cfg = {
+                "merchant_code": payment_method_details.get("merchant_code"),
+                "terminal_code": payment_method_details.get("terminal_code"),
+                "init_secret_key": payment_method_details.get("init_secret_key"),
+                "query_secret_key": payment_method_details.get("query_secret_key"),
+                "ipnv3_secret_key": payment_method_details.get("ipnv3_secret_key"),
+            }
+            
+            # Validate required fields
+            required_fields = ["merchant_code", "terminal_code", "init_secret_key", "query_secret_key", "ipnv3_secret_key"]
+            missing_fields = [field for field in required_fields if not vnpay_cfg.get(field)]
+            if missing_fields:
+                raise ValueError(f"VNPAY payment method details missing required fields: {', '.join(missing_fields)}")
+            
+            # Create PaymentService with VNPAY provider
+            payment_service = PaymentService(provider_name=PaymentProviderEnum.VNPAY, cfg=vnpay_cfg)
+            
+            # Generate QR code using VNPAY
+            payment_request_id, qr_content, trace_id = payment_service.generate_qr_code(
+                order_code=payment.transaction_code,
+                amount=int(payment.total_amount),
+                client_transaction_code=payment.transaction_code,
+                user_id=str(order.created_by) if order.created_by else "",
+                description=f"Payment for order {order.id}",
+            )
+            
+            # Update payment with generated details
+            details = {
+                "qr_content": qr_content,
+                "payment_request_id": payment_request_id,
+                "trace_id": trace_id,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat(),
+            }
+
+            return payment_request_id, details
+        
+        else:
+            raise ValueError(f"Unsupported payment provider for QR: {payment_provider.value}")
 
     @classmethod
     @with_db_session_classmethod
@@ -305,13 +351,19 @@ class PaymentOperation:
         return tenant
 
     @classmethod
-    def _get_payment_method_details_from_store(cls, store: Store, payment_method: PaymentMethod) -> Optional[Dict[str, Any]]:
+    def _get_payment_method_details_from_store(
+        cls, 
+        store: Store, 
+        payment_method: PaymentMethod,
+        payment_provider: Optional[PaymentProvider] = None
+    ) -> Optional[Dict[str, Any]]:
         """
         Get payment method details from store's payment methods.
         
         Args:
             store: Store instance
             payment_method: Payment method to get details for
+            payment_provider: Optional payment provider to filter by
             
         Returns:
             Payment method details dictionary or None if not found
@@ -322,9 +374,15 @@ class PaymentOperation:
         # Find the payment method in store's payment methods
         for method in store.payment_methods:
             if method.get('payment_method') == payment_method.value:
-                return method.get('details')
+                # If payment_provider is specified, also match it
+                if payment_provider:
+                    if method.get('payment_provider') == payment_provider.value:
+                        return method.get('details')
+                else:
+                    return method.get('details')
         
-        raise ValueError(f"Payment method {payment_method.value} not found in store {store.id}")
+        provider_msg = f" with provider {payment_provider.value}" if payment_provider else ""
+        raise ValueError(f"Payment method {payment_method.value}{provider_msg} not found in store {store.id}")
 
     @classmethod
     @with_db_session_classmethod
@@ -505,3 +563,4 @@ class PaymentOperation:
             raise ValueError(f"Payment transaction with transaction code {transaction_code} not found")
         
         return payment_transaction
+

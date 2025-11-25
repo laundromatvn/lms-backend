@@ -42,7 +42,14 @@ class AbandonControllerOperation:
     @classmethod
     @with_db_session_classmethod
     def register(cls, db: Session, device_id: str):
-        controller = db.query(Controller).filter_by(device_id=device_id).first()
+        controller = (
+            db.query(Controller)
+            .filter_by(
+                device_id=device_id,
+                deleted_at=None,
+            )
+            .first()
+        )
         if controller and controller.store_id:
             return controller
 

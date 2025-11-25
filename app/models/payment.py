@@ -228,23 +228,72 @@ class Payment(Base):
             if not isinstance(payment_method_details, dict):
                 raise ValueError("Payment method details must be a dictionary")
             
-            # Validate required fields based on payment method
-            if hasattr(self, 'payment_method') and self.payment_method == PaymentMethod.QR:
+            # Get payment method and provider for validation
+            payment_method = getattr(self, 'payment_method', None)
+            provider = getattr(self, 'provider', None)
+            
+            # If provider is not set yet, skip validation (will be validated when provider is set)
+            # This can happen during object initialization when attributes are set in different orders
+            if provider is None and payment_method == PaymentMethod.QR:
+                return payment_method_details
+            
+            # Validate required fields based on payment method and provider
+            if payment_method == PaymentMethod.QR:
+                # VIETQR QR payment requires bank details
+                if provider == PaymentProvider.VIET_QR:
+                    required_fields = [
+                        'bank_code',
+                        'bank_name', 
+                        'bank_account_number',
+                        'bank_account_name',
+                    ]
+                    for field in required_fields:
+                        if field not in payment_method_details:
+                            raise ValueError(f"QR payment method details must have '{field}' field")
+                        
+                        if not isinstance(payment_method_details[field], str):
+                            raise ValueError(f"QR payment method '{field}' must be a string")
+                        
+                        if not payment_method_details[field].strip():
+                            raise ValueError(f"QR payment method '{field}' cannot be empty")
+                
+                # VNPAY QR payment requires merchant/terminal details
+                elif provider == PaymentProvider.VNPAY:
+                    required_fields = [
+                        'merchant_code',
+                        'terminal_code',
+                        'init_secret_key',
+                        'query_secret_key',
+                        'ipnv3_secret_key',
+                    ]
+                    for field in required_fields:
+                        if field not in payment_method_details:
+                            raise ValueError(f"VNPAY QR payment method details must have '{field}' field")
+                        
+                        if not isinstance(payment_method_details[field], str):
+                            raise ValueError(f"VNPAY QR payment method '{field}' must be a string")
+                        
+                        if not payment_method_details[field].strip():
+                            raise ValueError(f"VNPAY QR payment method '{field}' cannot be empty")
+            
+            # VNPAY CARD payment requires merchant/terminal details
+            elif payment_method == PaymentMethod.CARD and provider == PaymentProvider.VNPAY:
                 required_fields = [
-                    'bank_code',
-                    'bank_name', 
-                    'bank_account_number',
-                    'bank_account_name',
+                    'merchant_code',
+                    'terminal_code',
+                    'init_secret_key',
+                    'query_secret_key',
+                    'ipnv3_secret_key',
                 ]
                 for field in required_fields:
                     if field not in payment_method_details:
-                        raise ValueError(f"QR payment method details must have '{field}' field")
+                        raise ValueError(f"VNPAY CARD payment method details must have '{field}' field")
                     
                     if not isinstance(payment_method_details[field], str):
-                        raise ValueError(f"QR payment method '{field}' must be a string")
+                        raise ValueError(f"VNPAY CARD payment method '{field}' must be a string")
                     
                     if not payment_method_details[field].strip():
-                        raise ValueError(f"QR payment method '{field}' cannot be empty")
+                        raise ValueError(f"VNPAY CARD payment method '{field}' cannot be empty")
         
         return payment_method_details
     

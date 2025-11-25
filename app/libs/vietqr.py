@@ -55,16 +55,35 @@ class VietQR:
             "Authorization": f"Basic {basic_auth}"
         }
 
-        try:    
+        try:
             response = requests.post(url, headers=headers, timeout=10)
+            
+            # Check HTTP status
+            if response.status_code != 200:
+                error_msg = f"VietQR token API returned status {response.status_code}"
+                try:
+                    error_data = response.json()
+                    if error_data.get("message"):
+                        error_msg = f"VietQR token API error: {error_data.get('message')}"
+                except:
+                    error_msg = f"{error_msg}: {response.text}"
+                raise ValueError(error_msg)
+            
             response_data = response.json()
+            
+            # Check for error response
+            if response_data.get("status") == "FAILED" or response_data.get("status") == "ERROR":
+                error_message = response_data.get("message", "Unknown error")
+                raise ValueError(f"VietQR token generation failed: {error_message}")
             
             access_token = response_data.get("access_token")
             if not access_token:
-                raise ValueError("Access token not found")
+                raise ValueError("Access token not found in response")
             return access_token
+        except ValueError:
+            raise
         except Exception as e:
-            raise e
+            raise ValueError(f"Failed to get VietQR token: {str(e)}")
 
     def generate_qr_code(self, request: GenerateQRCodeRequest) -> tuple[str, str, str]:
         url = f"{self.base_url}/vqr/api/qr/generate-customer"
@@ -86,9 +105,31 @@ class VietQR:
 
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=10)
+            
+            
+            # Check HTTP status
+            if response.status_code != 200:
+                error_msg = f"VietQR API returned status {response.status_code}"
+                try:
+                    error_data = response.json()
+                    if error_data.get("message"):
+                        error_msg = f"VietQR API error: {error_data.get('message')}"
+                except:
+                    error_msg = f"{error_msg}: {response.text}"
+                raise ValueError(error_msg)
+            
             response_data = response.json()
+            
+            # Check for error response
+            if response_data.get("status") == "FAILED" or response_data.get("status") == "ERROR":
+                error_message = response_data.get("message", "Unknown error")
+                raise ValueError(f"VietQR QR generation failed: {error_message}")
+            
+            # Parse success response
             qrData = GenerateQRCodeResponse(**response_data)
             
             return qrData.qrCode, qrData.transactionId, qrData.transactionRefId
+        except ValueError:
+            raise
         except Exception as e:
-            raise e
+            raise ValueError(f"Failed to generate VietQR code: {str(e)}")

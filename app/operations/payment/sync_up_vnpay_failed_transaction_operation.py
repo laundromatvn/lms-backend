@@ -14,39 +14,56 @@ class SyncUpVnPayFailedTransactionOperation:
     @with_db_session_for_class_instance
     def execute(self, db: Session):
         self._preload(db)
-        self._validate_request(db)
+        self._validate_request()
 
+        # idempotency guard
+        if self.payment.status == PaymentStatus.FAILED:
+            return self.payment
+
+        # update payment
         self.payment.update_status(PaymentStatus.FAILED)
         db.add(self.payment)
         db.commit()
         db.refresh(self.payment)
 
-        OrderOperation.update_order_status(self.order.id, OrderStatus.PAYMENT_FAILED)
+        # update order
+        OrderOperation.update_order_status(
+            self.order.id,
+            OrderStatus.PAYMENT_FAILED
+        )
 
         return self.payment
 
     def _preload(self, db: Session):
-        self.payment = self._get_payment(db)
-        if not self.payment:
-            raise ValueError(f"Payment with transaction code {self.request.orderCode} not found")
-
-        self.order = self._get_order(db)
-        if not self.order:
-            raise ValueError(f"Order with payment ID {self.payment.id} not found")
-
-    def _get_payment(self, db: Session):
-        return (
+        # Prefer provider transaction code (unique)
+        self.payment = (
             db.query(Payment)
             .filter(
-                Payment.transaction_code == self.request.orderCode,
+                Payment.provider_transaction_id == self.request.transactionCode,
                 Payment.provider == PaymentProvider.VNPAY,
                 Payment.deleted_at.is_(None),
             )
             .first()
         )
 
-    def _get_order(self, db: Session):
-        return (
+        # fallback to internal transaction code if needed
+        if not self.payment:
+            self.payment = (
+                db.query(Payment)
+                .filter(
+                    Payment.transaction_code == self.request.clientTransactionCode,
+                    Payment.provider == PaymentProvider.VNPAY,
+                    Payment.deleted_at.is_(None),
+                )
+                .first()
+            )
+
+        if not self.payment:
+            raise ValueError(
+                f"Payment not found: providerTransactionId={self.request.transactionCode}, internalTransactionCode={self.request.clientTransactionCode}"
+            )
+
+        self.order = (
             db.query(Order)
             .filter(
                 Order.id == self.payment.order_id,
@@ -55,6 +72,10 @@ class SyncUpVnPayFailedTransactionOperation:
             .first()
         )
 
-    def _validate_request(self, db: Session):
-        # TODO: Validate request + Verify checksum
+        if not self.order:
+            raise ValueError(f"Order for payment ID {self.payment.id} not found")
+
+    def _validate_request(self):
+        # TODO: Add checksum verification here (HMAC SHA256)
         return True
+

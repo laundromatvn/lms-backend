@@ -8,6 +8,7 @@ class VNPAYIpnRequest(BaseModel):
     orderCode: str
     amount: int
     transactionCode: str
+    clientTransactionCode: str
     responseCode: str
     responseMessage: str
     checksum: str

@@ -37,6 +37,7 @@ async def get_overview_key_metrics(
     operation = GetDashboardOverviewKeyMetricsOperation(
         tenant_id=query_params.tenant_id,
         store_id=query_params.store_id,
+        query_params=query_params,
     )
     result = operation.execute()
     return result

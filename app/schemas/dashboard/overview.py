@@ -25,6 +25,7 @@ class OverviewKeyMetricsResponse(BaseModel):
     total_in_progress_dryers: int = 0
     total_dryers: int = 0
     total_in_progress_orders: int = 0
+    total_finished_orders: int = 0
     today_orders: int = 0
     revenue_by_day: float = 0
     revenue_by_month: float = 0

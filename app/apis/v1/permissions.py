@@ -27,7 +27,7 @@ def get_permission(
     db: Session = Depends(get_db),
 ):
     policies = PermissionPolicies(db, current_user)
-    if not policies.can_get_permission():
+    if not policies.has_permission_get_access():
         raise HTTPException(status_code=403, detail="You are not allowed to get permission")
 
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
@@ -45,7 +45,7 @@ def update_permission(
     db: Session = Depends(get_db),
 ):
     policies = PermissionPolicies(db, current_user)
-    if not policies.can_update_permission():
+    if not policies.has_permission_update_access():
         raise HTTPException(status_code=403, detail="You are not allowed to update permission")
 
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
@@ -68,7 +68,7 @@ def delete_permission(
     db: Session = Depends(get_db),
 ):
     policies = PermissionPolicies(db, current_user)
-    if not policies.can_delete_permission():
+    if not policies.has_permission_delete_access():
         raise HTTPException(status_code=403, detail="You are not allowed to delete permission")
     
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
@@ -86,7 +86,7 @@ def list_permissions(
     db: Session = Depends(get_db),
 ):
     policies = PermissionPolicies(db, current_user)
-    if not policies.can_list_permissions():
+    if not policies.has_permission_list_access():
         raise HTTPException(status_code=403, detail="You are not allowed to list permissions")
 
     total, permissions = ListPermissionsOperation().execute(db, query_params)
@@ -106,7 +106,7 @@ def create_permission(
     db: Session = Depends(get_db),
 ):
     policies = PermissionPolicies(db, current_user)
-    if not policies.can_create_permission():
+    if not policies.has_permission_create_access():
         raise HTTPException(status_code=403, detail="You are not allowed to create permission")
 
     CreatePermissionOperation().execute(db, request)

@@ -26,6 +26,16 @@
         "code": "store.delete",
         "name": "Delete Store",
         "description": "Delete Store"
+      },
+      {
+        "code": "store.get_payment_methods",
+        "name": "Get Payment Methods",
+        "description": "Get Payment Methods"
+      },
+      {
+        "code": "store.update_payment_methods",
+        "name": "Update Payment Methods",
+        "description": "Update Payment Methods"
       }
     ]
   },

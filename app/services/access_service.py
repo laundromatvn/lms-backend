@@ -4,11 +4,13 @@ from app.models.user import User
 from app.policies.portal_overview_policies import PortalOverviewPolicies
 from app.policies.portal_policies import PortalPolicies
 from app.policies.permission_policies import PermissionPolicies
+from app.policies.portal_store_policies import PortalStorePolicies
 
 
 ACCESS_POLICIES = {
     "portal": PortalPolicies,
     "portal_dashboard_overview": PortalOverviewPolicies,
+    "portal_store": PortalStorePolicies,
 }
 
 

@@ -1,7 +1,7 @@
 """add_permissions_table
 
 Revision ID: 8be8886b44c6
-Revises: 3cb48e2150a0
+Revises: c2db48ece4bb
 Create Date: 2025-11-22 01:46:12.188102
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '8be8886b44c6'
-down_revision = '3cb48e2150a0'
+down_revision = 'c2db48ece4bb'
 branch_labels = None
 depends_on = None
 

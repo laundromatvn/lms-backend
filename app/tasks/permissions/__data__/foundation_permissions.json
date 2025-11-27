@@ -1,62 +1,422 @@
 [
-    {
-        "group": "store",
-        "permissions": [
-            {
-                "code": "store.list",
-                "name": "List Stores",
-                "description": "List Stores"
-            },
-            {
-                "code": "store.get",
-                "name": "Get Store",
-                "description": "Get Store"
-            },
-            {
-                "code": "store.create",
-                "name": "Create Store",
-                "description": "Create Store"
-            },
-            {
-                "code": "store.update",
-                "name": "Update Store",
-                "description": "Update Store"
-            },
-            {
-                "code": "store.delete",
-                "name": "Delete Store",
-                "description": "Delete Store"
-            }
-        ]
-    },
-    {
-        "group": "machine",
-        "permissions": [
-            {
-                "code": "machine.list",
-                "name": "List Machines",
-                "description": "List Machines"
-            },
-            {
-                "code": "machine.get",
-                "name": "Get Machine",
-                "description": "Get Machine"
-            },
-            {
-                "code": "machine.create",
-                "name": "Create Machine",
-                "description": "Create Machine"
-            },
-            {
-                "code": "machine.update",
-                "name": "Update Machine",
-                "description": "Update Machine"
-            },
-            {
-                "code": "machine.delete",
-                "name": "Delete Machine",
-                "description": "Delete Machine"
-            }
-        ]
-    }
+  {
+    "group": "store",
+    "permissions": [
+      {
+        "code": "store.list",
+        "name": "List Stores",
+        "description": "List Stores"
+      },
+      {
+        "code": "store.get",
+        "name": "Get Store",
+        "description": "Get Store"
+      },
+      {
+        "code": "store.create",
+        "name": "Create Store",
+        "description": "Create Store"
+      },
+      {
+        "code": "store.update",
+        "name": "Update Store",
+        "description": "Update Store"
+      },
+      {
+        "code": "store.delete",
+        "name": "Delete Store",
+        "description": "Delete Store"
+      }
+    ]
+  },
+  {
+    "group": "controller",
+    "permissions": [
+      {
+        "code": "controller.list",
+        "name": "List Controllers",
+        "description": "List Controllers"
+      },
+      {
+        "code": "controller.get",
+        "name": "Get Controller",
+        "description": "Get Controller"
+      },
+      {
+        "code": "controller.create",
+        "name": "Create Controller",
+        "description": "Create Controller"
+      },
+      {
+        "code": "controller.update",
+        "name": "Update Controller",
+        "description": "Update Controller"
+      },
+      {
+        "code": "controller.delete",
+        "name": "Delete Controller",
+        "description": "Delete Controller"
+      }
+    ]
+  },
+  {
+    "group": "machine",
+    "permissions": [
+      {
+        "code": "machine.list",
+        "name": "List Machines",
+        "description": "List Machines"
+      },
+      {
+        "code": "machine.get",
+        "name": "Get Machine",
+        "description": "Get Machine"
+      },
+      {
+        "code": "machine.create",
+        "name": "Create Machine",
+        "description": "Create Machine"
+      },
+      {
+        "code": "machine.update",
+        "name": "Update Machine",
+        "description": "Update Machine"
+      },
+      {
+        "code": "machine.delete",
+        "name": "Delete Machine",
+        "description": "Delete Machine"
+      }
+    ]
+  },
+  {
+    "group": "datapoint",
+    "permissions": [
+      {
+        "code": "datapoint.list",
+        "name": "List Datapoints",
+        "description": "List Datapoints"
+      },
+      {
+        "code": "datapoint.get",
+        "name": "Get Datapoint",
+        "description": "Get Datapoint"
+      },
+      {
+        "code": "datapoint.create",
+        "name": "Create Datapoint",
+        "description": "Create Datapoint"
+      },
+      {
+        "code": "datapoint.update",
+        "name": "Update Datapoint",
+        "description": "Update Datapoint"
+      },
+      {
+        "code": "datapoint.delete",
+        "name": "Delete Datapoint",
+        "description": "Delete Datapoint"
+      }
+    ]
+  },
+  {
+    "group": "firmware",
+    "permissions": [
+      {
+        "code": "firmware.list",
+        "name": "List Firmwares",
+        "description": "List Firmwares"
+      },
+      {
+        "code": "firmware.get",
+        "name": "Get Firmware",
+        "description": "Get Firmware"
+      },
+      {
+        "code": "firmware.create",
+        "name": "Create Firmware",
+        "description": "Create Firmware"
+      },
+      {
+        "code": "firmware.update",
+        "name": "Update Firmware",
+        "description": "Update Firmware"
+      },
+      {
+        "code": "firmware.delete",
+        "name": "Delete Firmware",
+        "description": "Delete Firmware"
+      }
+    ]
+  },
+  {
+    "group": "firmware_deployment",
+    "permissions": [
+      {
+        "code": "firmware_deployment.list",
+        "name": "List Firmware Deployments",
+        "description": "List Firmware Deployments"
+      },
+      {
+        "code": "firmware_deployment.get",
+        "name": "Get Firmware Deployment",
+        "description": "Get Firmware Deployment"
+      },
+      {
+        "code": "firmware_deployment.create",
+        "name": "Create Firmware Deployment",
+        "description": "Create Firmware Deployment"
+      },
+      {
+        "code": "firmware_deployment.update",
+        "name": "Update Firmware Deployment",
+        "description": "Update Firmware Deployment"
+      },
+      {
+        "code": "firmware_deployment.delete",
+        "name": "Delete Firmware Deployment",
+        "description": "Delete Firmware Deployment"
+      }
+    ]
+  },
+  {
+    "group": "user",
+    "permissions": [
+      {
+        "code": "user.list",
+        "name": "List Users",
+        "description": "List Users"
+      },
+      {
+        "code": "user.get",
+        "name": "Get User",
+        "description": "Get User"
+      },
+      {
+        "code": "user.create",
+        "name": "Create User",
+        "description": "Create User"
+      },
+      {
+        "code": "user.update",
+        "name": "Update User",
+        "description": "Update User"
+      },
+      {
+        "code": "user.delete",
+        "name": "Delete User",
+        "description": "Delete User"
+      }
+    ]
+  },
+  {
+    "group": "tenant",
+    "permissions": [
+      {
+        "code": "tenant.list",
+        "name": "List Tenants",
+        "description": "List Tenants"
+      },
+      {
+        "code": "tenant.get",
+        "name": "Get Tenant",
+        "description": "Get Tenant"
+      },
+      {
+        "code": "tenant.create",
+        "name": "Create Tenant",
+        "description": "Create Tenant"
+      },
+      {
+        "code": "tenant.update",
+        "name": "Update Tenant",
+        "description": "Update Tenant"
+      },
+      {
+        "code": "tenant.delete",
+        "name": "Delete Tenant",
+        "description": "Delete Tenant"
+      }
+    ]
+  },
+  {
+    "group": "tenant_member",
+    "permissions": [
+      {
+        "code": "tenant_member.list",
+        "name": "List Tenant Members",
+        "description": "List Tenant Members"
+      },
+      {
+        "code": "tenant_member.get",
+        "name": "Get Tenant Member",
+        "description": "Get Tenant Member"
+      },
+      {
+        "code": "tenant_member.create",
+        "name": "Create Tenant Member",
+        "description": "Create Tenant Member"
+      },
+      {
+        "code": "tenant_member.update",
+        "name": "Update Tenant Member",
+        "description": "Update Tenant Member"
+      },
+      {
+        "code": "tenant_member.delete",
+        "name": "Delete Tenant Member",
+        "description": "Delete Tenant Member"
+      }
+    ]
+  },
+  {
+    "group": "order",
+    "permissions": [
+      {
+        "code": "order.list",
+        "name": "List Orders",
+        "description": "List Orders"
+      },
+      {
+        "code": "order.get",
+        "name": "Get Order",
+        "description": "Get Order"
+      },
+      {
+        "code": "order.create",
+        "name": "Create Order",
+        "description": "Create Order"
+      },
+      {
+        "code": "order.update",
+        "name": "Update Order",
+        "description": "Update Order"
+      },
+      {
+        "code": "order.delete",
+        "name": "Delete Order",
+        "description": "Delete Order"
+      }
+    ]
+  },
+  {
+    "group": "payment",
+    "permissions": [
+      {
+        "code": "payment.list",
+        "name": "List Payments",
+        "description": "List Payments"
+      },
+      {
+        "code": "payment.get",
+        "name": "Get Payment",
+        "description": "Get Payment"
+      },
+      {
+        "code": "payment.create",
+        "name": "Create Payment",
+        "description": "Create Payment"
+      },
+      {
+        "code": "payment.update",
+        "name": "Update Payment",
+        "description": "Update Payment"
+      },
+      {
+        "code": "payment.delete",
+        "name": "Delete Payment",
+        "description": "Delete Payment"
+      }
+    ]
+  },
+  {
+    "group": "promotion_campaign",
+    "permissions": [
+      {
+        "code": "promotion_campaign.list",
+        "name": "List Promotion Campaigns",
+        "description": "List Promotion Campaigns"
+      },
+      {
+        "code": "promotion_campaign.get",
+        "name": "Get Promotion Campaign",
+        "description": "Get Promotion Campaign"
+      },
+      {
+        "code": "promotion_campaign.create",
+        "name": "Create Promotion Campaign",
+        "description": "Create Promotion Campaign"
+      },
+      {
+        "code": "promotion_campaign.update",
+        "name": "Update Promotion Campaign",
+        "description": "Update Promotion Campaign"
+      },
+      {
+        "code": "promotion_campaign.delete",
+        "name": "Delete Promotion Campaign",
+        "description": "Delete Promotion Campaign"
+      }
+    ]
+  },
+  {
+    "group": "permission",
+    "permissions": [
+      {
+        "code": "permission.list",
+        "name": "List Permissions",
+        "description": "List Permissions"
+      },
+      {
+        "code": "permission.get",
+        "name": "Get Permission",
+        "description": "Get Permission"
+      },
+      {
+        "code": "permission.create",
+        "name": "Create Permission",
+        "description": "Create Permission"
+      },
+      {
+        "code": "permission.update",
+        "name": "Update Permission",
+        "description": "Update Permission"
+      },
+      {
+        "code": "permission.delete",
+        "name": "Delete Permission",
+        "description": "Delete Permission"
+      }
+    ]
+  },
+  {
+    "group": "system_task",
+    "permissions": [
+      {
+        "code": "system_task.list",
+        "name": "List System Tasks",
+        "description": "List System Tasks"
+      },
+      {
+        "code": "system_task.get",
+        "name": "Get System Task",
+        "description": "Get System Task"
+      },
+      {
+        "code": "system_task.create",
+        "name": "Create System Task",
+        "description": "Create System Task"
+      },
+      {
+        "code": "system_task.update",
+        "name": "Update System Task",
+        "description": "Update System Task"
+      },
+      {
+        "code": "system_task.delete",
+        "name": "Delete System Task",
+        "description": "Delete System Task"
+      }
+    ]
+  }
 ]

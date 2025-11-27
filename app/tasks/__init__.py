@@ -18,6 +18,8 @@ from app.tasks.firmware.handle_update_firmware_ack_task import handle_update_fir
 from app.tasks.firmware.handle_update_firmware_completed_task import handle_update_firmware_completed_task
 from app.tasks.firmware.handle_update_firmware_failed_task import handle_update_firmware_failed_task
 
+from app.tasks.permissions.add_foundation_permissions_task import add_foundation_permissions_task
+
 
 __all__ = [
     # Health check
@@ -43,6 +45,9 @@ __all__ = [
     "handle_update_firmware_ack_task",
     "handle_update_firmware_completed_task",
     "handle_update_firmware_failed_task",
+    
+    # Permission tasks
+    "add_foundation_permissions_task",
 ]
 
 

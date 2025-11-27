@@ -1,0 +1,62 @@
+[
+    {
+        "group": "store",
+        "permissions": [
+            {
+                "code": "store.list",
+                "name": "List Stores",
+                "description": "List Stores"
+            },
+            {
+                "code": "store.get",
+                "name": "Get Store",
+                "description": "Get Store"
+            },
+            {
+                "code": "store.create",
+                "name": "Create Store",
+                "description": "Create Store"
+            },
+            {
+                "code": "store.update",
+                "name": "Update Store",
+                "description": "Update Store"
+            },
+            {
+                "code": "store.delete",
+                "name": "Delete Store",
+                "description": "Delete Store"
+            }
+        ]
+    },
+    {
+        "group": "machine",
+        "permissions": [
+            {
+                "code": "machine.list",
+                "name": "List Machines",
+                "description": "List Machines"
+            },
+            {
+                "code": "machine.get",
+                "name": "Get Machine",
+                "description": "Get Machine"
+            },
+            {
+                "code": "machine.create",
+                "name": "Create Machine",
+                "description": "Create Machine"
+            },
+            {
+                "code": "machine.update",
+                "name": "Update Machine",
+                "description": "Update Machine"
+            },
+            {
+                "code": "machine.delete",
+                "name": "Delete Machine",
+                "description": "Delete Machine"
+            }
+        ]
+    }
+]

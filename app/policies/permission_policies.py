@@ -1,13 +1,11 @@
-from sqlalchemy.orm import Session
-
 from app.policies.base import BasePolicies
-from app.models.user import User
 
 
 class PermissionPolicies(BasePolicies):
-    def __init__(self, db: Session, current_user: User):
-        super().__init__(db, current_user, ["portal_system_management"])
-        
+    required_permissions = [
+        "portal_system_management",
+    ]
+
     def preload_policies(self) -> None:
         self.portal_system_management_enabled = "portal_system_management" in self.enabled_policies
 

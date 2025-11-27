@@ -1,13 +1,13 @@
-from sqlalchemy.orm import Session
+from typing import Dict
 
 from app.policies.base import BasePolicies
-from app.models.user import User
-from app.models.user import UserRole
 
 
 class PortalPolicies(BasePolicies):
-    def __init__(self, db: Session, current_user: User):
-        super().__init__(db, current_user, ["portal_laundry_foundation_management", "portal_system_management"])
+    required_permissions = [
+        "portal_laundry_foundation_management",
+        "portal_system_management",
+    ]
 
     def preload_policies(self) -> None:
         self.portal_laundry_foundation_management_enabled = "portal_laundry_foundation_management" in self.enabled_policies
@@ -18,4 +18,10 @@ class PortalPolicies(BasePolicies):
     
     def can_access_portal_system_management(self) -> bool:
         return self.portal_system_management_enabled and self.current_user.is_admin
+    
+    def access(self) -> Dict[str, bool]:
+        return {
+            "portal_laundry_foundation_management": self.can_access_portal_laundry_foundation_management(),
+            "portal_system_management": self.can_access_portal_system_management(),
+        }
 

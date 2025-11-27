@@ -86,6 +86,21 @@
         "code": "machine.delete",
         "name": "Delete Machine",
         "description": "Delete Machine"
+      },
+      {
+        "code": "machine.start",
+        "name": "Start Machine",
+        "description": "Start Machine"
+      },
+      {
+        "code": "machine.stop",
+        "name": "Stop Machine",
+        "description": "Stop Machine"
+      },
+      {
+        "code": "machine.restart",
+        "name": "Restart Machine",
+        "description": "Restart Machine"
       }
     ]
   },
@@ -416,6 +431,16 @@
         "code": "system_task.delete",
         "name": "Delete System Task",
         "description": "Delete System Task"
+      }
+    ]
+  },
+  {
+    "group": "dashboard.overview",
+    "permissions": [
+      {
+        "code": "dashboard.overview.get",
+        "name": "Get Dashboard Overview",
+        "description": "Get Dashboard Overview"
       }
     ]
   }

@@ -177,9 +177,6 @@ class GetDashboardOverviewKeyMetricsOperation:
         if self.query_params.end_date:
             base_query = base_query.filter(Order.created_at <= self.query_params.end_date)
             
-        if not self.query_params.start_date and not self.query_params.end_date:
-            base_query = base_query.filter(func.date(func.timezone(settings.TIMEZONE_NAME, Order.created_at)) == date.today())
-
         return base_query.count()
     
     def _get_in_progress_orders(self, db: Session):
@@ -218,9 +215,6 @@ class GetDashboardOverviewKeyMetricsOperation:
         if self.query_params.end_date:
             base_query = base_query.filter(Payment.created_at <= self.query_params.end_date)
             
-        if not self.query_params.start_date and not self.query_params.end_date:
-            base_query = base_query.filter(func.date(func.timezone(settings.TIMEZONE_NAME, Payment.created_at)) == date.today())
-
         return base_query.scalar()
     
     def _get_current_month_revenue(self, db: Session):
@@ -269,8 +263,5 @@ class GetDashboardOverviewKeyMetricsOperation:
         if self.query_params.end_date:
             base_query = base_query.filter(Order.created_at <= self.query_params.end_date)
             
-        if not self.query_params.start_date and not self.query_params.end_date:
-            base_query = base_query.filter(func.date(func.timezone(settings.TIMEZONE_NAME, Order.created_at)) == date.today())
-        
         return base_query.count()
 

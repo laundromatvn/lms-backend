@@ -20,11 +20,10 @@ from app.schemas.dashboard.overview import (
 )
 from app.operations.dashboard.get_dashboard_overview_key_metrics_operation import GetDashboardOverviewKeyMetricsOperation
 from app.operations.dashboard.get_overview_revenue_by_day_bar_chart_operation import GetOverviewRevenueByDayBarChartOperation
-from app.operations.dashboard.get_overview_store_key_metrics_operation import GetOverviewStoreKeyMetricsOperation
 from app.operations.dashboard.list_overview_order_operation import ListOverviewOrderOperation
 from app.operations.dashboard.get_overview_machine_status_line_chart_operation import GetOverviewMachineStatusLineChartOperation
 from app.utils.pagination import get_total_pages
-from app.utils.timezone import get_tzinfo
+from app.utils.timezone import get_tzinfo, to_utc
 from app.schemas.pagination import PaginatedResponse
 
 router = APIRouter()
@@ -51,9 +50,13 @@ async def get_overview_order_by_day_bar_chart(
     now = datetime.now(tzinfo)
 
     if not query_params.start_date and not query_params.end_date:
+        # Create default dates in Vietnam timezone, then convert to UTC
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end_date = now
+        start_date = to_utc(start_date)
+        end_date = to_utc(end_date)
     else:
+        # Dates are already converted to UTC by the validator
         start_date = query_params.start_date
         end_date = query_params.end_date
 
@@ -74,9 +77,13 @@ async def get_overview_revenue_by_day_bar_chart(
     now = datetime.now(tzinfo)
 
     if not query_params.start_date and not query_params.end_date:
+        # Create default dates in Vietnam timezone, then convert to UTC
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end_date = now
+        start_date = to_utc(start_date)
+        end_date = to_utc(end_date)
     else:
+        # Dates are already converted to UTC by the validator
         start_date = query_params.start_date
         end_date = query_params.end_date
 

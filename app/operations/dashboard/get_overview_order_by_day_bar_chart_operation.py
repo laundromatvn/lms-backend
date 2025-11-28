@@ -4,9 +4,11 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, func
 
+from app.core.config import settings
 from app.libs.database import with_db_session_for_class_instance
 from app.models.order import Order
 from app.models.store import Store
+from app.utils.timezone import to_local
 
 
 class GetOverviewOrderByDayBarChartOperation:
@@ -16,12 +18,18 @@ class GetOverviewOrderByDayBarChartOperation:
     
     @with_db_session_for_class_instance
     def execute(self, db: Session, start_date: datetime, end_date: datetime):
-        date_expr = func.date(Order.created_at)
+        # Convert UTC timestamps to Vietnam timezone, then extract date
+        date_expr = func.date(func.timezone(settings.TIMEZONE_NAME, Order.created_at))
         filters = [Store.tenant_id == self.tenant_id]
+        
         if start_date is not None:
-            filters.append(date_expr >= start_date.date())
+            # Convert UTC date back to Vietnam timezone to get the correct date
+            start_date_local = to_local(start_date)
+            filters.append(date_expr >= start_date_local.date())
         if end_date is not None:
-            filters.append(date_expr <= end_date.date())
+            # Convert UTC date back to Vietnam timezone to get the correct date
+            end_date_local = to_local(end_date)
+            filters.append(date_expr <= end_date_local.date())
 
         query = (
             db.query(Order)
@@ -37,8 +45,16 @@ class GetOverviewOrderByDayBarChartOperation:
 
         orders_count_by_date = {row.date: int(row.total_orders) for row in orders}
 
-        start_day = start_date.date()
-        end_day = end_date.date()
+        # Use Vietnam timezone dates for label generation
+        start_date_local = to_local(start_date) if start_date else None
+        end_date_local = to_local(end_date) if end_date else None
+        
+        start_day = start_date_local.date() if start_date_local else None
+        end_day = end_date_local.date() if end_date_local else None
+        
+        if not start_day or not end_day:
+            return {"labels": [], "values": []}
+        
         num_days = (end_day - start_day).days
         labels = []
         values = []

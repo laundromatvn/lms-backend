@@ -4,6 +4,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 import json
 
+from fastapi import Query
 from pydantic import BaseModel, Field, validator, root_validator
 
 from app.models.order import OrderStatus, OrderDetailStatus, AddOnType
@@ -267,7 +268,7 @@ class OrderCompletionRequest(BaseModel):
 
 class ListOrderQueryParams(Pagination):
     tenant_id: Optional[UUID] = None
-    store_id: Optional[UUID] = None
+    store_ids: Optional[list[UUID]] = None
     status: Optional[OrderStatus] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None

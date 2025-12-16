@@ -268,8 +268,9 @@ class OrderOperation:
         if query_params.end_date:
             base_query = base_query.filter(Order.created_at <= query_params.end_date)
 
-        if query_params.store_id:
-            base_query = base_query.filter(Order.store_id == query_params.store_id)
+        if query_params.store_ids:
+            print("query_params.store_ids", query_params.store_ids)
+            base_query = base_query.filter(Order.store_id.in_(query_params.store_ids))
 
         if query_params.payment_status:
             base_query = base_query.filter(Payment.status == query_params.payment_status)

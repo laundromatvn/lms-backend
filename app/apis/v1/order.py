@@ -7,7 +7,7 @@ CRUD operations, status updates, and order retrieval.
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy.orm import Session
 
 from app.apis.deps import get_current_user
@@ -82,9 +82,12 @@ async def create_order(
 @router.get("", response_model=PaginatedResponse[OrderResponse])
 async def list_orders(
     query_params: ListOrderQueryParams = Depends(),
+    store_ids: list[uuid.UUID] = Query(None, description="List of store IDs to filter orders"),
     current_user: User = Depends(get_current_user)
 ):
     try:
+        query_params.store_ids = store_ids
+        
         total, orders = OrderOperation.get_orders_by_tenant(
             current_user,
             query_params

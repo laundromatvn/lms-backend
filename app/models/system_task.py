@@ -45,7 +45,7 @@ class SystemTask(Base):
         index=True
     )
     data = Column(JSON, nullable=True)  # JSON field to store any data
-    
+
     @validates('status')
     def validate_status(self, key: str, status) -> SystemTaskStatus:
         if not isinstance(status, SystemTaskStatus):

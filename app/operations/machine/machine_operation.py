@@ -157,14 +157,6 @@ class MachineOperation:
                 f"Relay {request.relay_no} is already in use for this controller"
             )
 
-        # Check if machine name is already taken (only if name is provided)
-        if request.name:
-            existing_name = (
-                db.query(Machine).filter(Machine.name == request.name).first()
-            )
-            if existing_name:
-                raise ValueError(f"Machine name '{request.name}' is already in use")
-
         # Check if relay number is within controller's total_relays limit
         if request.relay_no > controller.total_relays:
             raise ValueError(
@@ -202,18 +194,6 @@ class MachineOperation:
             raise ValueError("Machine not found")
 
         update_data = request.model_dump(exclude_unset=True)
-
-        # Check if name is being updated and if it's unique (only if name is provided)
-        if "name" in update_data and update_data["name"] is not None:
-            existing_name = (
-                db.query(Machine)
-                .filter(Machine.name == update_data["name"], Machine.id != machine_id)
-                .first()
-            )
-            if existing_name:
-                raise ValueError(
-                    f"Machine name '{update_data['name']}' is already in use"
-                )
 
         for field, value in update_data.items():
             if hasattr(machine, field):

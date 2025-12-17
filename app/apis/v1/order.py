@@ -1,10 +1,3 @@
-"""
-Order API endpoints.
-
-This module contains all FastAPI endpoints for order management including
-CRUD operations, status updates, and order retrieval.
-"""
-
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
@@ -18,6 +11,7 @@ from app.models.payment import Payment
 from app.models.order import Order
 from app.models.user import User, UserRole
 from app.operations.order import OrderOperation
+from app.operations.order.list_orders import ListOrdersOperation
 from app.operations.order.order_detail_operation import OrderDetailOperation
 from app.operations.order.sync_up_order_operation import SyncUpOrderOperation
 from app.operations.promotion.check_and_apply_promotion_operation import CheckAndApplyPromotionOperation
@@ -29,7 +23,6 @@ from app.schemas.order import (
     ListOrderDetailQueryParams,
 )
 from app.schemas.pagination import PaginatedResponse
-from app.tasks.payment.payment_tasks import sync_payment_transaction
 from app.operations.payment.payment_operation import PaymentOperation
 from app.utils.pagination import get_total_pages
 
@@ -83,15 +76,14 @@ async def create_order(
 async def list_orders(
     query_params: ListOrderQueryParams = Depends(),
     store_ids: list[uuid.UUID] = Query(None, description="List of store IDs to filter orders"),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     try:
         query_params.store_ids = store_ids
         
-        total, orders = OrderOperation.get_orders_by_tenant(
-            current_user,
-            query_params
-        )
+        operation = ListOrdersOperation(db, current_user, query_params)
+        total, orders = operation.execute()
 
         return {
             "page": query_params.page,

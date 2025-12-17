@@ -40,6 +40,31 @@
     ]
   },
   {
+    "group": "store_member",
+    "permissions": [
+      {
+        "code": "store_member.list",
+        "name": "List Store Members",
+        "description": "List Store Members"
+      },
+      {
+        "code": "store_member.get",
+        "name": "Get Store Member",
+        "description": "Get Store Member"
+      },
+      {
+        "code": "store_member.create",
+        "name": "Create Store Member",
+        "description": "Create Store Member"
+      },
+      {
+        "code": "store_member.delete",
+        "name": "Delete Store Member",
+        "description": "Delete Store Member"
+      }
+    ]
+  },
+  {
     "group": "controller",
     "permissions": [
       {

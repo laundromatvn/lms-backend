@@ -50,6 +50,11 @@ TENANT_STAFF_EXCLUDED_PERMISSIONS = [
     "controller.create",
     "controller.update",
     "controller.delete",
+    "store_member.list",
+    "store_member.get",
+    "store_member.create",
+    "store_member.update",
+    "store_member.delete",
 ]
 
 TENANT_ADMIN_EXCLUDED_PERMISSIONS = [

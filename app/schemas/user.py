@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.models.user import UserRole, UserStatus
+from app.schemas.pagination import Pagination
 
 
 class UserSerializer(BaseModel):
@@ -42,3 +43,11 @@ class UpdateUserRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     password: str
+
+
+class ListAssignedStoresQueryParams(Pagination):
+    pass
+
+
+class AssignMemberToStoreRequest(BaseModel):
+    store_ids: List[UUID]

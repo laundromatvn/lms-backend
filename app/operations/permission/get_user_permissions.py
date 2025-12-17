@@ -47,6 +47,9 @@ TENANT_STAFF_EXCLUDED_PERMISSIONS = [
     "store.delete",
     "store.get_payment_methods",
     "store.update_payment_methods",
+    "controller.create",
+    "controller.update",
+    "controller.delete",
 ]
 
 TENANT_ADMIN_EXCLUDED_PERMISSIONS = [

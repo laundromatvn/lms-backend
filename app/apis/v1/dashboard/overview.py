@@ -2,7 +2,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from typing import List
 
-from app.apis.deps import get_current_user
+from app.apis.deps import require_permissions
 from app.models.user import User
 from app.operations.dashboard.list_overview_order_operation import ListOverviewOrderOperation
 from app.operations.dashboard.get_overview_order_by_day_bar_chart_operation import GetOverviewOrderByDayBarChartOperation
@@ -32,6 +32,7 @@ router = APIRouter()
 @router.get("/key-metrics", response_model=OverviewKeyMetricsResponse)
 async def get_overview_key_metrics(
     query_params: OverviewKeyMetricsQueryParams = Depends(),
+    _: User = Depends(require_permissions(["dashboard.overview.view"])),
 ):  
     operation = GetDashboardOverviewKeyMetricsOperation(
         tenant_id=query_params.tenant_id,
@@ -45,6 +46,7 @@ async def get_overview_key_metrics(
 @router.get("/order-by-day-bar-chart", response_model=OverviewOrderByDayBarChartResponse)
 async def get_overview_order_by_day_bar_chart(
     query_params: OverviewOrderByDayQueryParams = Depends(),
+    _: User = Depends(require_permissions(["dashboard.overview.view"])),
 ):  
     tzinfo = get_tzinfo()
     now = datetime.now(tzinfo)
@@ -72,6 +74,7 @@ async def get_overview_order_by_day_bar_chart(
 @router.get("/revenue-by-day-bar-chart", response_model=OverviewRevenueByDayBarChartResponse)
 async def get_overview_revenue_by_day_bar_chart(
     query_params: OverviewRevenueByDayQueryParams = Depends(),
+    _: User = Depends(require_permissions(["dashboard.overview.view"])),
 ):  
     tzinfo = get_tzinfo()
     now = datetime.now(tzinfo)
@@ -99,7 +102,9 @@ async def get_overview_revenue_by_day_bar_chart(
 @router.get("/order", response_model=PaginatedResponse[ListOverviewOrdersResponseItem])
 async def list_overview_orders(
     query_params: ListOverviewOrdersQueryParams = Depends(),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions([
+        "order.list",
+    ])),
 ):
     total, data = ListOverviewOrderOperation.execute(
         current_user=current_user,
@@ -141,6 +146,9 @@ async def list_overview_orders(
 @router.get("/machine-status-line-chart", response_model=List[MachineStatusLineChartData])
 async def get_machine_status_line_chart(
     query_params: GetOverviewMachineStatusLineChartQueryParams = Depends(),
+    _: User = Depends(require_permissions([
+        "machine.list",
+    ])),
 ):  
     result = GetOverviewMachineStatusLineChartOperation.execute(
         store_id=query_params.store_id,

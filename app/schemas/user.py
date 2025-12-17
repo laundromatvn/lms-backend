@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -17,6 +18,10 @@ class UserSerializer(BaseModel):
     phone: str | None = None
     role: UserRole
     status: UserStatus
+    
+    
+class UserPermissionSerializer(BaseModel):
+    permissions: List[str]
     
     
 class CreateUserRequest(BaseModel):

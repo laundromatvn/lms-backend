@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 
-from app.apis.v1.access import router as access_router
 from app.apis.v1.auth import router as auth_router
 from app.apis.v1.controller import router as controller_router
 from app.apis.v1.dashboard import router as dashboard_router
@@ -22,7 +21,6 @@ from app.apis.v1.user import router as user_router
 
 router = APIRouter()
 
-router.include_router(access_router, prefix="/access", tags=["Access"])
 router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 router.include_router(controller_router, prefix="/controller", tags=["Controller"])
 router.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])

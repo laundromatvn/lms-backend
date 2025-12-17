@@ -15,7 +15,6 @@ from app.schemas.permission import (
 )
 from app.schemas.pagination import PaginatedResponse
 from app.utils.pagination import get_total_pages
-from app.policies.permission_policies import PermissionPolicies
 
 router = APIRouter()
 
@@ -26,10 +25,6 @@ def get_permission(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    policies = PermissionPolicies(db, current_user)
-    if not policies.has_permission_get_access():
-        raise HTTPException(status_code=403, detail="You are not allowed to get permission")
-
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
@@ -44,10 +39,6 @@ def update_permission(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    policies = PermissionPolicies(db, current_user)
-    if not policies.has_permission_update_access():
-        raise HTTPException(status_code=403, detail="You are not allowed to update permission")
-
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
@@ -67,10 +58,6 @@ def delete_permission(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    policies = PermissionPolicies(db, current_user)
-    if not policies.has_permission_delete_access():
-        raise HTTPException(status_code=403, detail="You are not allowed to delete permission")
-    
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
@@ -85,10 +72,6 @@ def list_permissions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    policies = PermissionPolicies(db, current_user)
-    if not policies.has_permission_list_access():
-        raise HTTPException(status_code=403, detail="You are not allowed to list permissions")
-
     total, permissions = ListPermissionsOperation().execute(db, query_params)
     return {
         "page": query_params.page,
@@ -105,9 +88,5 @@ def create_permission(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    policies = PermissionPolicies(db, current_user)
-    if not policies.has_permission_create_access():
-        raise HTTPException(status_code=403, detail="You are not allowed to create permission")
-
     CreatePermissionOperation().execute(db, request)
 

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from app.libs.database import get_db
 from app.models.user import User
 from app.schemas.user import (
     UserSerializer,
@@ -8,7 +10,9 @@ from app.schemas.user import (
     CreateUserRequest,
 )
 from app.apis.deps import get_current_user
+from app.operations.permission.get_user_permissions import GetUserPermissionsOperation
 from app.operations.user.user_operation import UserOperation
+from app.schemas.user import UserPermissionSerializer
 
 
 router = APIRouter()
@@ -18,6 +22,14 @@ router = APIRouter()
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user.to_dict()
 
+
+@router.get("/me/permissions", response_model=UserPermissionSerializer)
+def get_me_permissions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    permissions = GetUserPermissionsOperation().execute(db, current_user)
+    return UserPermissionSerializer(permissions=permissions)
 
 @router.post("/{user_id}/reset-password", response_model=UserSerializer)
 def reset_password(

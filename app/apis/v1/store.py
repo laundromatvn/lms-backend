@@ -8,6 +8,7 @@ from app.apis.deps import get_current_user, require_permissions
 from app.core.logging import logger
 from app.libs.database import get_db
 from app.models.user import User
+from app.operations.store.list_stores import ListStoresOperation
 from app.operations.store.store_operation import StoreOperation
 from app.operations.store.store_machine_opeartion import StoreMachineOperation
 from app.operations.store.get_store_payment_methods_operation import GetStorePaymentMethodsOperation
@@ -52,10 +53,13 @@ def create_store(
 @router.get("", response_model=PaginatedResponse[StoreSerializer])
 def list_stores(
     query_params: ListStoreQueryParams = Depends(),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["store.list"])),
+    db: Session = Depends(get_db),
 ):
     try:
-        total, stores = StoreOperation.list(current_user, query_params)
+        operation = ListStoresOperation(db, current_user, query_params)
+        total, stores = operation.execute()
+
         return {
             "page": query_params.page,
             "page_size": query_params.page_size,

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.apis.deps import get_current_user
+from app.apis.deps import require_permissions
 from app.libs.database import get_db
 from app.models.permission import Permission
 from app.models.user import User
@@ -22,7 +22,7 @@ router = APIRouter()
 @router.get("/{permission_id}", response_model=PermissionSerializer)
 def get_permission(
     permission_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["permission.get"])),
     db: Session = Depends(get_db),
 ):
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
@@ -36,7 +36,7 @@ def get_permission(
 def update_permission(
     permission_id: int,
     request: PermissionEditRequest,
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(require_permissions(["permission.update"])),
     db: Session = Depends(get_db),
 ):
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
@@ -55,7 +55,7 @@ def update_permission(
 @router.delete("/{permission_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_permission(
     permission_id: int,
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(require_permissions(["permission.delete"])),
     db: Session = Depends(get_db),
 ):
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
@@ -69,7 +69,7 @@ def delete_permission(
 @router.get("", response_model=PaginatedResponse[PermissionSerializer])
 def list_permissions(
     query_params: ListPermissionQueryParams = Depends(),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(require_permissions(["permission.list"])),
     db: Session = Depends(get_db),
 ):
     total, permissions = ListPermissionsOperation().execute(db, query_params)
@@ -85,7 +85,7 @@ def list_permissions(
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_permission(
     request: PermissionCreateRequest,
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(require_permissions(["permission.create"])),
     db: Session = Depends(get_db),
 ):
     CreatePermissionOperation().execute(db, request)

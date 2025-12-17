@@ -28,6 +28,10 @@ TENANT_STAFF_EXCLUDED_PERMISSIONS = [
     "firmware_deployment.delete",
     "store.get_payment_methods",
     "store.update_payment_methods",
+    "dashboard.overview.view",
+    "machine.create",
+    "machine.update",
+    "machine.delete",
 ]
 
 TENANT_ADMIN_EXCLUDED_PERMISSIONS = [

@@ -448,9 +448,9 @@
     "group": "dashboard.overview",
     "permissions": [
       {
-        "code": "dashboard.overview.get",
-        "name": "Get Dashboard Overview",
-        "description": "Get Dashboard Overview"
+        "code": "dashboard.overview.view",
+        "name": "View Dashboard Overview",
+        "description": "View Dashboard Overview"
       }
     ]
   }

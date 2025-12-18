@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta
 
+from celery.app.base import to_utc
+from celery.utils.time import ZoneInfo
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.logging import logger
+from app.core.config import settings
 from app.libs.database import with_db_session_for_class_instance
 from app.models.machine import Machine, MachineStatus
 from app.models.datapoint import Datapoint, DatapointValueType
@@ -34,8 +37,8 @@ class ResetNoRespondingMachinesOperation:
         self.db.commit()
 
     def _get_no_responding_machines(self):
-        threshold_datetime = datetime.now() - timedelta(
-            minutes=self.NO_RESPONSE_THRESHOLD
+        threshold_datetime = to_utc(
+            datetime.now(tz=ZoneInfo(settings.TIMEZONE_NAME)) - timedelta(minutes=self.NO_RESPONSE_THRESHOLD)
         )
 
         return (

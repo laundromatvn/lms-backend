@@ -20,6 +20,8 @@ from app.tasks.firmware.handle_update_firmware_failed_task import handle_update_
 
 from app.tasks.permissions.add_foundation_permissions_task import add_foundation_permissions_task
 
+from app.tasks.machine.reset_no_responding_machines_task import reset_no_responding_machines_task
+
 
 __all__ = [
     # Health check
@@ -48,6 +50,8 @@ __all__ = [
     
     # Permission tasks
     "add_foundation_permissions_task",
+    
+    # Machine tasks
+    "reset_no_responding_machines_task",
 ]
-
 

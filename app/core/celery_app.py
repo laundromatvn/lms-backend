@@ -45,4 +45,8 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.promotion.sync_up_promotion_campaign_task",
         "schedule": crontab(minute="*/1"),
     },
+    "reset-no-responding-machines": {
+        "task": "app.tasks.machine.reset_no_responding_machines_task",
+        "schedule": crontab(minute="*/1"),
+    },
 }

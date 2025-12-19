@@ -24,6 +24,7 @@ from app.operations.user.assign_member_to_store import AssignMemberToStoreOperat
 from app.operations.user.list_assigned_stores import ListAssignedStoresOperation
 from app.operations.user.delete_assigned_store import DeleteAssignedStoreOperation
 from app.operations.user.list_notifications import ListNotificationsOperation
+from app.operations.user.clear_all_notifications import ClearAllNotificationsOperation
 from app.schemas.user import UserPermissionSerializer
 from app.utils.pagination import get_total_pages
 
@@ -65,6 +66,21 @@ def list_notifications(
         )
     except Exception as e:
         logger.error("List notifications failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post(
+    "/me/notifications/clear", status_code=status.HTTP_204_NO_CONTENT
+)
+def clear_all_notifications(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = ClearAllNotificationsOperation(db, current_user)
+        operation.execute()
+    except Exception as e:
+        logger.error("Clear all notifications failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

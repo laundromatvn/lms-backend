@@ -1,5 +1,6 @@
 from typing import List
 
+from fastapi import Query
 from sqlalchemy.orm import Session
 
 from app.models.user import User
@@ -22,6 +23,8 @@ class ListNotificationsOperation:
             self.db.query(Notification)
             .filter(Notification.user_id == self.current_user.id)
         )
+        
+        base_query = self._apply_filters(base_query)
 
         total = base_query.count()
         notifications = (
@@ -33,3 +36,9 @@ class ListNotificationsOperation:
         )
 
         return total, notifications
+
+    def _apply_filters(self, base_query: Query) -> Query:
+        if self.query_params.type:
+            base_query = base_query.filter(Notification.type == self.query_params.type)
+
+        return base_query

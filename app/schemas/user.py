@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.models.user import UserRole, UserStatus
+from app.models.notification import NotificationType
 from app.schemas.pagination import Pagination
 
 
@@ -54,4 +55,4 @@ class AssignMemberToStoreRequest(BaseModel):
 
 
 class ListNotificationsQueryParams(Pagination):
-    pass
+    type: NotificationType | None = None

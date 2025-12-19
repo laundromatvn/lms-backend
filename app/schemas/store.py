@@ -9,6 +9,7 @@ from app.schemas.machine import MachineSerializer
 from app.schemas.pagination import Pagination
 
 
+
 class QRPaymentMethodDetails(BaseModel):
     bank_code: str | None = None
     bank_name: str | None = None
@@ -54,6 +55,9 @@ class StoreSerializer(BaseModel):
 class ListStoreQueryParams(Pagination):
     tenant_id: UUID | None = None
     status: StoreStatus | None = None
+    search: str | None = None
+    order_by: str | None = None
+    order_direction: str | None = None
 
 
 class AddStoreRequest(BaseModel):

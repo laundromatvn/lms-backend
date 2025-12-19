@@ -41,3 +41,6 @@ class UpdateControllerRequest(BaseModel):
 class ListControllerQueryParams(Pagination):
     status: ControllerStatus | None = None
     store_id: UUID | None = None
+    store_name: str | None = None
+    order_by: str | None = None
+    order_direction: str | None = None

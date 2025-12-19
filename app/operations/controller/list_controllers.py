@@ -88,8 +88,26 @@ class ListControllersOperation:
 
         if self.query_params.store_id:
             base_query = base_query.filter(Controller.store_id == self.query_params.store_id)
+            
+        if self.query_params.store_name:
+            base_query = base_query.filter(Store.name.ilike(f"%{self.query_params.store_name}%"))
 
         return base_query
 
     def _apply_ordering(self, base_query: Query) -> Query:
-        return base_query.order_by(Controller.created_at.desc())
+        if not self.query_params.order_by: return base_query
+        
+        if self.query_params.order_by == "store_name":
+            if self.query_params.order_direction == "desc":
+                base_query = base_query.order_by(Store.name.desc())
+            else:
+                base_query = base_query.order_by(Store.name.asc())
+        elif self.query_params.order_by:
+            if self.query_params.order_direction == "desc":
+                base_query = base_query.order_by(getattr(Controller, self.query_params.order_by).desc())
+            else:
+                base_query = base_query.order_by(getattr(Controller, self.query_params.order_by).asc())
+        else:
+            base_query = base_query.order_by(Controller.created_at.desc())
+            
+        return base_query

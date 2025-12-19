@@ -59,7 +59,7 @@ def list_stores(
     try:
         operation = ListStoresOperation(db, current_user, query_params)
         total, stores = operation.execute()
-
+        
         return {
             "page": query_params.page,
             "page_size": query_params.page_size,

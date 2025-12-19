@@ -25,6 +25,7 @@ class ListStoresOperation:
         base_query = self._build_base_query()
 
         base_query = self._apply_filters(base_query)
+        base_query = self._apply_ordering(base_query)
 
         total = base_query.count()
         stores = (
@@ -71,5 +72,28 @@ class ListStoresOperation:
 
         if self.query_params.status:
             base_query = base_query.filter(Store.status == self.query_params.status)
+            
+        if self.query_params.search:
+            base_query = base_query.filter(
+                Store.name.ilike(f"%{self.query_params.search}%")
+            )
+
+        return base_query
+    
+    def _apply_ordering(self, base_query: Query) -> Query:
+        if not self.query_params.order_by: return base_query
+        
+        if self.query_params.order_by == "tenant_name":
+            if self.query_params.order_direction == "desc":
+                base_query = base_query.order_by(Tenant.name.desc())
+            else:
+                base_query = base_query.order_by(Tenant.name.asc())
+        elif self.query_params.order_by:
+            if self.query_params.order_direction == "desc":
+                base_query = base_query.order_by(getattr(Store, self.query_params.order_by).desc())
+            else:
+                base_query = base_query.order_by(getattr(Store, self.query_params.order_by).asc())
+        else:
+            base_query = base_query.order_by(Store.created_at.desc())
 
         return base_query

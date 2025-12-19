@@ -6,6 +6,7 @@ from app.apis.v1.dashboard import router as dashboard_router
 from app.apis.v1.firmware import router as firmware_router
 from app.apis.v1.firmware_deployment import router as firmware_deployment_router
 from app.apis.v1.machine import router as machine_router
+from app.apis.v1.notification import router as notification_router
 from app.apis.v1.tenant import router as tenant_router
 from app.apis.v1.tenant_member import router as tenant_member_router
 from app.apis.v1.store import router as store_router
@@ -27,6 +28,7 @@ router.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])
 router.include_router(firmware_router, prefix="/firmware", tags=["Firmware"])
 router.include_router(firmware_deployment_router, prefix="/firmware-deployment", tags=["Firmware Deployment"])
 router.include_router(machine_router, prefix="/machine", tags=["Machine"])
+router.include_router(notification_router, prefix="/notification", tags=["Notification"])
 router.include_router(tenant_router, prefix="/tenant", tags=["Tenant"])
 router.include_router(tenant_member_router, prefix="/tenant-member", tags=["Tenant Member"])
 router.include_router(store_router, prefix="/store", tags=["Store"])

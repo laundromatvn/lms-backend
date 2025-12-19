@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.logging import logger
 from app.libs.database import get_db
 from app.models.user import User
+from app.schemas.notification import NotificationSerializer
 from app.schemas.store import StoreSerializer
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import (
@@ -14,6 +15,7 @@ from app.schemas.user import (
     CreateUserRequest,
     ListAssignedStoresQueryParams,
     AssignMemberToStoreRequest,
+    ListNotificationsQueryParams,
 )
 from app.apis.deps import get_current_user, require_permissions
 from app.operations.permission.get_user_permissions import GetUserPermissionsOperation
@@ -21,6 +23,7 @@ from app.operations.user.user_operation import UserOperation
 from app.operations.user.assign_member_to_store import AssignMemberToStoreOperation
 from app.operations.user.list_assigned_stores import ListAssignedStoresOperation
 from app.operations.user.delete_assigned_store import DeleteAssignedStoreOperation
+from app.operations.user.list_notifications import ListNotificationsOperation
 from app.schemas.user import UserPermissionSerializer
 from app.utils.pagination import get_total_pages
 
@@ -39,6 +42,30 @@ def get_me_permissions(
 ):
     permissions = GetUserPermissionsOperation().execute(db, current_user)
     return UserPermissionSerializer(permissions=permissions)
+
+
+@router.get(
+    "/me/notifications", response_model=PaginatedResponse[NotificationSerializer]
+)
+def list_notifications(
+    query_params: ListNotificationsQueryParams = Depends(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = ListNotificationsOperation(db, current_user, query_params)
+        total, notifications = operation.execute()
+
+        return PaginatedResponse(
+            page=query_params.page,
+            page_size=query_params.page_size,
+            total=total,
+            total_pages=get_total_pages(total, query_params.page_size),
+            data=notifications,
+        )
+    except Exception as e:
+        logger.error("List notifications failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{user_id}/reset-password", response_model=UserSerializer)
@@ -99,7 +126,9 @@ def update_user(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/{user_id}/assigned-stores", response_model=PaginatedResponse[StoreSerializer])
+@router.get(
+    "/{user_id}/assigned-stores", response_model=PaginatedResponse[StoreSerializer]
+)
 def list_assigned_stores(
     user_id: str,
     query_params: ListAssignedStoresQueryParams = Depends(),
@@ -132,7 +161,9 @@ def assign_member_to_store(
     db: Session = Depends(get_db),
 ):
     try:
-        operation = AssignMemberToStoreOperation(current_user, user_id, request.store_ids)
+        operation = AssignMemberToStoreOperation(
+            current_user, user_id, request.store_ids
+        )
         operation.execute(db)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -143,7 +174,9 @@ def assign_member_to_store(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.delete("/{user_id}/assigned-stores/{store_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{user_id}/assigned-stores/{store_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 def delete_assigned_store(
     user_id: UUID,
     store_id: UUID,

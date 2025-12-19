@@ -51,3 +51,7 @@ class ListAssignedStoresQueryParams(Pagination):
 
 class AssignMemberToStoreRequest(BaseModel):
     store_ids: List[UUID]
+
+
+class ListNotificationsQueryParams(Pagination):
+    pass

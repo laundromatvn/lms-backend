@@ -21,6 +21,7 @@ from app.tasks.firmware.handle_update_firmware_failed_task import handle_update_
 from app.tasks.permissions.add_foundation_permissions_task import add_foundation_permissions_task
 
 from app.tasks.machine.reset_no_responding_machines_task import reset_no_responding_machines_task
+from app.tasks.machine.send_no_responding_machine_notifications_task import send_no_responding_machine_notifications_task
 
 
 __all__ = [
@@ -53,5 +54,6 @@ __all__ = [
     
     # Machine tasks
     "reset_no_responding_machines_task",
+    "send_no_responding_machine_notifications_task",
 ]
 

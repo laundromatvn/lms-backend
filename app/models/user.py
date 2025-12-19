@@ -12,7 +12,7 @@ from sqlalchemy import (
     event,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, relationship
 
 from app.libs.database import Base
 from app.utils.security.hash import get_password_hash, verify_password
@@ -59,6 +59,8 @@ class User(Base):
 
     is_verified = Column(Boolean, nullable=False, default=False)
     verified_at = Column(DateTime(timezone=True), nullable=True)
+    
+    notifications = relationship("Notification", back_populates="user")
     
     @validates('role')
     def validate_role(self, key: str, role) -> UserRole:

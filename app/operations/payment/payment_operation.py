@@ -36,7 +36,7 @@ class PaymentOperation:
         db: Session,
         request: InitializePaymentRequest, 
         created_by: Optional[uuid.UUID] = None
-    ) -> Payment:
+    ) -> Optional[Payment]:
         """
         Initialize a new payment transaction.
 
@@ -187,6 +187,13 @@ class PaymentOperation:
         """
         payment = cls.get_payment_by_id(payment_id)
         order = cls._validate_order_for_payment(payment.order_id)
+        
+        # Skip validation for full discount payments (they are created with SUCCESS status)
+        if (
+            payment.payment_method == PaymentMethod.DISCOUNT_FULL
+            and payment.total_amount == Decimal("0.00")
+        ):
+            return payment
         
         # Validate payment can have details generated
         if payment.status != PaymentStatus.NEW:

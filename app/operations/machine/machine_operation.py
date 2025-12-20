@@ -406,15 +406,17 @@ class MachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .filter(
                 Controller.device_id == controller_device_id,
+                Controller.deleted_at.is_(None),
                 Machine.relay_no == machine_relay_no,
+                Machine.deleted_at.is_(None),
             )
             .first()
         )
-
         if not machine:
             raise ValueError("Machine not found")
 
         machine.status = status.upper()
+        db.add(machine)
         db.commit()
         db.refresh(machine)
 

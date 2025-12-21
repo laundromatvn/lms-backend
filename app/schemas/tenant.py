@@ -41,3 +41,6 @@ class TenantSerializer(BaseModel):
 
 class ListTenantQueryParams(Pagination):
     status: TenantStatus | None = None
+    search: str | None = None
+    order_by: str | None = None
+    order_direction: str | None = None

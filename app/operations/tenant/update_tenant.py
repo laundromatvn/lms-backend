@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
 
 from app.models.user import User
@@ -24,4 +25,13 @@ class UpdateTenantOperation:
         tenant.contact_phone_number = self.request.contact_phone_number
         tenant.contact_full_name = self.request.contact_full_name
         tenant.contact_address = self.request.contact_address
+        tenant.status = self.request.status
+        
+        tenant.updated_by = self.current_user.id
+        tenant.updated_at = func.now()
+
+        self.db.add(tenant)
+        self.db.commit()
+        self.db.refresh(tenant)
+
         return tenant

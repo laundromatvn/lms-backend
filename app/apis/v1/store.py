@@ -12,7 +12,7 @@ from app.operations.store.list_stores import ListStoresOperation
 from app.operations.store.store_operation import StoreOperation
 from app.operations.store.store_machine_opeartion import StoreMachineOperation
 from app.operations.store.get_store_payment_methods_operation import GetStorePaymentMethodsOperation
-from app.operations.store_members import (
+from app.operations.store_member import (
     AddStoreMemberOperation,
     ListStoreMembersOperation,
     DeleteStoreMemberOperation,

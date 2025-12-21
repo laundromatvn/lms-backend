@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.logging import logger
 from app.libs.database import get_db
 from app.models.user import User
+from app.operations.user.create_user import CreateUserOperation
 from app.schemas.notification import NotificationSerializer
 from app.schemas.store import StoreSerializer
 from app.schemas.pagination import PaginatedResponse
@@ -16,6 +17,7 @@ from app.schemas.user import (
     ListAssignedStoresQueryParams,
     AssignMemberToStoreRequest,
     ListNotificationsQueryParams,
+    ListAvailableUserTenantAdminsRequest,
 )
 from app.apis.deps import get_current_user, require_permissions
 from app.operations.permission.get_user_permissions import GetUserPermissionsOperation
@@ -25,6 +27,9 @@ from app.operations.user.list_assigned_stores import ListAssignedStoresOperation
 from app.operations.user.delete_assigned_store import DeleteAssignedStoreOperation
 from app.operations.user.list_notifications import ListNotificationsOperation
 from app.operations.user.clear_all_notifications import ClearAllNotificationsOperation
+from app.operations.user.list_available_user_tenant_admins import (
+    ListAvailableUserTenantAdminsOperation,
+)
 from app.schemas.user import UserPermissionSerializer
 from app.utils.pagination import get_total_pages
 
@@ -69,9 +74,7 @@ def list_notifications(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post(
-    "/me/notifications/clear", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.post("/me/notifications/clear", status_code=status.HTTP_204_NO_CONTENT)
 def clear_all_notifications(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -81,6 +84,30 @@ def clear_all_notifications(
         operation.execute()
     except Exception as e:
         logger.error("Clear all notifications failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get(
+    "/available-tenant-admins", response_model=PaginatedResponse[UserSerializer]
+)
+def list_available_tenant_admins(
+    request: ListAvailableUserTenantAdminsRequest = Depends(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = ListAvailableUserTenantAdminsOperation(db, current_user, request)
+        total, users = operation.execute()
+
+        return PaginatedResponse(
+            page=request.page,
+            page_size=request.page_size,
+            total=total,
+            total_pages=get_total_pages(total, request.page_size),
+            data=users,
+        )
+    except Exception as e:
+        logger.error("List available tenant admins failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -99,13 +126,15 @@ def reset_password(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("", response_model=UserSerializer)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=UserSerializer)
 def create_user(
     request: CreateUserRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["user.create"])),
+    db: Session = Depends(get_db),
 ):
     try:
-        user = UserOperation.create(current_user, request)
+        operation = CreateUserOperation(db, current_user, request)
+        user = operation.execute()
         return user
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

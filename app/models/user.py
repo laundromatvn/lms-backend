@@ -4,6 +4,7 @@ from typing import Optional
 
 from sqlalchemy import (
     Boolean,
+    UniqueConstraint,
     Column,
     DateTime,
     Enum as SQLEnum,
@@ -36,7 +37,7 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    
+
     created_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True), nullable=True)
@@ -52,15 +53,19 @@ class User(Base):
         default=UserStatus.NEW,
         index=True
     )
-    
-    phone = Column(String(20), unique=True, nullable=True, index=True)
-    email = Column(String(255), unique=True, nullable=True, index=True)
+
+    phone = Column(String(20), nullable=True, index=True)
+    email = Column(String(255), nullable=True, index=True)
     password = Column(String(255), nullable=False)
 
     is_verified = Column(Boolean, nullable=False, default=False)
     verified_at = Column(DateTime(timezone=True), nullable=True)
     
     notifications = relationship("Notification", back_populates="user")
+
+    __table_args__ = (
+        UniqueConstraint('phone', 'email', name='uq_user_phone_email'),
+    )
     
     @validates('role')
     def validate_role(self, key: str, role) -> UserRole:

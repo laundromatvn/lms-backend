@@ -30,7 +30,6 @@ class CreateUserRequest(BaseModel):
     email: str | None = None
     phone: str | None = None
     role: UserRole
-    status: UserStatus
     password: str
 
 
@@ -56,3 +55,7 @@ class AssignMemberToStoreRequest(BaseModel):
 
 class ListNotificationsQueryParams(Pagination):
     type: NotificationType | None = None
+
+
+class ListAvailableUserTenantAdminsRequest(Pagination):
+    pass

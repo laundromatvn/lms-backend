@@ -6,8 +6,7 @@ from sqlalchemy.orm import Session
 from app.libs.mqtt import mqtt_client
 from app.libs.database import with_db_session_classmethod
 from app.libs.cache import cache_manager
-from app.core.logging import logger
-from app.models.controller import Controller
+from app.models.controller import Controller, ControllerStatus
 from app.enums.mqtt import MQTTEventTypeEnum
 
 
@@ -49,9 +48,10 @@ class AbandonControllerOperation:
     def register(cls, db: Session, device_id: str):
         controller = (
             db.query(Controller)
-            .filter_by(
-                device_id=device_id,
-                deleted_at=None,
+            .filter(
+                Controller.device_id == device_id,
+                Controller.deleted_at.is_(None),
+                Controller.status.in_([ControllerStatus.NEW, ControllerStatus.ACTIVE]),
             )
             .first()
         )
@@ -69,7 +69,6 @@ class AbandonControllerOperation:
             abandon_controllers,
             ttl_seconds=60 * 15,
         )
-        return None
 
     @classmethod
     def confirm_assignment(cls, controller: Controller):

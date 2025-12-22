@@ -11,7 +11,7 @@ from app.enums.mqtt import MQTTEventTypeEnum
 from app.libs.database import with_db_session_classmethod
 from app.libs.mqtt import mqtt_client
 from app.models.machine import Machine, MachineType, MachineStatus
-from app.models.controller import Controller
+from app.models.controller import Controller, ControllerStatus
 from app.models.store import Store
 from app.models.tenant_member import TenantMember
 from app.models.user import User
@@ -295,7 +295,12 @@ class MachineOperation:
         total_amount: Decimal = None,
         pulse_value: int = 10,
     ) -> Machine:
-        machine = db.query(Machine).filter_by(id=machine_id).first()
+        machine = (
+            db.query(Machine).filter(
+                Machine.id == machine_id,
+                Machine.deleted_at.is_(None),
+            ).first()
+        )
         if not machine:
             raise ValueError("Machine not found")
 
@@ -349,7 +354,10 @@ class MachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .filter(
                 Controller.device_id == controller_device_id,
+                Controller.deleted_at.is_(None),
+                Controller.status != ControllerStatus.INACTIVE,
                 Machine.relay_no == machine_relay_no,
+                Machine.deleted_at.is_(None),
             )
             .first()
         )
@@ -377,7 +385,10 @@ class MachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .filter(
                 Controller.device_id == controller_device_id,
+                Controller.deleted_at.is_(None),
+                Controller.status != ControllerStatus.INACTIVE,
                 Machine.relay_no == machine_relay_no,
+                Machine.deleted_at.is_(None),
             )
             .first()
         )
@@ -407,6 +418,7 @@ class MachineOperation:
             .filter(
                 Controller.device_id == controller_device_id,
                 Controller.deleted_at.is_(None),
+                Controller.status != ControllerStatus.INACTIVE,
                 Machine.relay_no == machine_relay_no,
                 Machine.deleted_at.is_(None),
             )

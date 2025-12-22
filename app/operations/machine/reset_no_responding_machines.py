@@ -10,6 +10,8 @@ from app.core.logging import logger
 from app.core.config import settings
 from app.core.celery_app import celery_app
 from app.libs.database import with_db_session_for_class_instance
+from app.models import ControllerStatus
+from app.models.controller import Controller
 from app.models.machine import Machine, MachineStatus
 from app.models.datapoint import Datapoint, DatapointValueType
 from app.models.store import Store
@@ -21,7 +23,7 @@ from app.services.notification_service import NotificationService
 
 class ResetNoRespondingMachinesOperation:
 
-    NO_RESPONSE_THRESHOLD = 5  # minutes
+    NO_RESPONSE_THRESHOLD = 15  # minutes
 
     """
     This operation resets the status of machines that have not responded in the last 10 minutes to IDLE.
@@ -54,8 +56,12 @@ class ResetNoRespondingMachinesOperation:
         """
         return (
             self.db.query(Machine)
+            .join(Controller, Machine.controller_id == Controller.id)
             .outerjoin(Datapoint, Machine.id == Datapoint.machine_id)
             .filter(
+                Controller.status != ControllerStatus.INACTIVE,
+                Controller.deleted_at.is_(None),
+                Machine.deleted_at.is_(None),
                 Machine.status.in_(
                     [
                         MachineStatus.STARTING,

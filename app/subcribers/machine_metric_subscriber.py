@@ -1,11 +1,9 @@
 from paho.mqtt.client import MQTTMessage
-from sqlalchemy import text
 
 from app.core.logging import logger
-from app.core.config import settings
 from app.enums.mqtt import MQTTEventTypeEnum
 from app.libs import mqtt
-from app.models.controller import Controller
+from app.models.controller import Controller, ControllerStatus
 from app.models.datapoint import Datapoint, DatapointValueType
 from app.operations.datapoint_operation import DatapointOperation
 from app.operations.machine.machine_operation import MachineOperation
@@ -51,7 +49,11 @@ class MachineMetricSubscriber:
 
             controller = (
                 db.query(Controller)
-                .filter_by(device_id=payload.controller_id)
+                .filter(
+                    Controller.device_id == payload.controller_id,
+                    Controller.deleted_at.is_(None),
+                    Controller.status != ControllerStatus.ACTIVE,
+                )
                 .first()
             )
             if not controller:

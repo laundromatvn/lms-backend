@@ -89,11 +89,9 @@ class OrderDetailOperation:
         existing_detail = (
             self.db_session.query(OrderDetail)
             .filter(
-                and_(
-                    OrderDetail.order_id == order_id,
-                    OrderDetail.machine_id == request.machine_id,
-                    OrderDetail.deleted_at.is_(None),
-                )
+                OrderDetail.order_id == order_id,
+                OrderDetail.machine_id == request.machine_id,
+                OrderDetail.deleted_at.is_(None),
             )
             .first()
         )

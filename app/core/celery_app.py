@@ -47,6 +47,6 @@ celery_app.conf.beat_schedule = {
     },
     "reset-no-responding-machines": {
         "task": "app.tasks.machine.reset_no_responding_machines_task",
-        "schedule": crontab(minute="*/5"),
+        "schedule": crontab(minute="*/15"),
     },
 }

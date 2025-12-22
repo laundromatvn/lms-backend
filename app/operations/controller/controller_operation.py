@@ -36,6 +36,7 @@ class ControllerOperation:
             .filter(
                 Controller.deleted_at.is_(None),
                 Controller.id == controller_id,
+                Controller.status != ControllerStatus.INACTIVE,
             )
             .first()
         )

@@ -1,4 +1,5 @@
 from typing import List
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, Query
 
 from app.models.controller import Controller, ControllerStatus
@@ -91,6 +92,14 @@ class ListControllersOperation:
             
         if self.query_params.store_name:
             base_query = base_query.filter(Store.name.ilike(f"%{self.query_params.store_name}%"))
+            
+        if self.query_params.search:
+            base_query = base_query.filter(
+                or_(
+                    Controller.name.ilike(f"%{self.query_params.search}%"),
+                    Controller.device_id.ilike(f"%{self.query_params.search}%"),
+                )
+            )
 
         return base_query
 

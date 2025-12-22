@@ -77,5 +77,3 @@ class MachineActionSubscriber:
             "app.tasks.firmware.handle_update_firmware_completed_task",
             kwargs={"deployment_id": deployment_id},
         )
-
-

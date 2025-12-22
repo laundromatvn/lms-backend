@@ -15,8 +15,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, func, or_
 
 from app.libs.database import with_db_session_classmethod
+from app.models import ControllerStatus, Controller
 from app.models.machine import Machine, MachineStatus, MachineType
-from app.models.order import Order, OrderStatus, OrderDetail, OrderDetailStatus, PromotionOrder
+from app.models.order import Order, OrderStatus, OrderDetail, OrderDetailStatus
 from app.models.payment import Payment
 from app.models.store import Store, StoreStatus
 from app.models.tenant_member import TenantMember
@@ -170,7 +171,7 @@ class OrderOperation:
             )
             .join(Payment, Order.id == Payment.order_id)
             .filter(
-                Order.id == order_id, 
+                Order.id == order_id,
                 Order.deleted_at.is_(None),
                 Payment.deleted_at.is_(None),
             )
@@ -272,34 +273,41 @@ class OrderOperation:
             base_query = base_query.filter(Order.store_id.in_(query_params.store_ids))
 
         if query_params.payment_status:
-            base_query = base_query.filter(Payment.status == query_params.payment_status)
+            base_query = base_query.filter(
+                Payment.status == query_params.payment_status
+            )
 
         if query_params.tenant_id:
-            tenant_member = db.query(TenantMember).filter(
-                TenantMember.tenant_id == query_params.tenant_id,
-                TenantMember.user_id == current_user.id,
-            ).first()
+            tenant_member = (
+                db.query(TenantMember)
+                .filter(
+                    TenantMember.tenant_id == query_params.tenant_id,
+                    TenantMember.user_id == current_user.id,
+                )
+                .first()
+            )
             if not tenant_member:
                 raise ValueError("You don't have permission to get this tenant")
 
-            base_query = base_query.filter(
-                Store.tenant_id == query_params.tenant_id
-            )
-        
+            base_query = base_query.filter(Store.tenant_id == query_params.tenant_id)
+
         if query_params.query:
             base_query = base_query.filter(
                 Payment.transaction_code.ilike(f"%{query_params.query}%"),
             )
-            
+
         if query_params.order_by:
             if query_params.order_direction == "desc":
-                base_query = base_query.order_by(getattr(Order, query_params.order_by).desc())
+                base_query = base_query.order_by(
+                    getattr(Order, query_params.order_by).desc()
+                )
             else:
-                base_query = base_query.order_by(getattr(Order, query_params.order_by).asc())
+                base_query = base_query.order_by(
+                    getattr(Order, query_params.order_by).asc()
+                )
 
         result = (
-            base_query
-            .offset((query_params.page - 1) * query_params.page_size)
+            base_query.offset((query_params.page - 1) * query_params.page_size)
             .limit(query_params.page_size)
             .all()
         )
@@ -512,11 +520,9 @@ class OrderOperation:
         store = (
             db.query(Store)
             .filter(
-                and_(
-                    Store.id == store_id,
-                    Store.deleted_at.is_(None),
-                    Store.status == StoreStatus.ACTIVE,
-                )
+                Store.id == store_id,
+                Store.deleted_at.is_(None),
+                Store.status == StoreStatus.ACTIVE,
             )
             .first()
         )
@@ -537,15 +543,16 @@ class OrderOperation:
         # Check machines exist and are available
         machines = (
             db.query(Machine)
+            .join(Controller, Machine.controller_id == Controller.id)
             .filter(
-                and_(
-                    Machine.id.in_(machine_ids),
-                    Machine.deleted_at.is_(None),
-                    or_(
-                        Machine.status == MachineStatus.IDLE,
-                        Machine.machine_type == MachineType.DRYER,
-                    ),
-                )
+                Controller.status != ControllerStatus.INACTIVE,
+                Controller.deleted_at.is_(None),
+                Machine.deleted_at.is_(None),
+                Machine.id.in_(machine_ids),
+                or_(
+                    Machine.status == MachineStatus.IDLE,
+                    Machine.machine_type == MachineType.DRYER,
+                ),
             )
             .all()
         )
@@ -591,10 +598,15 @@ class OrderOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def _start_machines(cls, db: Session, updated_by: Optional[uuid.UUID], order_id: uuid.UUID) -> None:
+    def _start_machines(
+        cls, db: Session, updated_by: Optional[uuid.UUID], order_id: uuid.UUID
+    ) -> None:
         """Start machines for an order."""
         order_details = (
-            db.query(OrderDetail).filter(OrderDetail.order_id == order_id).all()
+            db.query(OrderDetail).filter(
+                OrderDetail.order_id == order_id,
+                OrderDetail.deleted_at.is_(None),
+            ).all()
         )
 
         for order_detail in order_details:
@@ -602,7 +614,7 @@ class OrderOperation:
                 MachineOperation.start(
                     user=updated_by,
                     total_amount=order_detail.price,
-                    machine_id=order_detail.machine.id
+                    machine_id=order_detail.machine.id,
                 )
                 order_detail.update_status(OrderDetailStatus.IN_PROGRESS)
                 db.add(order_detail)
@@ -611,7 +623,9 @@ class OrderOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def _finish_machines(cls, db: Session, updated_by: Optional[uuid.UUID], order_id: uuid.UUID) -> None:
+    def _finish_machines(
+        cls, db: Session, updated_by: Optional[uuid.UUID], order_id: uuid.UUID
+    ) -> None:
         """Finish machines for an order."""
         order_details = (
             db.query(OrderDetail).filter(OrderDetail.order_id == order_id).all()
@@ -627,7 +641,9 @@ class OrderOperation:
 
     @classmethod
     @with_db_session_classmethod
-    def _cancel_machines(cls, db: Session, updated_by: Optional[uuid.UUID], order_id: uuid.UUID) -> None:
+    def _cancel_machines(
+        cls, db: Session, updated_by: Optional[uuid.UUID], order_id: uuid.UUID
+    ) -> None:
         """Cancel machines for an order."""
         order_details = (
             db.query(OrderDetail).filter(OrderDetail.order_id == order_id).all()

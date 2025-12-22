@@ -32,7 +32,11 @@ class SyncUpOrderOperation:
 
     @classmethod
     def __get_order(cls, db: Session, order_id: uuid.UUID):
-        return db.query(Order).get(order_id)
+        return (
+            db.query(Order)
+            .filter(Order.id == order_id, Order.deleted_at.is_(None))
+            .first()
+        )
 
     @classmethod
     def __sync_up_waiting_for_payment(cls, db: Session, order: Order):
@@ -87,5 +91,3 @@ class SyncUpOrderOperation:
             db.add(order)
             db.commit()
             return
-
-

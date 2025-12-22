@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.libs.database import with_db_session_for_class_instance
+from app.models import ControllerStatus
 from app.models.controller import Controller
 from app.models.notification import Notification, NotificationType, NotificationChannel
 from app.models.user import User, UserRole
@@ -71,7 +72,12 @@ class SendNoRespondingMachineNotificationsOperation:
             )
             .join(Controller, Machine.controller_id == Controller.id)
             .join(Store, Controller.store_id == Store.id)
-            .filter(Machine.id == machine_id)
+            .filter(
+                Controller.status != ControllerStatus.INACTIVE,
+                Controller.deleted_at.is_(None),
+                Machine.deleted_at.is_(None),
+                Machine.id == machine_id,
+            )
             .first()
         )
 

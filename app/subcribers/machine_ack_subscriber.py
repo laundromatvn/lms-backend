@@ -59,7 +59,7 @@ class MachineAckSubscriber:
         # Parse topic: lms/stores/{store_id}/controllers/{controller_id}/ack
         controller_device_id = payload.controller_id
         machine_relay_no = payload.payload.get("relay_id")
-        
+
         if not controller_device_id or not machine_relay_no:
             raise ValueError("Controller device ID and machine relay no are required")
 

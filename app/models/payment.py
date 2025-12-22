@@ -339,7 +339,7 @@ class Payment(Base):
         """Update payment transaction status with validation"""
         if not self._is_valid_status_transition(self.status, new_status):
             raise ValueError(f"Invalid status transition from {self.status.value} to {new_status.value}")
-        
+
         self.status = new_status
         self.updated_by = updated_by
     

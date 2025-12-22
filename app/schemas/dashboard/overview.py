@@ -2,12 +2,13 @@ from datetime import datetime
 from typing import List, Any, Dict, Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from app.models.machine import MachineStatus
 from app.models.order import OrderStatus
 from app.models.payment import PaymentStatus, PaymentMethod
 from app.schemas.pagination import Pagination
+from app.utils.timezone import to_utc
 
 
 class OverviewKeyMetricsQueryParams(BaseModel):
@@ -15,6 +16,13 @@ class OverviewKeyMetricsQueryParams(BaseModel):
     store_id: UUID | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
+
+    @validator('start_date', 'end_date', pre=True)
+    def convert_to_utc(cls, v):
+        """Convert datetime to UTC. If timezone-naive, assume it's in Vietnam timezone."""
+        if v is None:
+            return None
+        return to_utc(v)
 
 
 class OverviewKeyMetricsResponse(BaseModel):
@@ -25,6 +33,7 @@ class OverviewKeyMetricsResponse(BaseModel):
     total_in_progress_dryers: int = 0
     total_dryers: int = 0
     total_in_progress_orders: int = 0
+    total_finished_orders: int = 0
     today_orders: int = 0
     revenue_by_day: float = 0
     revenue_by_month: float = 0
@@ -34,6 +43,13 @@ class OverviewOrderByDayQueryParams(BaseModel):
     tenant_id: UUID
     start_date: datetime | None = None
     end_date: datetime | None = None
+
+    @validator('start_date', 'end_date', pre=True)
+    def convert_to_utc(cls, v):
+        """Convert datetime to UTC. If timezone-naive, assume it's in Vietnam timezone."""
+        if v is None:
+            return None
+        return to_utc(v)
     
 
 class OverviewOrderByDayBarChartResponse(BaseModel):
@@ -45,6 +61,13 @@ class OverviewRevenueByDayQueryParams(BaseModel):
     tenant_id: UUID
     start_date: datetime | None = None
     end_date: datetime | None = None
+
+    @validator('start_date', 'end_date', pre=True)
+    def convert_to_utc(cls, v):
+        """Convert datetime to UTC. If timezone-naive, assume it's in Vietnam timezone."""
+        if v is None:
+            return None
+        return to_utc(v)
     
 
 class OverviewRevenueByDayBarChartResponse(BaseModel):
@@ -86,6 +109,13 @@ class ListOverviewOrdersQueryParams(Pagination):
     order_by: Optional[str] = None
     order_direction: Optional[str] = None
 
+    @validator('start_date', 'end_date', pre=True)
+    def convert_to_utc(cls, v):
+        """Convert datetime to UTC. If timezone-naive, assume it's in Vietnam timezone."""
+        if v is None:
+            return None
+        return to_utc(v)
+
 
 class ListOverviewOrdersResponseItem(BaseModel):
     id: UUID
@@ -109,6 +139,13 @@ class GetOverviewMachineStatusLineChartQueryParams(BaseModel):
     machine_id: UUID | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
+
+    @validator('start_date', 'end_date', pre=True)
+    def convert_to_utc(cls, v):
+        """Convert datetime to UTC. If timezone-naive, assume it's in Vietnam timezone."""
+        if v is None:
+            return None
+        return to_utc(v)
 
 
 class MachineStatusLineChartData(BaseModel):

@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
-from app.apis.deps import get_current_user
+from app.apis.deps import get_current_user, require_permissions
 from app.core.logging import logger
+from app.libs.database import get_db
 from app.models.user import User
 from app.operations.controller.abandon_controller_operation import AbandonControllerOperation
 from app.operations.controller.controller_operation import ControllerOperation
+from app.operations.controller.list_controllers import ListControllersOperation
 from app.schemas.controller import (
     ControllerSerializer,
     AddControllerRequest,
@@ -37,10 +40,13 @@ def add_controller(
 @router.get("", response_model=PaginatedResponse[ControllerSerializer])
 def list_controllers(
     query_params: ListControllerQueryParams = Depends(),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(['controller.list'])),
+    db: Session = Depends(get_db),
 ):
     try:
-        total, controllers = ControllerOperation.list(current_user, query_params)
+        operation = ListControllersOperation(db, current_user, query_params)
+        total, controllers = operation.execute()
+
         return {
             "page": query_params.page,
             "page_size": query_params.page_size,
@@ -51,7 +57,7 @@ def list_controllers(
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
-        logger.error("List controllers failed", type=type(e).__name__, error=str(e))
+        logger.error("List controllers failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

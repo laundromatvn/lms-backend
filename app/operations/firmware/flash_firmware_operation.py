@@ -39,7 +39,7 @@ class FlashFirmwareOperation:
         total_controllers = self._count_controllers(db, payload.controller_ids)
         if total_controllers == 0:
             raise ValueError("No controllers found")
-        
+
         for offset in range(0, total_controllers, self.CHUNK_SIZE):
             controllers = self._get_controllers(
                 db=db,

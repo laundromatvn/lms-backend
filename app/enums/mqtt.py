@@ -14,6 +14,7 @@ class MQTTEventTypeEnum(str, Enum):
     MACHINE_FINISH = "finish"
     MACHINE_FINISH_ACK = "finish_ack"
     MACHINE_STATE = "machine_state"
+    MACHINE_STATE_ACK = "machine_state_ack"
     
     # Flash Firmware
     UPDATE_FIRMWARE = "update_firmware"

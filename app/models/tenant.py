@@ -76,7 +76,7 @@ class Tenant(Base):
     def validate_contact_phone_number(self, key: str, phone: str) -> str:
         if not phone:
             raise ValueError("Contact phone number is required")
-        
+
         phone = phone.strip()
         if not phone:
             raise ValueError("Phone number cannot be empty")

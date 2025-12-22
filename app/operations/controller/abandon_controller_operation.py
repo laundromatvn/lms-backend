@@ -6,8 +6,7 @@ from sqlalchemy.orm import Session
 from app.libs.mqtt import mqtt_client
 from app.libs.database import with_db_session_classmethod
 from app.libs.cache import cache_manager
-from app.core.logging import logger
-from app.models.controller import Controller
+from app.models.controller import Controller, ControllerStatus
 from app.enums.mqtt import MQTTEventTypeEnum
 
 
@@ -31,7 +30,12 @@ class AbandonControllerOperation:
             "correlation_id": str(uuid.uuid4()),
             "controller_id": str(device_id),
             "store_id": None,
-            "payload": {"relay_id": 1, "pulse_duration": 50, "value": 10},
+            "payload": {
+                "relay_id": 1,
+                "pulse_duration": 50,
+                "pulse_interval": 100,
+                "value": 5,
+            },
         }
 
         mqtt_client.publish(
@@ -42,7 +46,15 @@ class AbandonControllerOperation:
     @classmethod
     @with_db_session_classmethod
     def register(cls, db: Session, device_id: str):
-        controller = db.query(Controller).filter_by(device_id=device_id).first()
+        controller = (
+            db.query(Controller)
+            .filter(
+                Controller.device_id == device_id,
+                Controller.deleted_at.is_(None),
+                Controller.status.in_([ControllerStatus.NEW, ControllerStatus.ACTIVE]),
+            )
+            .first()
+        )
         if controller and controller.store_id:
             return controller
 
@@ -57,7 +69,6 @@ class AbandonControllerOperation:
             abandon_controllers,
             ttl_seconds=60 * 15,
         )
-        return None
 
     @classmethod
     def confirm_assignment(cls, controller: Controller):

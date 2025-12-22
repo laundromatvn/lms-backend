@@ -27,5 +27,3 @@ class SyncUpInProgressOrdersOperation:
         
         for order in orders:
             SyncUpOrderOperation.execute(order.id)
-
-

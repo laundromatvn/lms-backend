@@ -29,3 +29,6 @@ class ListTenantMemberQueryParams(BaseModel):
     tenant_id: Optional[UUID] = None
     page: int = 1
     page_size: int = 10
+    order_by: Optional[str] = None
+    order_direction: Optional[str] = None
+    search: Optional[str] = None

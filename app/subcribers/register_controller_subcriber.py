@@ -16,6 +16,7 @@ RESPONSE_TOPIC = "lms/controllers/{device_id}/wait_admin_assign_store"
 
 
 class RegisterControllerSubcriber:
+
     def __init__(self, mqtt_client: mqtt.MQTTClient):
         self.mqtt_client = mqtt_client
         self.class_name = self.__class__.__name__.lower()
@@ -39,10 +40,12 @@ class RegisterControllerSubcriber:
         try:
             controller = AbandonControllerOperation.register(payload.controller_id)
             response_topic = RESPONSE_TOPIC.format(device_id=payload.controller_id)
+
             if controller:
                 payload = self.build_existing_controller_payload(controller)
             else:
                 payload = self.build_pending_controller_payload(payload.controller_id)
+
             logger.info(f"{self.class_name}_response_topic", response_topic=response_topic, controller=controller, payload=payload)
             self.mqtt_client.publish(topic=response_topic, payload=payload)
         except Exception as e:

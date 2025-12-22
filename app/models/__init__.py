@@ -13,6 +13,7 @@ from .tenant import Tenant, TenantStatus
 from .tenant_member import TenantMember
 from .store import Store, StoreStatus
 from .user import User, UserRole, UserStatus
+from .notification import Notification, NotificationType, NotificationStatus, NotificationChannel
 from .order import Order, OrderStatus, OrderDetail, OrderDetailStatus, PromotionOrder
 from .payment import (
     Payment, 
@@ -61,6 +62,12 @@ __all__ = [
     "User",
     "UserRole", 
     "UserStatus",
+
+    # Notification
+    "Notification",
+    "NotificationType",
+    "NotificationStatus",
+    "NotificationChannel",
 
     # Order
     "Order",

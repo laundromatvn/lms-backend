@@ -50,7 +50,10 @@ class GeneratePaymentDetailsOperation:
         self.order = self.payment.order
         self.store = self.payment.store
 
-    def _validate(self):
+    def _validate(self):        
+        if self.payment.payment_method == PaymentMethod.DISCOUNT_FULL and self.payment.total_amount == 0:
+            return
+
         if self.payment.status != PaymentStatus.NEW:
             raise ValueError(
                 f"Payment {self.payment.id} cannot generate details in status {self.payment.status.value}"

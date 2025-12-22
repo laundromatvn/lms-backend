@@ -2,10 +2,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from typing import List
 
-from app.apis.deps import get_current_user
+from app.apis.deps import require_permissions
 from app.models.user import User
 from app.operations.dashboard.list_overview_order_operation import ListOverviewOrderOperation
-from app.operations.order import OrderOperation
 from app.operations.dashboard.get_overview_order_by_day_bar_chart_operation import GetOverviewOrderByDayBarChartOperation
 from app.schemas.dashboard.overview import (
     OverviewKeyMetricsQueryParams,
@@ -21,13 +20,11 @@ from app.schemas.dashboard.overview import (
 )
 from app.operations.dashboard.get_dashboard_overview_key_metrics_operation import GetDashboardOverviewKeyMetricsOperation
 from app.operations.dashboard.get_overview_revenue_by_day_bar_chart_operation import GetOverviewRevenueByDayBarChartOperation
-from app.operations.dashboard.get_overview_store_key_metrics_operation import GetOverviewStoreKeyMetricsOperation
 from app.operations.dashboard.list_overview_order_operation import ListOverviewOrderOperation
 from app.operations.dashboard.get_overview_machine_status_line_chart_operation import GetOverviewMachineStatusLineChartOperation
 from app.utils.pagination import get_total_pages
-from app.utils.timezone import get_tzinfo
+from app.utils.timezone import get_tzinfo, to_utc
 from app.schemas.pagination import PaginatedResponse
-
 
 router = APIRouter()
 
@@ -35,10 +32,12 @@ router = APIRouter()
 @router.get("/key-metrics", response_model=OverviewKeyMetricsResponse)
 async def get_overview_key_metrics(
     query_params: OverviewKeyMetricsQueryParams = Depends(),
+    _: User = Depends(require_permissions(["dashboard.overview.view"])),
 ):  
     operation = GetDashboardOverviewKeyMetricsOperation(
         tenant_id=query_params.tenant_id,
         store_id=query_params.store_id,
+        query_params=query_params,
     )
     result = operation.execute()
     return result
@@ -47,14 +46,19 @@ async def get_overview_key_metrics(
 @router.get("/order-by-day-bar-chart", response_model=OverviewOrderByDayBarChartResponse)
 async def get_overview_order_by_day_bar_chart(
     query_params: OverviewOrderByDayQueryParams = Depends(),
+    _: User = Depends(require_permissions(["dashboard.overview.view"])),
 ):  
     tzinfo = get_tzinfo()
     now = datetime.now(tzinfo)
 
     if not query_params.start_date and not query_params.end_date:
+        # Create default dates in Vietnam timezone, then convert to UTC
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end_date = now
+        start_date = to_utc(start_date)
+        end_date = to_utc(end_date)
     else:
+        # Dates are already converted to UTC by the validator
         start_date = query_params.start_date
         end_date = query_params.end_date
 
@@ -70,14 +74,19 @@ async def get_overview_order_by_day_bar_chart(
 @router.get("/revenue-by-day-bar-chart", response_model=OverviewRevenueByDayBarChartResponse)
 async def get_overview_revenue_by_day_bar_chart(
     query_params: OverviewRevenueByDayQueryParams = Depends(),
+    _: User = Depends(require_permissions(["dashboard.overview.view"])),
 ):  
     tzinfo = get_tzinfo()
     now = datetime.now(tzinfo)
 
     if not query_params.start_date and not query_params.end_date:
+        # Create default dates in Vietnam timezone, then convert to UTC
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end_date = now
+        start_date = to_utc(start_date)
+        end_date = to_utc(end_date)
     else:
+        # Dates are already converted to UTC by the validator
         start_date = query_params.start_date
         end_date = query_params.end_date
 
@@ -93,7 +102,9 @@ async def get_overview_revenue_by_day_bar_chart(
 @router.get("/order", response_model=PaginatedResponse[ListOverviewOrdersResponseItem])
 async def list_overview_orders(
     query_params: ListOverviewOrdersQueryParams = Depends(),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions([
+        "order.list",
+    ])),
 ):
     total, data = ListOverviewOrderOperation.execute(
         current_user=current_user,
@@ -135,6 +146,9 @@ async def list_overview_orders(
 @router.get("/machine-status-line-chart", response_model=List[MachineStatusLineChartData])
 async def get_machine_status_line_chart(
     query_params: GetOverviewMachineStatusLineChartQueryParams = Depends(),
+    _: User = Depends(require_permissions([
+        "machine.list",
+    ])),
 ):  
     result = GetOverviewMachineStatusLineChartOperation.execute(
         store_id=query_params.store_id,
@@ -143,3 +157,4 @@ async def get_machine_status_line_chart(
         end_date=query_params.end_date,
     )
     return result
+

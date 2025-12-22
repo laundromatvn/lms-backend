@@ -11,7 +11,7 @@ from app.enums.mqtt import MQTTEventTypeEnum
 from app.libs.database import with_db_session_classmethod
 from app.libs.mqtt import mqtt_client
 from app.models.machine import Machine, MachineType, MachineStatus
-from app.models.controller import Controller
+from app.models.controller import Controller, ControllerStatus
 from app.models.store import Store
 from app.models.tenant_member import TenantMember
 from app.models.user import User
@@ -157,14 +157,6 @@ class MachineOperation:
                 f"Relay {request.relay_no} is already in use for this controller"
             )
 
-        # Check if machine name is already taken (only if name is provided)
-        if request.name:
-            existing_name = (
-                db.query(Machine).filter(Machine.name == request.name).first()
-            )
-            if existing_name:
-                raise ValueError(f"Machine name '{request.name}' is already in use")
-
         # Check if relay number is within controller's total_relays limit
         if request.relay_no > controller.total_relays:
             raise ValueError(
@@ -202,18 +194,6 @@ class MachineOperation:
             raise ValueError("Machine not found")
 
         update_data = request.model_dump(exclude_unset=True)
-
-        # Check if name is being updated and if it's unique (only if name is provided)
-        if "name" in update_data and update_data["name"] is not None:
-            existing_name = (
-                db.query(Machine)
-                .filter(Machine.name == update_data["name"], Machine.id != machine_id)
-                .first()
-            )
-            if existing_name:
-                raise ValueError(
-                    f"Machine name '{update_data['name']}' is already in use"
-                )
 
         for field, value in update_data.items():
             if hasattr(machine, field):
@@ -315,7 +295,12 @@ class MachineOperation:
         total_amount: Decimal = None,
         pulse_value: int = 10,
     ) -> Machine:
-        machine = db.query(Machine).filter_by(id=machine_id).first()
+        machine = (
+            db.query(Machine).filter(
+                Machine.id == machine_id,
+                Machine.deleted_at.is_(None),
+            ).first()
+        )
         if not machine:
             raise ValueError("Machine not found")
 
@@ -369,7 +354,10 @@ class MachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .filter(
                 Controller.device_id == controller_device_id,
+                Controller.deleted_at.is_(None),
+                Controller.status != ControllerStatus.INACTIVE,
                 Machine.relay_no == machine_relay_no,
+                Machine.deleted_at.is_(None),
             )
             .first()
         )
@@ -397,7 +385,10 @@ class MachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .filter(
                 Controller.device_id == controller_device_id,
+                Controller.deleted_at.is_(None),
+                Controller.status != ControllerStatus.INACTIVE,
                 Machine.relay_no == machine_relay_no,
+                Machine.deleted_at.is_(None),
             )
             .first()
         )
@@ -426,15 +417,18 @@ class MachineOperation:
             .join(Controller, Machine.controller_id == Controller.id)
             .filter(
                 Controller.device_id == controller_device_id,
+                Controller.deleted_at.is_(None),
+                Controller.status != ControllerStatus.INACTIVE,
                 Machine.relay_no == machine_relay_no,
+                Machine.deleted_at.is_(None),
             )
             .first()
         )
-
         if not machine:
             raise ValueError("Machine not found")
 
         machine.status = status.upper()
+        db.add(machine)
         db.commit()
         db.refresh(machine)
 

@@ -1,8 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.apis.deps import get_current_user
+from sqlalchemy.orm import Session
+
+from app.apis.deps import require_permissions
+from app.libs.database import get_db
 from app.models.user import User
-from app.operations.tenant.tenant_operation import TenantOperation
+from app.operations.tenant.list_tenants import ListTenantsOperation
+from app.operations.tenant.get_tenant import GetTenantOperation
+from app.operations.tenant.update_tenant import UpdateTenantOperation
+from app.operations.tenant.create_tenant import CreateTenantOperation    
+from app.operations.tenant.delete_tenant import DeleteTenantOperation
 from app.schemas.tenant import (
     TenantSerializer,
     AddTenantRequest,
@@ -20,66 +27,88 @@ router = APIRouter()
 @router.get("", response_model=PaginatedResponse[TenantSerializer])
 def list_tenants(
     query_params: ListTenantQueryParams = Depends(),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["tenant.list"])),
+    db: Session = Depends(get_db),
 ):
     try:
-        total, tenants = TenantOperation.list(current_user, query_params)
-        return {
-            "page": query_params.page,
-            "page_size": query_params.page_size,
-            "total": total,
-            "total_pages": get_total_pages(total, query_params.page_size),
-            "data": tenants,
-        }
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+        operation = ListTenantsOperation(db, current_user, query_params)
+        total, tenants = operation.execute()
+
+        return PaginatedResponse(
+            page=query_params.page,
+            page_size=query_params.page_size,
+            total=total,
+            total_pages=get_total_pages(total, query_params.page_size),
+            data=tenants,
+        )
+    except PermissionError:
+        raise HTTPException(status_code=403)
     except Exception as e:
         logger.error("List tenants failed", error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=422)
 
 
-@router.post("", response_model=TenantSerializer)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=TenantSerializer)
 def add_tenant(
     request: AddTenantRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["tenant.create"])),
+    db: Session = Depends(get_db),
 ):
     try:
-        return TenantOperation.add(current_user, request)
-    except ValueError:
-        raise HTTPException(status_code=400, detail=str(e))
+        operation = CreateTenantOperation(db, current_user, request)
+        tenant = operation.execute()
+        return tenant
     except Exception as e:
         logger.error("Add tenant failed", type=type(e).__name__, error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=422)
 
 
 @router.get("/{tenant_id}", response_model=TenantSerializer)
 def get_tenant(
     tenant_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["tenant.get"])),
+    db: Session = Depends(get_db),
 ):
     try:
-        return TenantOperation.get(current_user, tenant_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail=str(e))
+        operation = GetTenantOperation(db, current_user, tenant_id)
+        tenant = operation.execute()
+        return tenant
     except PermissionError:
-        raise HTTPException(status_code=403, detail=str(e))
+        raise HTTPException(status_code=403)
     except Exception as e:
         logger.error("Get tenant failed", type=type(e).__name__, error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=422)
 
 
 @router.patch("/{tenant_id}", response_model=TenantSerializer)
 def update_tenant(
     tenant_id: str,
     request: UpdateTenantRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["tenant.update"])),
+    db: Session = Depends(get_db),
 ):
     try:
-        return TenantOperation.update_partially(current_user, tenant_id, request)
-    except ValueError:
-        raise HTTPException(status_code=404, detail=str(e))
+        operation = UpdateTenantOperation(db, current_user, tenant_id, request)
+        tenant = operation.execute()
+        return tenant
     except PermissionError:
-        raise HTTPException(status_code=403, detail=str(e))
+        raise HTTPException(status_code=403)
     except Exception as e:
         logger.error("Update tenant failed", type=type(e).__name__, error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=422)
+
+
+@router.delete("/{tenant_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_tenant(
+    tenant_id: str,
+    current_user: User = Depends(require_permissions(["tenant.delete"])),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = DeleteTenantOperation(db, current_user, tenant_id)
+        operation.execute()
+    except PermissionError:
+        raise HTTPException(status_code=403)
+    except Exception as e:
+        logger.error("Delete tenant failed", type=type(e).__name__, error=str(e))
+        raise HTTPException(status_code=422)

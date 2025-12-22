@@ -1,9 +1,12 @@
 from datetime import datetime
+from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from app.models.user import UserRole, UserStatus
+from app.models.notification import NotificationType
+from app.schemas.pagination import Pagination
 
 
 class UserSerializer(BaseModel):
@@ -19,11 +22,14 @@ class UserSerializer(BaseModel):
     status: UserStatus
     
     
+class UserPermissionSerializer(BaseModel):
+    permissions: List[str]
+    
+    
 class CreateUserRequest(BaseModel):
     email: str | None = None
     phone: str | None = None
     role: UserRole
-    status: UserStatus
     password: str
 
 
@@ -37,3 +43,19 @@ class UpdateUserRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     password: str
+
+
+class ListAssignedStoresQueryParams(Pagination):
+    pass
+
+
+class AssignMemberToStoreRequest(BaseModel):
+    store_ids: List[UUID]
+
+
+class ListNotificationsQueryParams(Pagination):
+    type: NotificationType | None = None
+
+
+class ListAvailableUserTenantAdminsRequest(Pagination):
+    pass

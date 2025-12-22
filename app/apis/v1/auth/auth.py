@@ -55,7 +55,7 @@ async def sign_in(request: SignInRequest):
         )
     except Exception as e:
         logger.error("Sign in failed", error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.post("/refresh-token", response_model=RefreshTokenResponse)

@@ -9,26 +9,27 @@ from app.schemas.machine import MachineSerializer
 from app.schemas.pagination import Pagination
 
 
+
 class QRPaymentMethodDetails(BaseModel):
-    bank_code: str
+    bank_code: str | None = None
     bank_name: str | None = None
-    bank_account_number: str
-    bank_account_name: str
+    bank_account_number: str | None = None
+    bank_account_name: str | None = None
     
     
 class VNPAYPaymentMethodDetails(BaseModel):
-    merchant_code: str
-    terminal_code: str
-    init_secret_key: str
-    query_secret_key: str
-    ipnv3_secret_key: str
+    merchant_code: str | None = None
+    terminal_code: str | None = None
+    init_secret_key: str | None = None
+    query_secret_key: str | None = None
+    ipnv3_secret_key: str | None = None
 
 
 class PaymentMethod(BaseModel):
     payment_method: str
     payment_provider: str | None = None
     is_enabled: bool
-    details: Union[QRPaymentMethodDetails, VNPAYPaymentMethodDetails]
+    details: Any | None = None
 
 
 class StoreSerializer(BaseModel):
@@ -54,6 +55,9 @@ class StoreSerializer(BaseModel):
 class ListStoreQueryParams(Pagination):
     tenant_id: UUID | None = None
     status: StoreStatus | None = None
+    search: str | None = None
+    order_by: str | None = None
+    order_direction: str | None = None
 
 
 class AddStoreRequest(BaseModel):

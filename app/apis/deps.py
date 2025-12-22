@@ -1,15 +1,17 @@
 import base64
 from fastapi import HTTPException, Header, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from typing import Optional
+from typing import Optional, Callable
 
 from app.core.logging import logger
 from app.core.config import settings
+from app.operations.permission.authorize_user_permission import AuthorizeUserPermissionOperation
 from app.utils.security.jwt import verify_token, verify_vietqr_internal_user
 from app.libs.mqtt import mqtt_client, MQTTClient
+from app.models.user import User
 
 
-def get_current_user(authorization: Optional[str] = Header(None)):
+def get_current_user(authorization: Optional[str] = Header(None)) -> Optional[User]:
     if not authorization:
         raise HTTPException(status_code=401)
 
@@ -81,3 +83,12 @@ def get_mqtt_client_dependency() -> MQTTClient:
             status_code=503,
             detail="MQTT service unavailable"
         )
+
+
+def require_permissions(perms: list[str]) -> Callable[[User], User]:
+    def dependency(user: User = Depends(get_current_user)):
+        is_authorized = AuthorizeUserPermissionOperation().execute(user, perms)
+        if not is_authorized:
+            raise HTTPException(status_code=403)
+        return user
+    return dependency

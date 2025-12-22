@@ -1,15 +1,37 @@
-from fastapi import APIRouter, Depends, HTTPException
+from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
+from app.core.logging import logger
+from app.libs.database import get_db
 from app.models.user import User
+from app.operations.user.create_user import CreateUserOperation
+from app.schemas.notification import NotificationSerializer
+from app.schemas.store import StoreSerializer
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import (
     UserSerializer,
     UpdateUserRequest,
     ResetPasswordRequest,
     CreateUserRequest,
+    ListAssignedStoresQueryParams,
+    AssignMemberToStoreRequest,
+    ListNotificationsQueryParams,
+    ListAvailableUserTenantAdminsRequest,
 )
-from app.apis.deps import get_current_user
+from app.apis.deps import get_current_user, require_permissions
+from app.operations.permission.get_user_permissions import GetUserPermissionsOperation
 from app.operations.user.user_operation import UserOperation
-
+from app.operations.user.assign_member_to_store import AssignMemberToStoreOperation
+from app.operations.user.list_assigned_stores import ListAssignedStoresOperation
+from app.operations.user.delete_assigned_store import DeleteAssignedStoreOperation
+from app.operations.user.list_notifications import ListNotificationsOperation
+from app.operations.user.clear_all_notifications import ClearAllNotificationsOperation
+from app.operations.user.list_available_user_tenant_admins import (
+    ListAvailableUserTenantAdminsOperation,
+)
+from app.schemas.user import UserPermissionSerializer
+from app.utils.pagination import get_total_pages
 
 router = APIRouter()
 
@@ -17,6 +39,76 @@ router = APIRouter()
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user.to_dict()
+
+
+@router.get("/me/permissions", response_model=UserPermissionSerializer)
+def get_me_permissions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    permissions = GetUserPermissionsOperation().execute(db, current_user)
+    return UserPermissionSerializer(permissions=permissions)
+
+
+@router.get(
+    "/me/notifications", response_model=PaginatedResponse[NotificationSerializer]
+)
+def list_notifications(
+    query_params: ListNotificationsQueryParams = Depends(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = ListNotificationsOperation(db, current_user, query_params)
+        total, notifications = operation.execute()
+
+        return PaginatedResponse(
+            page=query_params.page,
+            page_size=query_params.page_size,
+            total=total,
+            total_pages=get_total_pages(total, query_params.page_size),
+            data=notifications,
+        )
+    except Exception as e:
+        logger.error("List notifications failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/me/notifications/clear", status_code=status.HTTP_204_NO_CONTENT)
+def clear_all_notifications(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = ClearAllNotificationsOperation(db, current_user)
+        operation.execute()
+    except Exception as e:
+        logger.error("Clear all notifications failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get(
+    "/available-tenant-admins", response_model=PaginatedResponse[UserSerializer]
+)
+def list_available_tenant_admins(
+    request: ListAvailableUserTenantAdminsRequest = Depends(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = ListAvailableUserTenantAdminsOperation(db, current_user, request)
+        total, users = operation.execute()
+
+        return PaginatedResponse(
+            page=request.page,
+            page_size=request.page_size,
+            total=total,
+            total_pages=get_total_pages(total, request.page_size),
+            data=users,
+        )
+    except Exception as e:
+        logger.error("List available tenant admins failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{user_id}/reset-password", response_model=UserSerializer)
@@ -34,13 +126,15 @@ def reset_password(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("", response_model=UserSerializer)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=UserSerializer)
 def create_user(
     request: CreateUserRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["user.create"])),
+    db: Session = Depends(get_db),
 ):
     try:
-        user = UserOperation.create(current_user, request)
+        operation = CreateUserOperation(db, current_user, request)
+        user = operation.execute()
         return user
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -74,4 +168,73 @@ def update_user(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get(
+    "/{user_id}/assigned-stores", response_model=PaginatedResponse[StoreSerializer]
+)
+def list_assigned_stores(
+    user_id: str,
+    query_params: ListAssignedStoresQueryParams = Depends(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = ListAssignedStoresOperation(current_user, user_id, query_params)
+        total, stores = operation.execute(db)
+
+        return {
+            "page": query_params.page,
+            "page_size": query_params.page_size,
+            "total": total,
+            "total_pages": get_total_pages(total, query_params.page_size),
+            "data": stores,
+        }
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        logger.error("List assigned stores failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{user_id}/assign-member-to-stores", status_code=status.HTTP_201_CREATED)
+def assign_member_to_store(
+    user_id: UUID,
+    request: AssignMemberToStoreRequest,
+    current_user: User = Depends(require_permissions(["store_member.create"])),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = AssignMemberToStoreOperation(
+            current_user, user_id, request.store_ids
+        )
+        operation.execute(db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        logger.error("Assign member to store failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete(
+    "/{user_id}/assigned-stores/{store_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_assigned_store(
+    user_id: UUID,
+    store_id: UUID,
+    current_user: User = Depends(require_permissions(["store_member.delete"])),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = DeleteAssignedStoreOperation(current_user, user_id, store_id)
+        operation.execute(db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        logger.error("Delete assigned store failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))

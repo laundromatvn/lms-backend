@@ -21,4 +21,3 @@ class HandleUpdateFirmwareAckOperation:
         db.add(deployment)
         db.commit()
 
-

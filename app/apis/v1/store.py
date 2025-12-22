@@ -12,6 +12,7 @@ from app.operations.store.list_stores import ListStoresOperation
 from app.operations.store.store_operation import StoreOperation
 from app.operations.store.store_machine_opeartion import StoreMachineOperation
 from app.operations.store.get_store_payment_methods_operation import GetStorePaymentMethodsOperation
+from app.operations.store.delete_store import DeleteStoreOperation
 from app.operations.store_member import (
     AddStoreMemberOperation,
     ListStoreMembersOperation,
@@ -77,12 +78,10 @@ def list_stores(
 @router.get("/{store_id}", response_model=StoreSerializer)
 def get_store(
     store_id: UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["store.get"])),
 ):
     try:
         return StoreOperation.get(current_user, store_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error("Get store failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
@@ -92,16 +91,30 @@ def get_store(
 def update_store(
     store_id: UUID,
     request: UpdateStoreRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["store.update"])),
 ):
     try:
         return StoreOperation.update_partially(current_user, store_id, request)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         logger.error("Update store failed", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.delete("/{store_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_store(
+    store_id: UUID,
+    current_user: User = Depends(require_permissions(["store.delete"])),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = DeleteStoreOperation(db, current_user, store_id)
+        operation.execute()
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        logger.error("Delete store failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 

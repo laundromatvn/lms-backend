@@ -44,15 +44,15 @@ class FlashNewFirmwareToControllersOperation:
         firmware = self._get_firmware(db, self.firmware_id)
         if not firmware:
             raise ValueError("Firmware not found")
-        
+
         controllers = self._get_controllers(db, self.controller_ids)
         if not controllers:
             raise ValueError("Controllers not found")
-        
+
         existing_firmware_deployments = self._get_existing_firmware_deployment(
             db, firmware.id, [controller.id for controller in controllers],
         )
-        
+
         for controller in controllers:
             if controller.id in existing_firmware_deployments:
                 deployment = existing_firmware_deployments[controller.id]
@@ -68,6 +68,8 @@ class FlashNewFirmwareToControllersOperation:
                 db.flush()
 
             self._publish_firmware_deployment(controller, firmware, deployment)
+            # TODO: remove this logic after handling another statuses
+            self._complete_firmware_deployment(db, deployment, controller)
         db.commit()
 
     def _get_current_user(self, db: Session, current_user_id: UUID) -> User:
@@ -141,4 +143,11 @@ class FlashNewFirmwareToControllersOperation:
 
         return payload
 
+    def _complete_firmware_deployment(self, db: Session, deployment: FirmwareDeployment, controller: Controller) -> None:
+        deployment.status = FirmwareDeploymentStatus.COMPLETED
+        db.add(deployment)
 
+        controller.provisioned_firmware_id = deployment.firmware_id
+        db.add(controller)
+
+        db.commit()

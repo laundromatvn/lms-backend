@@ -57,7 +57,7 @@ class ListControllersOperation:
                 Controller.status.notin_([ControllerStatus.INACTIVE]),
             )
         )
-        
+
         if self.current_user.is_tenant_admin:
             store_ids_sub_query = (
                 self.db.query(Store.id)

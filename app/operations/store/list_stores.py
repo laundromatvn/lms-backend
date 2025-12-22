@@ -2,7 +2,7 @@ from typing import List
 from sqlalchemy.orm import Session, Query
 
 from app.models.user import User
-from app.models.store import Store
+from app.models.store import Store, StoreStatus
 from app.models.store_member import StoreMember
 from app.models.tenant import Tenant
 from app.models.tenant_member import TenantMember
@@ -61,6 +61,12 @@ class ListStoresOperation:
             )
             
             base_query = base_query.filter(Store.id.in_(assigned_store_ids_sub_query))
+            
+        if not self.current_user.is_admin:
+            base_query = base_query.filter(
+                Store.deleted_at.is_(None),
+                Store.status.notin_([StoreStatus.INACTIVE]),
+            )
 
         return base_query
 

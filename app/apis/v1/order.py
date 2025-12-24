@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy.orm import Session
 
-from app.apis.deps import get_current_user
+from app.apis.deps import get_current_user, require_permissions
 from app.core.logging import logger
 from app.libs.database import get_db
 from app.models.payment import PaymentStatus, PaymentProvider
@@ -11,6 +11,7 @@ from app.models.payment import Payment
 from app.models.order import Order
 from app.models.user import User, UserRole
 from app.operations.order import OrderOperation
+from app.operations.order.get_order import GetOrderOperation
 from app.operations.order.list_orders import ListOrdersOperation
 from app.operations.order.order_detail_operation import OrderDetailOperation
 from app.operations.order.sync_up_order_operation import SyncUpOrderOperation
@@ -275,19 +276,14 @@ async def check_promotion(
 @router.get("/{order_id}", response_model=OrderResponse)
 async def get_order(
     order_id: uuid.UUID = Path(..., description="Order ID"),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(require_permissions(["order.get"])),
     db: Session = Depends(get_db),
 ):
-    """
-    Get order by ID.
-    
-    Returns the order with all its details including promotion information (sub_total, discount_amount, promotion_summary, total_amount).
-    """
     try:
-        order = OrderOperation.get_order_by_id(order_id)
+        operation = GetOrderOperation(db, current_user, order_id)
+        order = operation.execute()
         return order
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
-        logger.error(f"Error getting order: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=422, detail=str(e))

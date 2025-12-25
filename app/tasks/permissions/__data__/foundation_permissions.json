@@ -508,5 +508,35 @@
         "description": "View Dashboard Overview"
       }
     ]
+  },
+  {
+    "group": "subscription_plan",
+    "permissions": [
+      {
+        "code": "subscription_plan.list",
+        "name": "List Subscription Plans",
+        "description": "List Subscription Plans"
+      },
+      {
+        "code": "subscription_plan.get",
+        "name": "Get Subscription Plan",
+        "description": "Get Subscription Plan"
+      },
+      {
+        "code": "subscription_plan.create",
+        "name": "Create Subscription Plan",
+        "description": "Create Subscription Plan"
+      },
+      {
+        "code": "subscription_plan.update",
+        "name": "Update Subscription Plan",
+        "description": "Update Subscription Plan"
+      },
+      {
+        "code": "subscription_plan.delete",
+        "name": "Delete Subscription Plan",
+        "description": "Delete Subscription Plan"
+      }
+    ]
   }
 ]

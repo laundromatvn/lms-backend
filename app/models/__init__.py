@@ -27,6 +27,7 @@ from .promotion_campaign import (
     PromotionCampaign,
     PromotionCampaignStatus,
 )
+from .subscription_plan import SubscriptionPlan
 from .system_task import SystemTask, SystemTaskStatus
 
 __all__ = [
@@ -96,4 +97,7 @@ __all__ = [
     # SystemTask
     "SystemTask",
     "SystemTaskStatus",
+
+    # Subscription Plan
+    "SubscriptionPlan",
 ]

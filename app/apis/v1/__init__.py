@@ -10,6 +10,7 @@ from app.apis.v1.notification import router as notification_router
 from app.apis.v1.tenant import router as tenant_router
 from app.apis.v1.tenant_member import router as tenant_member_router
 from app.apis.v1.store import router as store_router
+from app.apis.v1.subscription_plan import router as subscription_plan_router
 from app.apis.v1.system_task import router as system_task_router
 from app.apis.v1.order import router as order_router
 from app.apis.v1.payment import router as payment_router
@@ -33,6 +34,7 @@ router.include_router(notification_router, prefix="/notification", tags=["Notifi
 router.include_router(tenant_router, prefix="/tenant", tags=["Tenant"])
 router.include_router(tenant_member_router, prefix="/tenant-member", tags=["Tenant Member"])
 router.include_router(store_router, prefix="/store", tags=["Store"])
+router.include_router(subscription_plan_router, prefix="/subscription-plan", tags=["Subscription Plan"])
 router.include_router(system_task_router, prefix="/system-task", tags=["System Task"])
 router.include_router(order_router, prefix="/order", tags=["Order"])
 router.include_router(payment_router, prefix="/payment", tags=["Payment"])

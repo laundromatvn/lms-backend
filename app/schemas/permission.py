@@ -48,7 +48,7 @@ class PermissionGroupSerializer(BaseModel):
 class PermissionGroupCreatePayload(BaseModel):
     name: str
     description: str | None = None
-    is_enabled: bool
+    is_enabled: bool | None = None
     tenant_id: UUID | None = None
     
     

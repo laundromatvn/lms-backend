@@ -33,3 +33,4 @@ class PermissionGroup(Base):
     tenant_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=True, index=True)
 
     tenant = relationship("Tenant", back_populates="permission_groups")
+    subscription_plans = relationship("SubscriptionPlan", back_populates="permission_group")

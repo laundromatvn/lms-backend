@@ -35,7 +35,9 @@ class MachineMetricSubscriber:
         try:
             event_type = payload.event_type
             if event_type == MQTTEventTypeEnum.MACHINE_STATE.value:
-                self._handle_machine_state(payload, topic)
+                logger.info("pause consuming machine state messages", payload=payload)
+                pass
+                # self._handle_machine_state(payload, topic)
             else:
                 raise ValueError(f"Unsupported event type: {event_type}")
         except Exception as e:

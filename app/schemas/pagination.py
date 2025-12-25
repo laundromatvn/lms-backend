@@ -8,7 +8,7 @@ T = TypeVar('T')
 class Pagination(BaseModel):
     """Base pagination parameters for query endpoints"""
     page: int = Field(default=1, ge=1, description="Page number (1-based)")
-    page_size: int = Field(default=10, ge=1, le=100, description="Number of items per page")
+    page_size: int = Field(default=10, ge=1, le=1000, description="Number of items per page")
 
 
 class PaginatedResponse(BaseModel, Generic[T]):

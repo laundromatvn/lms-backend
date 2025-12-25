@@ -26,10 +26,9 @@ class ListPermissionGroupsOperation:
         base_query = self._apply_scope(base_query)
         base_query = self._apply_filters(base_query)
         base_query = self._apply_ordering(base_query)
-        base_query = self._apply_pagination(base_query)
 
         total = base_query.count()
-        permission_groups = base_query.all()
+        permission_groups = self._apply_pagination(base_query).all()
 
         return total, permission_groups
 

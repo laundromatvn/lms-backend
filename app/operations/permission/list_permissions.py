@@ -30,4 +30,3 @@ class ListPermissionsOperation:
         total = base_query.count()
         permissions = base_query.offset((query_params.page - 1) * query_params.page_size).limit(query_params.page_size).all()
         return total, permissions
-

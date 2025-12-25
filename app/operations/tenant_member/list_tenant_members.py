@@ -23,10 +23,9 @@ class ListTenantMembersOperation:
 
         base_query = self._apply_filters(base_query)
         base_query = self._apply_ordering(base_query)
-        base_query = self._apply_pagination(base_query)
 
         total = base_query.count()
-        tenant_members = base_query.all()
+        tenant_members = self._apply_pagination(base_query).all()
 
         return total, tenant_members
 

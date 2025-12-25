@@ -23,7 +23,11 @@ class AddPermissionsToGroupOperation:
 
     def execute(self) -> None:
         self._validate()
-        self._add_permissions()
+        
+        if self.permissions:
+            self._add_permissions()
+        else:
+            self._remove_all_permissions()
 
     def _validate(self) -> None:
         self.permissions = (
@@ -38,10 +42,9 @@ class AddPermissionsToGroupOperation:
 
     def _add_permissions(self) -> None:
         # clean all existing permissions for this group
-        if self.permissions:
-            self.db.query(PermissionGroupPermission).filter(
-                PermissionGroupPermission.permission_group_id == self.permission_group_id
-            ).delete()
+        self.db.query(PermissionGroupPermission).filter(
+            PermissionGroupPermission.permission_group_id == self.permission_group_id
+        ).delete()
 
         # add new permissions
         permission_group_permissions = []
@@ -51,5 +54,12 @@ class AddPermissionsToGroupOperation:
                 permission_id=permission.id)
             permission_group_permissions.append(permission_group_permission)
         self.db.add_all(permission_group_permissions)
+
+        self.db.commit()
+
+    def _remove_all_permissions(self) -> None:
+        self.db.query(PermissionGroupPermission).filter(
+            PermissionGroupPermission.permission_group_id == self.permission_group_id
+        ).delete()
 
         self.db.commit()

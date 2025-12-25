@@ -5,6 +5,7 @@ from app.schemas.permission import PermissionEditRequest
 
     
 class CreatePermissionOperation:
+
     def execute(self, db: Session, request: PermissionEditRequest) -> Permission:
         permission = Permission(
             code=request.code,

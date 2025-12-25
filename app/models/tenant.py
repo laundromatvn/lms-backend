@@ -51,6 +51,7 @@ class Tenant(Base):
     payments = relationship("Payment", back_populates="tenant")
     datapoints = relationship("Datapoint", back_populates="tenant")
     promotion_campaigns = relationship("PromotionCampaign", back_populates="tenant")
+    permission_groups = relationship("PermissionGroup", back_populates="tenant")
 
     @validates('status')
     def validate_status(self, key: str, status) -> TenantStatus:

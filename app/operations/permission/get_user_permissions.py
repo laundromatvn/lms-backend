@@ -85,7 +85,7 @@ class GetUserPermissionsOperation:
             db.query(Permission.code)
             .filter(Permission.is_enabled == True)
         )
-        
+
         if current_user.role == UserRole.CUSTOMER:
             return []
 

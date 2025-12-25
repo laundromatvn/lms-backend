@@ -440,6 +440,36 @@
     ]
   },
   {
+    "group": "permission_group",
+    "permissions": [
+      {
+        "code": "permission_group.list",
+        "name": "List Permission Groups",
+        "description": "List Permission Groups"
+      },
+      {
+        "code": "permission_group.get",
+        "name": "Get Permission Group",
+        "description": "Get Permission Group"
+      },
+      {
+        "code": "permission_group.create",
+        "name": "Create Permission Group",
+        "description": "Create Permission Group"
+      },
+      {
+        "code": "permission_group.update",
+        "name": "Update Permission Group",
+        "description": "Update Permission Group"
+      },
+      {
+        "code": "permission_group.delete",
+        "name": "Delete Permission Group",
+        "description": "Delete Permission Group"
+      }
+    ]
+  },
+  {
     "group": "system_task",
     "permissions": [
       {

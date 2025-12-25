@@ -12,6 +12,9 @@ from .machine import Machine, MachineType, MachineStatus
 from .tenant import Tenant, TenantStatus
 from .tenant_member import TenantMember
 from .store import Store, StoreStatus
+from .store_member import StoreMember
+from .permission_group import PermissionGroup
+from .permission import Permission
 from .user import User, UserRole, UserStatus
 from .notification import Notification, NotificationType, NotificationStatus, NotificationChannel
 from .order import Order, OrderStatus, OrderDetail, OrderDetailStatus, PromotionOrder
@@ -57,6 +60,11 @@ __all__ = [
     # Store
     "Store",
     "StoreStatus",
+    "StoreMember",
+
+    # Permission
+    "PermissionGroup",
+    "Permission",
 
     # User
     "User",

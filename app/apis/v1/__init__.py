@@ -14,6 +14,7 @@ from app.apis.v1.system_task import router as system_task_router
 from app.apis.v1.order import router as order_router
 from app.apis.v1.payment import router as payment_router
 from app.apis.v1.permissions import router as permissions_router
+from app.apis.v1.permission_groups import router as permission_groups_router
 from app.apis.v1.promotion_campaign import router as promotion_campaign_router
 from app.apis.v1.vietqr import router as vietqr_router
 from app.apis.v1.vnpay import router as vnpay_router
@@ -36,8 +37,8 @@ router.include_router(system_task_router, prefix="/system-task", tags=["System T
 router.include_router(order_router, prefix="/order", tags=["Order"])
 router.include_router(payment_router, prefix="/payment", tags=["Payment"])
 router.include_router(permissions_router, prefix="/permission", tags=["Permissions"])
+router.include_router(permission_groups_router, prefix="/permission-group", tags=["Permission Groups"])
 router.include_router(promotion_campaign_router, prefix="/promotion-campaign", tags=["Promotion Campaign"])
 router.include_router(vietqr_router, prefix="/vietqr", tags=["VietQR"])
 router.include_router(vnpay_router, prefix="/vnpay", tags=["VNPAY"])
 router.include_router(user_router, prefix="/user", tags=["User"])
-

@@ -64,3 +64,13 @@ class ListPermissionGroupsQueryParams(Pagination):
     search: str | None = None
     order_by: str | None = None
     order_direction: str | None = None
+
+
+class AddPermissionsToGroupPayload(BaseModel):
+    permission_codes: list[str]
+
+
+class ListGroupPermissionsQueryParams(Pagination):
+    search: str | None = None
+    order_by: str | None = None
+    order_direction: str | None = None

@@ -12,6 +12,6 @@ class AuthorizeUserPermissionOperation:
         # TODO: Add cache logic
         user_permissions = GetUserPermissionsOperation().execute(db, user)
 
-        is_authorized = all(permission in user_permissions for permission in permissions)
+        is_authorized = any(permission in user_permissions for permission in permissions)
 
         return is_authorized

@@ -50,7 +50,7 @@ class SyncUpOrderOperation:
             if payment.status in [PaymentStatus.FAILED, PaymentStatus.CANCELLED]:
                 is_payment_failed = True
                 break
-        
+
         if not is_payment_failed:
             return
 
@@ -65,7 +65,6 @@ class SyncUpOrderOperation:
         db.add(order)
         db.commit()
         return
-
 
     @classmethod
     def __sync_up_in_progress(cls, db: Session, order: Order):

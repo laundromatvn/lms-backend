@@ -23,7 +23,7 @@ from app.services.notification_service import NotificationService
 
 class ResetNoRespondingMachinesOperation:
 
-    NO_RESPONSE_THRESHOLD = 15  # minutes
+    NO_RESPONSE_THRESHOLD = 5  # minutes
 
     """
     This operation resets the status of machines that have not responded in the last 10 minutes to IDLE.

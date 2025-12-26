@@ -1,6 +1,7 @@
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy.orm import Session, Query
+from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.models.subscription_plan import SubscriptionPlan
@@ -38,16 +39,12 @@ class UpdateSubscriptionPlanOperation:
             raise ValueError(f"Subscription plan with ID {self.subscription_plan_id} not found")
 
     def _update(self):
-        self.subscription_plan.name = self.payload.name
-        self.subscription_plan.description = self.payload.description
-        self.subscription_plan.is_enabled = self.payload.is_enabled
-        self.subscription_plan.is_default = self.payload.is_default
-        self.subscription_plan.price = self.payload.price
-        self.subscription_plan.type = self.payload.type
-        self.subscription_plan.interval = self.payload.interval
-        self.subscription_plan.interval_count = self.payload.interval_count
-        self.subscription_plan.trial_period_count = self.payload.trial_period_count
-        self.subscription_plan.permission_group_id = self.payload.permission_group_id
+        for key, value in self.payload.model_dump().items():
+            if value is not None:
+                setattr(self.subscription_plan, key, value)
         
+        self.subscription_plan.updated_by = self.current_user.id
+        self.subscription_plan.updated_at = datetime.now()
+
         self.db.add(self.subscription_plan)
         self.db.commit()

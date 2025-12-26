@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.models.subscription import SubscriptionStatus
 from app.models.subscription_plan import SubscriptionPlanInterval, SubscriptionPlanType
 from app.schemas.pagination import Pagination
 
@@ -70,3 +71,21 @@ class ListSubscriptionPlansPermissionsQueryParams(Pagination):
 
 class SetDefaultSubscriptionPlanPayload(BaseModel):
     subscription_plan_id: UUID
+
+
+class TenantSubscriptionSerializer(BaseModel):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None = None
+    created_by: UUID | None = None
+    updated_by: UUID | None = None
+    deleted_by: UUID | None = None
+    status: SubscriptionStatus
+    start_date: datetime
+    end_date: datetime | None = None
+    trial_end_date: datetime | None = None
+    next_renewal_date: datetime | None = None
+    tenant_id: UUID
+    subscription_plan_id: UUID
+    subscription_plan: SubscriptionPlanSerializer

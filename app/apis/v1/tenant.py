@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.apis.deps import require_permissions, get_current_user
 from app.libs.database import get_db
 from app.models.user import User
-from app.operations.tenant.get_active_subscrpition_plan import GetTenantSubscriptionPlanOperation
+from app.operations.tenant.get_active_subscrpition import GetTenantSubscriptionOperation
 from app.operations.tenant.get_tenant_permissions import GetTenantPermissionsOperation
 from app.operations.tenant.list_tenants import ListTenantsOperation
 from app.operations.tenant.get_tenant import GetTenantOperation
@@ -21,7 +21,7 @@ from app.schemas.tenant import (
     CreateTenantSubscriptionPlanRequest,
     ListTenantPermissionsQueryParams,
 )
-from app.schemas.subscription import SubscriptionPlanSerializer
+from app.schemas.subscription import TenantSubscriptionSerializer
 from app.schemas.permission import PermissionSerializer
 from app.core.logging import logger
 from app.schemas.pagination import PaginatedResponse
@@ -31,18 +31,16 @@ from app.utils.pagination import get_total_pages
 router = APIRouter()
 
 
-
-
-@router.get("/{tenant_id}/subscription-plan", response_model=SubscriptionPlanSerializer)
-def get_tenant_subscription_plan(
+@router.get("/{tenant_id}/subscription", response_model=TenantSubscriptionSerializer)
+def get_tenant_subscription(
     tenant_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     try:
-        operation = GetTenantSubscriptionPlanOperation(db, current_user, tenant_id)
-        subscription_plan = operation.execute()
-        return subscription_plan
+        operation = GetTenantSubscriptionOperation(db, current_user, tenant_id)
+        tenant_subscription = operation.execute()
+        return tenant_subscription
     except PermissionError:
         raise HTTPException(status_code=403)
     except Exception as e:
@@ -63,7 +61,7 @@ def add_tenant_subscription_plan(
         raise HTTPException(status_code=403)
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
-    
+
     
 @router.get("/{tenant_id}/permissions", response_model=PaginatedResponse[PermissionSerializer])
 def get_tenant_permissions(

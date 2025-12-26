@@ -2,7 +2,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session, Query
 
-from app.operations.tenant.get_active_subscrpition_plan import GetTenantSubscriptionPlanOperation
+from app.operations.tenant.get_active_subscription_plan import GetTenantSubscriptionPlanOperation
 from app.models.permission import Permission
 from app.models.permission_group_permission import PermissionGroupPermission
 from app.models.user import User

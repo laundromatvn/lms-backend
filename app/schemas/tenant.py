@@ -48,3 +48,9 @@ class ListTenantQueryParams(Pagination):
 
 class CreateTenantSubscriptionPlanRequest(BaseModel):
     subscription_plan_id: UUID
+
+
+class ListTenantPermissionsQueryParams(Pagination):
+    search: str | None = None
+    order_by: str | None = None
+    order_direction: str | None = None

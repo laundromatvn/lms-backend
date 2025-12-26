@@ -6,6 +6,7 @@ from app.apis.deps import require_permissions, get_current_user
 from app.libs.database import get_db
 from app.models.user import User
 from app.operations.tenant.get_active_subscrpition_plan import GetTenantSubscriptionPlanOperation
+from app.operations.tenant.get_tenant_permissions import GetTenantPermissionsOperation
 from app.operations.tenant.list_tenants import ListTenantsOperation
 from app.operations.tenant.get_tenant import GetTenantOperation
 from app.operations.tenant.subscribe_to_plan import SubscribeToPlanOperation
@@ -18,8 +19,10 @@ from app.schemas.tenant import (
     UpdateTenantRequest,
     ListTenantQueryParams,
     CreateTenantSubscriptionPlanRequest,
+    ListTenantPermissionsQueryParams,
 )
 from app.schemas.subscription import SubscriptionPlanSerializer
+from app.schemas.permission import PermissionSerializer
 from app.core.logging import logger
 from app.schemas.pagination import PaginatedResponse
 from app.utils.pagination import get_total_pages
@@ -56,6 +59,34 @@ def add_tenant_subscription_plan(
     try:
         operation = SubscribeToPlanOperation(db, current_user, tenant_id, request.subscription_plan_id)
         operation.execute()
+    except PermissionError:
+        raise HTTPException(status_code=403)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    
+    
+@router.get("/{tenant_id}/permissions", response_model=PaginatedResponse[PermissionSerializer])
+def get_tenant_permissions(
+    tenant_id: str,
+    query_params: ListTenantPermissionsQueryParams = Depends(),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = GetTenantPermissionsOperation(
+            db,
+            current_user,
+            tenant_id,
+            query_params,
+        )
+        total, permissions = operation.execute()
+        return PaginatedResponse(
+            page=query_params.page,
+            page_size=query_params.page_size,
+            total=total,
+            total_pages=get_total_pages(total, query_params.page_size),
+            data=permissions,
+        )
     except PermissionError:
         raise HTTPException(status_code=403)
     except Exception as e:

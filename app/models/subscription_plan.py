@@ -65,3 +65,7 @@ class SubscriptionPlan(Base):
     permission_group_id = Column(UUID(as_uuid=True), ForeignKey('permission_groups.id'), nullable=True, index=True)
     
     permission_group = relationship("PermissionGroup", back_populates="subscription_plans")
+
+    def soft_delete(self, deleted_by: uuid.UUID) -> None:
+        self.deleted_at = func.now()
+        self.deleted_by = deleted_by

@@ -26,6 +26,7 @@ class SubscriptionPlanSerializer(BaseModel):
     interval_count: int | None = None
     trial_period_count: int | None = None
     permission_group_id: UUID | None = None
+    permission_group_name: str | None = None
 
 
 class SubscriptionPlanCreatePayload(BaseModel):
@@ -41,9 +42,28 @@ class SubscriptionPlanCreatePayload(BaseModel):
     permission_group_id: UUID | None = None
 
 
+class SubscriptionPlanUpdatePayload(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    is_enabled: bool | None = None
+    is_default: bool | None = None
+    price: int | None = None
+    type: SubscriptionPlanType | None = None
+    interval: SubscriptionPlanInterval | None = None
+    interval_count: int | None = None
+    trial_period_count: int | None = None
+    permission_group_id: UUID | None = None
+
+
 class ListSubscriptionPlansQueryParams(Pagination):
     is_enabled: bool | None = None
     is_default: bool | None = None
+    search: str | None = None
+    order_by: str | None = None
+    order_direction: str | None = None
+
+
+class ListSubscriptionPlansPermissionsQueryParams(Pagination):
     search: str | None = None
     order_by: str | None = None
     order_direction: str | None = None

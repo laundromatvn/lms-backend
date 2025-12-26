@@ -14,18 +14,35 @@ from app.operations.subscription.list_subscription_plans import ListSubscription
 from app.operations.subscription.add_subscription_plan import AddSubscriptionPlanOperation
 from app.operations.subscription.update_subscription_plan import UpdateSubscriptionPlanOperation
 from app.operations.subscription.list_subscription_plan_permissions import ListSubscriptionPlansPermissionsOperation
+from app.operations.subscription.set_default_subscription_plan import SetDefaultSubscriptionPlanOperation
 from app.schemas.subscription import (
     SubscriptionPlanSerializer,
     SubscriptionPlanCreatePayload,
     ListSubscriptionPlansQueryParams,
     SubscriptionPlanUpdatePayload,
     ListSubscriptionPlansPermissionsQueryParams,
+    SetDefaultSubscriptionPlanPayload,
 )
 from app.schemas.permission import PermissionSerializer
 from app.schemas.pagination import PaginatedResponse
 from app.utils.pagination import get_total_pages
 
 router = APIRouter()
+
+
+@router.post("/set-default", status_code=204)
+def set_default_subscription_plan(
+    payload: SetDefaultSubscriptionPlanPayload,
+    current_user: User = Depends(require_permissions(["subscription_plan.update"])),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = SetDefaultSubscriptionPlanOperation(db, current_user, payload.subscription_plan_id)
+        operation.execute()
+    except PermissionError:
+        raise HTTPException(status_code=403)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.get("/{subscription_plan_id}/permissions", response_model=PaginatedResponse[PermissionSerializer])

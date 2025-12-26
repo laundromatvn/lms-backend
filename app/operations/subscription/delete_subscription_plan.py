@@ -25,6 +25,7 @@ class DeleteSubscriptionPlanOperation:
                 SubscriptionPlan.id == self.subscription_plan_id,
                 SubscriptionPlan.deleted_at.is_(None),
                 SubscriptionPlan.is_default.is_(False),
+                SubscriptionPlan.is_enabled.is_(True),
             )
             .first()
         )

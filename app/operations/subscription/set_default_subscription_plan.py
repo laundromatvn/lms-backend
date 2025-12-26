@@ -5,49 +5,53 @@ from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.models.subscription_plan import SubscriptionPlan
-from app.schemas.subscription import SubscriptionPlanUpdatePayload
 
 
-class UpdateSubscriptionPlanOperation:
+class SetDefaultSubscriptionPlanOperation:
     def __init__(
         self,
         db: Session,
         current_user: User,
         subscription_plan_id: UUID,
-        payload: SubscriptionPlanUpdatePayload,
     ):
         self.db = db
         self.current_user = current_user
         self.subscription_plan_id = subscription_plan_id
-        self.payload = payload
 
     def execute(self):
         self._get_subscription_plan()
-        self._update()
+        self._remove_default_from_other_subscription_plans()
+        self._set_default()
 
     def _get_subscription_plan(self) -> SubscriptionPlan:
         self.subscription_plan = (
-            self.db
-            .query(SubscriptionPlan)
+            self.db.query(SubscriptionPlan)
             .filter(
                 SubscriptionPlan.id == self.subscription_plan_id,
                 SubscriptionPlan.deleted_at.is_(None),
+                SubscriptionPlan.is_enabled.is_(True),
+                SubscriptionPlan.is_default.is_(False),
             )
             .first()
         )
         if not self.subscription_plan:
-            raise ValueError(f"Subscription plan with ID {self.subscription_plan_id} not found")
+            raise ValueError(
+                f"Subscription plan with ID {self.subscription_plan_id} not found"
+            )
 
-    def _update(self):
-        for key, value in self.payload.model_dump().items():
-            if key == "is_enabled" and value is False and self.subscription_plan.is_default:
-                raise ValueError("Disabled default subscription plan must be enabled")
+    def _remove_default_from_other_subscription_plans(self):
+        self.db.query(SubscriptionPlan).filter(
+            SubscriptionPlan.is_default.is_(True),
+        ).update({
+            "is_default": False,
+            "updated_by": self.current_user.id,
+            "updated_at": datetime.now(),
+        }, synchronize_session=False)
+        self.db.commit()
 
-            if value is not None:
-                setattr(self.subscription_plan, key, value)
-        
+    def _set_default(self):
+        self.subscription_plan.is_default = True
         self.subscription_plan.updated_by = self.current_user.id
         self.subscription_plan.updated_at = datetime.now()
-
         self.db.add(self.subscription_plan)
         self.db.commit()

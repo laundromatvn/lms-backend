@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from sqlalchemy.orm import Session
 
-from app.apis.deps import require_permissions
+from app.apis.deps import require_permissions, get_current_user
 from app.libs.database import get_db
 from app.models.user import User
+from app.operations.tenant.get_active_subscrpition_plan import GetTenantSubscriptionPlanOperation
 from app.operations.tenant.list_tenants import ListTenantsOperation
 from app.operations.tenant.get_tenant import GetTenantOperation
+from app.operations.tenant.subscribe_to_plan import SubscribeToPlanOperation
 from app.operations.tenant.update_tenant import UpdateTenantOperation
 from app.operations.tenant.create_tenant import CreateTenantOperation    
 from app.operations.tenant.delete_tenant import DeleteTenantOperation
@@ -15,13 +17,49 @@ from app.schemas.tenant import (
     AddTenantRequest,
     UpdateTenantRequest,
     ListTenantQueryParams,
+    CreateTenantSubscriptionPlanRequest,
 )
+from app.schemas.subscription import SubscriptionPlanSerializer
 from app.core.logging import logger
 from app.schemas.pagination import PaginatedResponse
 from app.utils.pagination import get_total_pages
 
 
 router = APIRouter()
+
+
+
+
+@router.get("/{tenant_id}/subscription-plan", response_model=SubscriptionPlanSerializer)
+def get_tenant_subscription_plan(
+    tenant_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = GetTenantSubscriptionPlanOperation(db, current_user, tenant_id)
+        subscription_plan = operation.execute()
+        return subscription_plan
+    except PermissionError:
+        raise HTTPException(status_code=403)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@router.post("/{tenant_id}/subscription-plan", status_code=204)
+def add_tenant_subscription_plan(
+    tenant_id: str,
+    request: CreateTenantSubscriptionPlanRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = SubscribeToPlanOperation(db, current_user, tenant_id, request.subscription_plan_id)
+        operation.execute()
+    except PermissionError:
+        raise HTTPException(status_code=403)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.get("", response_model=PaginatedResponse[TenantSerializer])

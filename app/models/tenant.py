@@ -52,7 +52,8 @@ class Tenant(Base):
     datapoints = relationship("Datapoint", back_populates="tenant")
     promotion_campaigns = relationship("PromotionCampaign", back_populates="tenant")
     permission_groups = relationship("PermissionGroup", back_populates="tenant")
-
+    subscriptions = relationship("Subscription", back_populates="tenant")
+    
     @validates('status')
     def validate_status(self, key: str, status) -> TenantStatus:
         if not isinstance(status, TenantStatus):

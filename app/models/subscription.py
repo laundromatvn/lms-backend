@@ -19,6 +19,7 @@ from app.libs.database import Base
 
 
 class SubscriptionStatus(str, Enum):
+    PENDING = "PENDING"
     ACTIVE = "ACTIVE"
     CANCELLED = "CANCELLED"
     PAST_DUE = "PAST_DUE"
@@ -49,9 +50,8 @@ class Subscription(Base):
     )
     
     start_date = Column(DateTime(timezone=True), nullable=False)
-    renewal_start_date = Column(DateTime(timezone=True), nullable=False)
-    trial_end_date = Column(DateTime(timezone=True), nullable=True)
     end_date = Column(DateTime(timezone=True), nullable=True)
+    trial_end_date = Column(DateTime(timezone=True), nullable=True)
     next_renewal_date = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships

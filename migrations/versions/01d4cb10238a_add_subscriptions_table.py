@@ -17,12 +17,12 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade() -> None:
-    subscription_status_enum = postgresql.ENUM(
-        'ACTIVE', 'CANCELLED', 'PAST_DUE', 'EXPIRED',
-        name='subscription_status', create_type=False)
-    subscription_status_enum.create(op.get_bind())
+subscription_status_enum = postgresql.ENUM(
+    'PENDING', 'ACTIVE', 'CANCELLED', 'PAST_DUE', 'EXPIRED',
+    name='subscription_status', create_type=False)
+subscription_status_enum.create(op.get_bind())
 
+def upgrade() -> None:
     op.create_table('subscriptions',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True, index=True),
 
@@ -37,7 +37,7 @@ def upgrade() -> None:
         sa.Column('tenant_id', postgresql.UUID(as_uuid=True), nullable=False, index=True),
         sa.Column('subscription_plan_id', postgresql.UUID(as_uuid=True), nullable=False, index=True),
         
-        sa.Column('status', subscription_status_enum, nullable=False, default='ACTIVE', index=True),
+        sa.Column('status', subscription_status_enum, nullable=False, default='PENDING', index=True),
         
         sa.Column('start_date', sa.DateTime(timezone=True), nullable=False),
         sa.Column('end_date', sa.DateTime(timezone=True), nullable=True),
@@ -54,3 +54,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table('subscriptions')
+    subscription_status_enum.drop(op.get_bind())

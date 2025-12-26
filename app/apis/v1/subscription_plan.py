@@ -5,10 +5,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.apis.deps import require_permissions
+from app.apis.deps import require_permissions, get_current_user
 from app.libs.database import get_db
 from app.models.user import User
 from app.operations.subscription.delete_subscription_plan import DeleteSubscriptionPlanOperation
+from app.operations.subscription.get_available_subscription_plan import GetAvailableSubscriptionPlanOperation
 from app.operations.subscription.get_subscription_plan import GetSubscriptionPlanOperation
 from app.operations.subscription.list_subscription_plans import ListSubscriptionPlansOperation
 from app.operations.subscription.add_subscription_plan import AddSubscriptionPlanOperation
@@ -39,6 +40,20 @@ def set_default_subscription_plan(
     try:
         operation = SetDefaultSubscriptionPlanOperation(db, current_user, payload.subscription_plan_id)
         operation.execute()
+    except PermissionError:
+        raise HTTPException(status_code=403)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@router.get("/available", response_model=List[SubscriptionPlanSerializer])
+def get_available_subscription_plans(
+    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        operation = GetAvailableSubscriptionPlanOperation(db)
+        return operation.execute()
     except PermissionError:
         raise HTTPException(status_code=403)
     except Exception as e:
